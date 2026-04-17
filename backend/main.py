@@ -12,6 +12,7 @@ from datetime import datetime
 
 from database import engine, get_db, Base
 from models import MicrochipMatching, FIELD_MAP, REVERSE_MAP
+from models_ublox import UbloxBacklog, UBLOX_COLUMN_MAP, UBLOX_DISPLAY_COLUMNS
 
 # 테이블 생성
 Base.metadata.create_all(bind=engine)
@@ -286,6 +287,216 @@ async def export_excel(data: dict):
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": "attachment; filename=microchip_matching_export.xlsx"},
     )
+
+
+# ==================== u-blox 백로그 ====================
+
+def parse_ublox_excel(contents: bytes):
+    """u-blox 백로그 엑셀 파싱"""
+    xls = pd.ExcelFile(io.BytesIO(contents), engine="openpyxl")
+    df = pd.read_excel(xls, sheet_name=0, header=None)
+
+    # 헤더 행 찾기
+    header_row = 0
+    for i in range(min(5, len(df))):
+        row_values = [str(v).strip() for v in df.iloc[i].values if pd.notna(v)]
+        if "Order Name" in row_values or "Type Number" in row_values:
+            header_row = i
+            break
+
+    # 14번 컬럼의 헤더 (전일 날짜)
+    prev_date_header = str(df.iloc[header_row, 14]) if df.shape[1] > 14 else None
+
+    df = df.iloc[header_row + 1:].reset_index(drop=True)
+    df = df.dropna(how="all").reset_index(drop=True)
+
+    records = []
+    for _, row in df.iterrows():
+        record = {}
+        has_data = False
+        for col_idx, (db_field, display_name, dtype) in UBLOX_COLUMN_MAP.items():
+            if col_idx >= len(row):
+                record[display_name] = None
+                continue
+            v = row.iloc[col_idx]
+            v = clean_value(v)
+            if dtype == "float":
+                record[display_name] = to_float(v)
+            elif dtype == "date" and isinstance(v, str):
+                record[display_name] = v
+            elif v is not None and isinstance(v, pd.Timestamp):
+                record[display_name] = v.strftime("%Y-%m-%d")
+            else:
+                record[display_name] = str(v) if v is not None else None
+            if v is not None:
+                has_data = True
+        if has_data and record.get("Order Name"):
+            records.append(record)
+
+    return records, prev_date_header
+
+
+def ublox_record_to_db(record: dict, upload_date) -> UbloxBacklog:
+    kwargs = {"upload_date": upload_date}
+    for col_idx, (db_field, display_name, dtype) in UBLOX_COLUMN_MAP.items():
+        val = record.get(display_name)
+        if dtype == "float":
+            kwargs[db_field] = to_float(val)
+        else:
+            kwargs[db_field] = str(val) if val is not None else None
+    return UbloxBacklog(**kwargs)
+
+
+def ublox_db_to_record(row: UbloxBacklog) -> dict:
+    record = {}
+    for col_idx, (db_field, display_name, dtype) in UBLOX_COLUMN_MAP.items():
+        record[display_name] = getattr(row, db_field)
+    return record
+
+
+@app.post("/api/ublox/upload")
+async def upload_ublox(file: UploadFile = File(...), db: Session = Depends(get_db)):
+    contents = await file.read()
+    records, prev_date_header = parse_ublox_excel(contents)
+
+    if not records:
+        return {"error": "데이터를 찾을 수 없습니다."}
+
+    # 업로드 날짜 결정
+    today = datetime.now().date()
+
+    # 이전 데이터 조회 (전일 비교용)
+    prev_dates = db.query(UbloxBacklog.upload_date).distinct().order_by(
+        UbloxBacklog.upload_date.desc()
+    ).all()
+    prev_dates = [d[0] for d in prev_dates if d[0] != today]
+
+    prev_records_map = {}
+    if prev_dates:
+        prev_date = prev_dates[0]
+        prev_rows = db.query(UbloxBacklog).filter(
+            UbloxBacklog.upload_date == prev_date
+        ).all()
+        for r in prev_rows:
+            key = r.order_name
+            prev_records_map[key] = ublox_db_to_record(r)
+
+    # 오늘 데이터 삭제 후 새로 저장
+    db.query(UbloxBacklog).filter(UbloxBacklog.upload_date == today).delete()
+    for r in records:
+        db.add(ublox_record_to_db(r, today))
+    db.commit()
+
+    # 변경 비교
+    changes = []
+    for r in records:
+        order_name = r.get("Order Name")
+        change_info = {"type": None, "changed_fields": []}
+
+        if order_name not in prev_records_map:
+            if prev_records_map:  # 전일 데이터가 있을 때만 신규 표시
+                change_info["type"] = "new"
+        else:
+            prev = prev_records_map[order_name]
+            changed = []
+            for col in ["Delivery Date", "Qty Ordered", "Price per unit", "Order Status"]:
+                if str(r.get(col, "")) != str(prev.get(col, "")):
+                    changed.append(col)
+            if changed:
+                change_info["type"] = "modified"
+                change_info["changed_fields"] = changed
+            del prev_records_map[order_name]
+
+        r["_change"] = change_info
+
+    # 삭제된 주문
+    deleted = []
+    for order_name, prev in prev_records_map.items():
+        prev["_change"] = {"type": "deleted", "changed_fields": []}
+        deleted.append(prev)
+
+    return {
+        "columns": UBLOX_DISPLAY_COLUMNS,
+        "data": records,
+        "deleted": deleted,
+        "total_rows": len(records),
+        "has_prev": len(prev_dates) > 0,
+        "prev_date": str(prev_dates[0]) if prev_dates else None,
+        "upload_date": str(today),
+    }
+
+
+@app.get("/api/ublox/data")
+async def get_ublox_data(db: Session = Depends(get_db)):
+    """최신 u-blox 데이터 조회"""
+    latest_date = db.query(UbloxBacklog.upload_date).distinct().order_by(
+        UbloxBacklog.upload_date.desc()
+    ).first()
+
+    if not latest_date:
+        return {"data": [], "columns": UBLOX_DISPLAY_COLUMNS, "total_rows": 0}
+
+    latest_date = latest_date[0]
+    rows = db.query(UbloxBacklog).filter(
+        UbloxBacklog.upload_date == latest_date
+    ).order_by(UbloxBacklog.id).all()
+
+    records = [ublox_db_to_record(r) for r in rows]
+    for r in records:
+        r["_change"] = {"type": None, "changed_fields": []}
+
+    return {
+        "columns": UBLOX_DISPLAY_COLUMNS,
+        "data": records,
+        "deleted": [],
+        "total_rows": len(records),
+        "upload_date": str(latest_date),
+        "has_prev": False,
+    }
+
+
+@app.get("/api/ublox/search/{type_number}")
+async def search_ublox(type_number: str, db: Session = Depends(get_db)):
+    """품명으로 백로그 조회"""
+    latest_date = db.query(UbloxBacklog.upload_date).distinct().order_by(
+        UbloxBacklog.upload_date.desc()
+    ).first()
+
+    if not latest_date:
+        return {"data": [], "summary": None}
+
+    rows = db.query(UbloxBacklog).filter(
+        UbloxBacklog.upload_date == latest_date[0],
+        UbloxBacklog.type_number.ilike(f"%{type_number}%")
+    ).order_by(UbloxBacklog.request_date).all()
+
+    records = [ublox_db_to_record(r) for r in rows]
+
+    # 요약
+    total_qty = sum(to_float(r.get("Qty Ordered")) or 0 for r in records)
+    total_value = sum(to_float(r.get("Total Value")) or 0 for r in records)
+    customers = list(set(r.get("End Customer") for r in records if r.get("End Customer")))
+
+    return {
+        "columns": UBLOX_DISPLAY_COLUMNS,
+        "data": records,
+        "total_rows": len(records),
+        "summary": {
+            "type_number": type_number,
+            "total_qty": total_qty,
+            "total_value": total_value,
+            "order_count": len(records),
+            "customers": customers,
+        },
+    }
+
+
+@app.delete("/api/ublox/data")
+async def reset_ublox(db: Session = Depends(get_db)):
+    count = db.query(UbloxBacklog).count()
+    db.query(UbloxBacklog).delete()
+    db.commit()
+    return {"deleted": count}
 
 
 # 프론트엔드 정적 파일 서빙 (배포용)

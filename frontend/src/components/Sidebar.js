@@ -18,6 +18,17 @@ function Sidebar({ activeMenu, setActiveMenu }) {
           마이크로칩 (매칭)
         </button>
       </div>
+
+      <div className="sidebar-section">
+        <div className="sidebar-section-title">UBLOX 백로그</div>
+        <button
+          className={`sidebar-menu-item ${activeMenu === "ublox" ? "active" : ""}`}
+          onClick={() => setActiveMenu("ublox")}
+        >
+          <span className="icon">&#9679;</span>
+          UBLOX 백로그
+        </button>
+      </div>
     </nav>
   );
 }

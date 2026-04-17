@@ -307,3 +307,54 @@ body {
   border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
+
+/* u-blox 변경 하이라이트 */
+.row-new {
+  background: #f0fdf4 !important;
+}
+
+.row-new td {
+  border-left: 3px solid #22c55e;
+}
+
+.row-modified {
+  background: #fefce8 !important;
+}
+
+.row-modified td {
+  border-left: 3px solid #eab308;
+}
+
+.row-deleted {
+  background: #fef2f2 !important;
+  text-decoration: line-through;
+  color: #999;
+}
+
+.cell-changed {
+  background: #fef08a !important;
+  font-weight: 700;
+}
+
+.ublox-legend {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 12px;
+  font-size: 12px;
+  color: #666;
+}
+
+.legend-new { color: #22c55e; }
+.legend-modified { color: #eab308; }
+.legend-deleted { color: #dc2626; }
+
+/* 품명 검색 결과 요약 */
+.search-summary {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e40af;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 13px;
+}
