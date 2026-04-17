@@ -357,4 +357,45 @@ body {
   border-radius: 8px;
   margin-bottom: 16px;
   font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.clear-search-btn {
+  background: #3b82f6;
+  color: #fff;
+  border: none;
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  margin-left: auto;
+}
+
+.clear-search-btn:hover {
+  background: #2563eb;
+}
+
+/* 변경분 필터 버튼 */
+.filter-btn {
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.15s;
+}
+
+.filter-btn:hover {
+  background: #e5e7eb;
+}
+
+.filter-btn.active {
+  background: #3b82f6;
+  color: #fff;
+  border-color: #3b82f6;
 }

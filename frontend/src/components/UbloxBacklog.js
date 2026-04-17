@@ -26,6 +26,7 @@ function UbloxBacklog() {
   const [search, setSearch] = useState("");
   const [searchResult, setSearchResult] = useState(null);
   const [uploadResult, setUploadResult] = useState(null);
+  const [showChangedOnly, setShowChangedOnly] = useState(true);
   const fileRef = React.useRef();
   const [dragging, setDragging] = useState(false);
 
@@ -48,11 +49,12 @@ function UbloxBacklog() {
         setError(res.data.error);
       } else {
         setData(res.data);
+        setShowChangedOnly(true);
         const newCount = res.data.data.filter(r => r._change?.type === "new").length;
         const modCount = res.data.data.filter(r => r._change?.type === "modified").length;
         const delCount = (res.data.deleted || []).length;
         if (res.data.has_prev) {
-          setUploadResult({ newCount, modCount, delCount, prev_date: res.data.prev_date });
+          setUploadResult({ newCount, modCount, delCount });
           setTimeout(() => setUploadResult(null), 8000);
         }
       }
@@ -68,7 +70,14 @@ function UbloxBacklog() {
     try {
       const res = await axios.get(`${API_URL}/api/ublox/search/${encodeURIComponent(search.trim())}`);
       setSearchResult(res.data);
+      setShowChangedOnly(false);
     } catch { setSearchResult(null); }
+  };
+
+  const clearSearch = () => {
+    setSearch("");
+    setSearchResult(null);
+    setShowChangedOnly(true);
   };
 
   const handleExport = async () => {
@@ -87,20 +96,41 @@ function UbloxBacklog() {
 
   const displayColumns = data?.columns || [];
   const allRows = searchResult?.data || data?.data || [];
+  const deletedRows = (!searchResult && data?.deleted) || [];
 
   const filtered = useMemo(() => {
-    if (searchResult) return allRows;
-    if (!search.trim()) return allRows;
-    const q = search.toLowerCase();
-    return allRows.filter((row) =>
-      displayColumns.some((col) => {
-        const v = row[col];
-        return v !== null && v !== undefined && String(v).toLowerCase().includes(q);
-      })
-    );
-  }, [allRows, search, displayColumns, searchResult]);
+    let rows = allRows;
+
+    // 품명 검색 결과일 때는 필터 안 함
+    if (searchResult) return rows;
+
+    // 변경분만 보기
+    if (showChangedOnly && data?.has_prev) {
+      const changed = rows.filter(r => r._change?.type === "new" || r._change?.type === "modified");
+      return [...changed, ...deletedRows];
+    }
+
+    // 일반 텍스트 필터
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      rows = rows.filter((row) =>
+        displayColumns.some((col) => {
+          const v = row[col];
+          return v !== null && v !== undefined && String(v).toLowerCase().includes(q);
+        })
+      );
+    }
+
+    return rows;
+  }, [allRows, deletedRows, search, displayColumns, searchResult, showChangedOnly, data]);
 
   const displayRows = filtered;
+
+  const totalChanged = useMemo(() => {
+    if (!data?.data) return 0;
+    return data.data.filter(r => r._change?.type === "new" || r._change?.type === "modified").length
+      + (data.deleted || []).length;
+  }, [data]);
 
   return (
     <>
@@ -109,7 +139,7 @@ function UbloxBacklog() {
         <p className="subtitle">
           u-blox Salesforce 백로그 현황
           {data?.upload_date && <span className="db-status"> | 업로드: {data.upload_date}</span>}
-          {data?.has_prev && data?.prev_date && <span className="db-status"> | 전일: {data.prev_date}</span>}
+          {data?.version && <span className="db-status"> | v{data.version}</span>}
         </p>
       </div>
 
@@ -135,7 +165,7 @@ function UbloxBacklog() {
 
       {uploadResult && (
         <div className="success-banner">
-          전일({uploadResult.prev_date}) 대비: 신규 <strong>{uploadResult.newCount}</strong>건 /
+          전일 대비: 신규 <strong>{uploadResult.newCount}</strong>건 /
           변경 <strong>{uploadResult.modCount}</strong>건 /
           삭제 <strong>{uploadResult.delCount}</strong>건
         </div>
@@ -150,6 +180,7 @@ function UbloxBacklog() {
           ({searchResult.summary.order_count}건) |
           금액: <strong>${searchResult.summary.total_value.toLocaleString()}</strong> |
           고객: {searchResult.summary.customers.join(", ")}
+          <button className="clear-search-btn" onClick={clearSearch}>검색 해제</button>
         </div>
       )}
 
@@ -157,11 +188,26 @@ function UbloxBacklog() {
         <>
           <div className="table-header">
             <div className="table-info">
-              총 <strong>{displayRows.length}</strong>건
+              {searchResult
+                ? <>검색 결과: <strong>{displayRows.length}</strong>건</>
+                : showChangedOnly && data.has_prev
+                  ? <>변경분: <strong>{displayRows.length}</strong>건 (전체 {data.total_rows}건)</>
+                  : <>총 <strong>{displayRows.length}</strong>건</>
+              }
             </div>
-            <button className="export-btn" onClick={handleExport}>
-              <span>&#128229;</span> 엑셀 내보내기
-            </button>
+            <div style={{ display: "flex", gap: 8 }}>
+              {data.has_prev && !searchResult && (
+                <button
+                  className={`filter-btn ${showChangedOnly ? "active" : ""}`}
+                  onClick={() => setShowChangedOnly(!showChangedOnly)}
+                >
+                  {showChangedOnly ? "전체 보기" : "변경분만"}
+                </button>
+              )}
+              <button className="export-btn" onClick={handleExport}>
+                <span>&#128229;</span> 엑셀 내보내기
+              </button>
+            </div>
           </div>
 
           <div className="search-bar">
@@ -170,7 +216,7 @@ function UbloxBacklog() {
               type="text"
               placeholder="품명(Type Number) 검색 — Enter로 상세 조회"
               value={search}
-              onChange={(e) => { setSearch(e.target.value); if (!e.target.value) setSearchResult(null); }}
+              onChange={(e) => { setSearch(e.target.value); if (!e.target.value) { setSearchResult(null); setShowChangedOnly(true); } }}
               onKeyDown={(e) => { if (e.key === "Enter") handleSearch(); }}
             />
           </div>
@@ -213,6 +259,11 @@ function UbloxBacklog() {
                     </tr>
                   );
                 })}
+                {displayRows.length === 0 && (
+                  <tr><td colSpan={displayColumns.length + 1} style={{ textAlign: "center", color: "#999", padding: 20 }}>
+                    {showChangedOnly ? "변경된 항목이 없습니다" : "데이터가 없습니다"}
+                  </td></tr>
+                )}
               </tbody>
             </table>
           </div>
