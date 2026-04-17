@@ -161,6 +161,18 @@ body {
   font-weight: 600;
 }
 
+/* Success */
+.success-banner {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #16a34a;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
 /* Error */
 .error-banner {
   background: #fef2f2;

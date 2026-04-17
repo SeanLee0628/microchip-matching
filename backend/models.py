@@ -36,7 +36,7 @@ class MicrochipMatching(Base):
     m10 = Column(Float)                          # 10월
     m11 = Column(Float)                          # 11월
     m12 = Column(Float)                          # 12월
-    mix_customer_part = Column(String)           # 믹스#(customer&part)
+    mix_customer_part = Column(String, unique=True, index=True)  # 믹스#(customer&part) - 중복 체크 키
 
 
 # DB 컬럼명 ↔ 엑셀 컬럼명 매핑

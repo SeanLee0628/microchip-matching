@@ -168,21 +168,55 @@ async def upload_excel(file: UploadFile = File(...), db: Session = Depends(get_d
     if records is None:
         return {"error": "헤더 행을 찾을 수 없습니다."}
 
-    # DB에 저장 (기존 데이터 삭제 후 새로 저장)
-    db.query(MicrochipMatching).delete()
+    # DB 저장: 믹스#(customer&part) 기준으로 중복 체크
     batch_id = datetime.now().strftime("%Y%m%d_%H%M%S") + "_" + uuid.uuid4().hex[:8]
+    inserted = 0
+    updated = 0
 
-    db_rows = [record_to_db_row(r, batch_id) for r in records]
-    db.bulk_save_objects(db_rows)
+    for r in records:
+        key = r.get("믹스#(customer&part)")
+        if not key:
+            continue
+
+        existing = db.query(MicrochipMatching).filter(
+            MicrochipMatching.mix_customer_part == key
+        ).first()
+
+        if existing:
+            # 기존 데이터 → 최신 값으로 업데이트
+            float_fields = {
+                "LT", "2023년", "2024년", "2025년", "2026년", "23~25추이",
+                "25-26(w/BL)", "BLOG TTL", "3월", "4월", "5월", "6월",
+                "7월", "8월", "9월", "10월", "11월", "12월",
+            }
+            for excel_col, db_field in FIELD_MAP.items():
+                val = r.get(excel_col)
+                if excel_col in float_fields:
+                    setattr(existing, db_field, to_float(val))
+                else:
+                    setattr(existing, db_field, str(val) if val is not None else None)
+            existing.upload_batch = batch_id
+            updated += 1
+        else:
+            # 새로운 데이터 → 추가
+            db.add(record_to_db_row(r, batch_id))
+            inserted += 1
+
     db.commit()
+
+    # 전체 데이터 반환
+    all_rows = db.query(MicrochipMatching).order_by(MicrochipMatching.id).all()
+    all_records = [db_row_to_record(row) for row in all_rows]
 
     return {
         "sheet_name": target_sheet,
         "columns": final_columns,
-        "data": records,
-        "total_rows": len(records),
+        "data": all_records,
+        "total_rows": len(all_records),
         "saved_to_db": True,
         "batch_id": batch_id,
+        "inserted": inserted,
+        "updated": updated,
     }
 
 

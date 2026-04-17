@@ -13,6 +13,7 @@ function App() {
   const [error, setError] = useState(null);
   const [activeMenu, setActiveMenu] = useState("matching");
   const [dbInfo, setDbInfo] = useState(null);
+  const [uploadResult, setUploadResult] = useState(null);
 
   // 페이지 진입 시 DB에서 데이터 자동 로드
   useEffect(() => {
@@ -37,6 +38,10 @@ function App() {
       uploaded_at: new Date().toLocaleString("ko-KR"),
       batch_id: result.batch_id,
     });
+    if (result.inserted !== undefined) {
+      setUploadResult({ inserted: result.inserted, updated: result.updated });
+      setTimeout(() => setUploadResult(null), 5000);
+    }
   };
 
   const handleError = (msg) => {
@@ -67,6 +72,12 @@ function App() {
               loading={loading}
               setLoading={setLoading}
             />
+
+            {uploadResult && (
+              <div className="success-banner">
+                신규 {uploadResult.inserted}건 추가 / 기존 {uploadResult.updated}건 업데이트
+              </div>
+            )}
 
             {error && <div className="error-banner">{error}</div>}
 
