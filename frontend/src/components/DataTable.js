@@ -51,6 +51,11 @@ function DataTable({ columns, rows, sheetName, totalRows }) {
     });
     ws["!cols"] = colWidths;
 
+    // 필터 옵션 설정
+    const lastCol = XLSX.utils.encode_col(columns.length - 1);
+    const lastRow = exportData.length + 1;
+    ws["!autofilter"] = { ref: `A1:${lastCol}${lastRow}` };
+
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "마이크로칩(매칭)");
     const buf = XLSX.write(wb, { bookType: "xlsx", type: "array" });
