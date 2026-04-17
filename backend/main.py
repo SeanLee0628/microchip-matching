@@ -13,6 +13,7 @@ from datetime import datetime
 from database import engine, get_db, Base
 from models import MicrochipMatching, FIELD_MAP, REVERSE_MAP
 from models_ublox import UbloxBacklog, UBLOX_COLUMN_MAP, UBLOX_DISPLAY_COLUMNS
+from models_sales import SalesPerformance as SalesModel, SALES_FIELD_MAP, SALES_REVERSE_MAP
 
 # 테이블 생성
 Base.metadata.create_all(bind=engine)
@@ -579,8 +580,45 @@ def parse_lot_date(lot_no):
     return None
 
 
+def sales_record_to_db(record: dict, batch_id: str) -> SalesModel:
+    float_fields = {"QTY", "DCPL($)", "매입금액($)", "SP($)", "매출금액($)", "매출환율",
+                     "SP(KRW)", "매출금액(KRW)", "GP($)", "GP%($)", "GP(KRW)", "GP%(KRW)"}
+    kwargs = {"upload_batch": batch_id}
+    for excel_col, db_field in SALES_FIELD_MAP.items():
+        val = record.get(excel_col)
+        if excel_col in float_fields:
+            kwargs[db_field] = to_float(val)
+        else:
+            kwargs[db_field] = str(val) if val is not None else None
+    return SalesModel(**kwargs)
+
+
+def sales_db_to_record(row: SalesModel) -> dict:
+    record = {}
+    for excel_col, db_field in SALES_FIELD_MAP.items():
+        record[excel_col] = getattr(row, db_field)
+    return record
+
+
+def compute_sales_summary(records):
+    total_sales_usd = sum(r.get("매출금액($)") or 0 for r in records)
+    total_buy_usd = sum(r.get("매입금액($)") or 0 for r in records)
+    total_gp_usd = sum(r.get("GP($)") or 0 for r in records)
+    total_sales_krw = sum(r.get("매출금액(KRW)") or 0 for r in records)
+    total_gp_krw = sum(r.get("GP(KRW)") or 0 for r in records)
+    return {
+        "total_sales_usd": round(total_sales_usd, 2),
+        "total_buy_usd": round(total_buy_usd, 2),
+        "total_gp_usd": round(total_gp_usd, 2),
+        "total_gp_pct": round(total_gp_usd / total_sales_usd * 100, 2) if total_sales_usd else 0,
+        "total_sales_krw": round(total_sales_krw, 2),
+        "total_gp_krw": round(total_gp_krw, 2),
+        "total_gp_pct_krw": round(total_gp_krw / total_sales_krw * 100, 2) if total_sales_krw else 0,
+    }
+
+
 @app.post("/api/sales/upload")
-async def upload_sales(file: UploadFile = File(...)):
+async def upload_sales(file: UploadFile = File(...), db: Session = Depends(get_db)):
     contents = await file.read()
     try:
         df = pd.read_excel(io.BytesIO(contents), header=0)
@@ -658,28 +696,35 @@ async def upload_sales(file: UploadFile = File(...)):
             "Month": month_val,
         })
 
-    # 합계 계산
-    total_sales_usd = sum(r["매출금액($)"] or 0 for r in records)
-    total_buy_usd = sum(r["매입금액($)"] or 0 for r in records)
-    total_gp_usd = sum(r["GP($)"] or 0 for r in records)
-    total_sales_krw = sum(r["매출금액(KRW)"] or 0 for r in records)
-    total_gp_krw = sum(r["GP(KRW)"] or 0 for r in records)
-
-    summary = {
-        "total_sales_usd": round(total_sales_usd, 2),
-        "total_buy_usd": round(total_buy_usd, 2),
-        "total_gp_usd": round(total_gp_usd, 2),
-        "total_gp_pct": round(total_gp_usd / total_sales_usd * 100, 2) if total_sales_usd else 0,
-        "total_sales_krw": round(total_sales_krw, 2),
-        "total_gp_krw": round(total_gp_krw, 2),
-        "total_gp_pct_krw": round(total_gp_krw / total_sales_krw * 100, 2) if total_sales_krw else 0,
-    }
+    # DB 저장
+    db.query(SalesModel).delete()
+    batch_id = datetime.now().strftime("%Y%m%d_%H%M%S") + "_" + uuid.uuid4().hex[:8]
+    for r in records:
+        db.add(sales_record_to_db(r, batch_id))
+    db.commit()
 
     return {
         "columns": SALES_COLUMNS,
         "data": records,
         "total_rows": len(records),
-        "summary": summary,
+        "summary": compute_sales_summary(records),
+        "saved_to_db": True,
+    }
+
+
+@app.get("/api/sales/data")
+async def get_sales_data(db: Session = Depends(get_db)):
+    """DB에서 영업실적 데이터 조회"""
+    rows = db.query(SalesModel).order_by(SalesModel.id).all()
+    if not rows:
+        return {"data": [], "columns": SALES_COLUMNS, "total_rows": 0}
+
+    records = [sales_db_to_record(r) for r in rows]
+    return {
+        "columns": SALES_COLUMNS,
+        "data": records,
+        "total_rows": len(records),
+        "summary": compute_sales_summary(records),
     }
 
 

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import { saveAs } from "file-saver";
 
@@ -28,6 +28,12 @@ function SalesPerformance() {
   const [search, setSearch] = useState("");
   const fileRef = React.useRef();
   const [dragging, setDragging] = useState(false);
+
+  useEffect(() => {
+    axios.get(`${API_URL}/api/sales/data`).then((res) => {
+      if (res.data.total_rows > 0) setData(res.data);
+    }).catch(() => {});
+  }, []);
 
   const handleFile = async (file) => {
     if (!file) return;
