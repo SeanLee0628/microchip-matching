@@ -76,7 +76,10 @@ def to_float(v):
     if v is None:
         return None
     try:
-        return float(v)
+        f = float(v)
+        if math.isnan(f) or math.isinf(f):
+            return None
+        return f
     except (ValueError, TypeError):
         return None
 
@@ -532,6 +535,152 @@ async def reset_ublox(db: Session = Depends(get_db)):
     db.query(UbloxBacklog).delete()
     db.commit()
     return {"deleted": count}
+
+
+# ==================== 영업실적 ====================
+
+FIXED_EXCHANGE_RATE = 1400
+
+SALES_COLUMNS = [
+    "구분", "MPN", "QTY", "DCPL($)", "매입금액($)",
+    "SP($)", "매출금액($)", "매출환율", "SP(KRW)", "매출금액(KRW)",
+    "GP($)", "GP%($)", "GP(KRW)", "GP%(KRW)",
+    "담당자", "납품처", "거래처코드", "출고일자", "입고일", "Month",
+]
+
+
+def parse_remark(remark):
+    """비고(내역)에서 매입단가, 매출단가 추출: '2.2_2.8' → (2.2, 2.8)"""
+    if not remark or str(remark) == "nan":
+        return None, None
+    parts = str(remark).split("_")
+    try:
+        buy = float(parts[0])
+    except (ValueError, IndexError):
+        buy = None
+    try:
+        sell = float(parts[1]) if len(parts) > 1 else None
+    except (ValueError, IndexError):
+        sell = None
+    return buy, sell
+
+
+def parse_lot_date(lot_no):
+    """LOT No.에서 입고일 추출: '260129_8K_$2.2_Korni' → '2026-01-29'"""
+    if not lot_no or str(lot_no) == "nan":
+        return None
+    parts = str(lot_no).split("_")
+    if not parts:
+        return None
+    date_str = parts[0].strip()
+    if len(date_str) == 6 and date_str.isdigit():
+        yy, mm, dd = date_str[:2], date_str[2:4], date_str[4:6]
+        return f"20{yy}-{mm}-{dd}"
+    return None
+
+
+@app.post("/api/sales/upload")
+async def upload_sales(file: UploadFile = File(...)):
+    contents = await file.read()
+    try:
+        df = pd.read_excel(io.BytesIO(contents), header=0)
+    except Exception:
+        df = pd.read_excel(io.BytesIO(contents), header=0, engine="xlrd")
+
+    records = []
+    for _, row in df.iterrows():
+        remark = row.get("비고(내역)")
+        lot_no = row.get("LOT No.")
+        qty = to_float(row.get("출고수량"))
+        if not qty or qty == 0:
+            continue
+
+        dcpl, sp = parse_remark(remark)
+        inbound_date = parse_lot_date(lot_no)
+
+        # 외화단가가 있으면 SP로 사용 (USD 거래)
+        foreign_price = to_float(row.get("외화단가"))
+        if foreign_price and foreign_price > 0:
+            sp = foreign_price
+
+        # 매출환율: 더존 환율이 있으면 사용, 없으면 고정
+        exch_rate = to_float(row.get("환율"))
+        if not exch_rate or exch_rate <= 1:
+            exch_rate = FIXED_EXCHANGE_RATE
+
+        # 계산
+        buy_amt = round(dcpl * qty, 2) if dcpl else None
+        sell_amt = round(sp * qty, 2) if sp else None
+        sp_krw = round(sp * exch_rate, 2) if sp else None
+        sell_amt_krw = round(sell_amt * exch_rate, 2) if sell_amt else None
+        gp_usd = round(sell_amt - buy_amt, 2) if sell_amt and buy_amt else None
+        gp_pct = round(gp_usd / sell_amt * 100, 2) if gp_usd and sell_amt and sell_amt != 0 else None
+        gp_krw = round(gp_usd * exch_rate, 2) if gp_usd else None
+        gp_pct_krw = round(gp_krw / sell_amt_krw * 100, 2) if gp_krw and sell_amt_krw and sell_amt_krw != 0 else None
+
+        # 출고일자
+        ship_date = row.get("출고일자")
+        if isinstance(ship_date, pd.Timestamp):
+            ship_date = ship_date.strftime("%Y-%m-%d")
+        else:
+            ship_date = str(ship_date) if ship_date and str(ship_date) != "nan" else None
+
+        # Month
+        month_val = row.get("출고년월")
+        if month_val and str(month_val) != "nan":
+            month_val = str(month_val).replace("/", "")
+        else:
+            month_val = None
+
+        vendor = row.get("품목군") or row.get("품목대분류") or ""
+        vendor = str(vendor) if str(vendor) != "nan" else ""
+
+        records.append({
+            "구분": vendor,
+            "MPN": str(row.get("품번", "")) if str(row.get("품번", "")) != "nan" else "",
+            "QTY": qty,
+            "DCPL($)": dcpl,
+            "매입금액($)": buy_amt,
+            "SP($)": sp,
+            "매출금액($)": sell_amt,
+            "매출환율": exch_rate,
+            "SP(KRW)": sp_krw,
+            "매출금액(KRW)": sell_amt_krw,
+            "GP($)": gp_usd,
+            "GP%($)": gp_pct,
+            "GP(KRW)": gp_krw,
+            "GP%(KRW)": gp_pct_krw,
+            "담당자": str(row.get("담당자", "")) if str(row.get("담당자", "")) != "nan" else "",
+            "납품처": str(row.get("고객", "")) if str(row.get("고객", "")) != "nan" else "",
+            "거래처코드": str(row.get("고객코드", "")) if str(row.get("고객코드", "")) != "nan" else "",
+            "출고일자": ship_date,
+            "입고일": inbound_date,
+            "Month": month_val,
+        })
+
+    # 합계 계산
+    total_sales_usd = sum(r["매출금액($)"] or 0 for r in records)
+    total_buy_usd = sum(r["매입금액($)"] or 0 for r in records)
+    total_gp_usd = sum(r["GP($)"] or 0 for r in records)
+    total_sales_krw = sum(r["매출금액(KRW)"] or 0 for r in records)
+    total_gp_krw = sum(r["GP(KRW)"] or 0 for r in records)
+
+    summary = {
+        "total_sales_usd": round(total_sales_usd, 2),
+        "total_buy_usd": round(total_buy_usd, 2),
+        "total_gp_usd": round(total_gp_usd, 2),
+        "total_gp_pct": round(total_gp_usd / total_sales_usd * 100, 2) if total_sales_usd else 0,
+        "total_sales_krw": round(total_sales_krw, 2),
+        "total_gp_krw": round(total_gp_krw, 2),
+        "total_gp_pct_krw": round(total_gp_krw / total_sales_krw * 100, 2) if total_sales_krw else 0,
+    }
+
+    return {
+        "columns": SALES_COLUMNS,
+        "data": records,
+        "total_rows": len(records),
+        "summary": summary,
+    }
 
 
 @app.post("/api/reset-tables")

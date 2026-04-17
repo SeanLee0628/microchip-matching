@@ -4,6 +4,7 @@ import Sidebar from "./components/Sidebar";
 import FileUpload from "./components/FileUpload";
 import DataTable from "./components/DataTable";
 import UbloxBacklog from "./components/UbloxBacklog";
+import SalesPerformance from "./components/SalesPerformance";
 import "./App.css";
 
 const API_URL = process.env.REACT_APP_API_URL || "";
@@ -94,6 +95,7 @@ function App() {
         )}
 
         {activeMenu === "ublox" && <UbloxBacklog />}
+        {activeMenu === "sales" && <SalesPerformance />}
       </main>
     </div>
   );

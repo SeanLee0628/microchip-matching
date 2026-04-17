@@ -29,6 +29,17 @@ function Sidebar({ activeMenu, setActiveMenu }) {
           UBLOX 백로그
         </button>
       </div>
+
+      <div className="sidebar-section">
+        <div className="sidebar-section-title">영업실적</div>
+        <button
+          className={`sidebar-menu-item ${activeMenu === "sales" ? "active" : ""}`}
+          onClick={() => setActiveMenu("sales")}
+        >
+          <span className="icon">&#9679;</span>
+          영업실적
+        </button>
+      </div>
     </nav>
   );
 }
