@@ -60,7 +60,7 @@ function SalesPerformance() {
       { data: exportData, columns },
       { responseType: "blob" }
     );
-    saveAs(res.data, `영업실적_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    saveAs(res.data, `2실_영업실적_${new Date().toISOString().slice(0, 10)}.xlsx`);
   };
 
   const columns = data?.columns || [];
@@ -83,7 +83,7 @@ function SalesPerformance() {
   return (
     <>
       <div className="page-header">
-        <h1>영업실적</h1>
+        <h1>2실 영업실적</h1>
         <p className="subtitle">더존 출고현황 → 매출현황 자동 변환 (환율: $1 = ₩1,400 고정)</p>
       </div>
 

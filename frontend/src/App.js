@@ -57,7 +57,7 @@ function App() {
         {activeMenu === "matching" && (
           <>
             <div className="page-header">
-              <h1>마이크로칩 (매칭)</h1>
+              <h1>Unitron AI</h1>
               <p className="subtitle">
                 마이크로칩 End Customer / Purchasing Customer 매칭 현황
                 {dbInfo?.uploaded_at && (

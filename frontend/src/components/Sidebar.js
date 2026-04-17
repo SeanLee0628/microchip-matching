@@ -15,7 +15,7 @@ function Sidebar({ activeMenu, setActiveMenu }) {
           onClick={() => setActiveMenu("matching")}
         >
           <span className="icon">&#9679;</span>
-          마이크로칩 (매칭)
+          Unitron AI
         </button>
       </div>
 
@@ -31,13 +31,13 @@ function Sidebar({ activeMenu, setActiveMenu }) {
       </div>
 
       <div className="sidebar-section">
-        <div className="sidebar-section-title">영업실적</div>
+        <div className="sidebar-section-title">2실 영업실적</div>
         <button
           className={`sidebar-menu-item ${activeMenu === "sales" ? "active" : ""}`}
           onClick={() => setActiveMenu("sales")}
         >
           <span className="icon">&#9679;</span>
-          영업실적
+          2실 영업실적
         </button>
       </div>
     </nav>
