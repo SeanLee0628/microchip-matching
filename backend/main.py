@@ -244,6 +244,8 @@ async def get_data(db: Session = Depends(get_db)):
 
 @app.post("/api/export")
 async def export_excel(data: dict):
+    from openpyxl.styles import PatternFill, Font, Alignment
+
     rows = data.get("data", [])
     columns = data.get("columns", COLUMNS)
 
@@ -252,6 +254,22 @@ async def export_excel(data: dict):
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine="openpyxl") as writer:
         df.to_excel(writer, sheet_name="마이크로칩(매칭)", index=False)
+        ws = writer.sheets["마이크로칩(매칭)"]
+
+        # 헤더 스타일: 하늘색 배경 + 볼드 + 가운데 정렬
+        sky_blue = PatternFill(start_color="87CEEB", end_color="87CEEB", fill_type="solid")
+        bold_font = Font(bold=True)
+        center_align = Alignment(horizontal="center")
+
+        for col_idx in range(1, len(df.columns) + 1):
+            cell = ws.cell(row=1, column=col_idx)
+            cell.fill = sky_blue
+            cell.font = bold_font
+            cell.alignment = center_align
+
+        # 필터 설정
+        ws.auto_filter.ref = ws.dimensions
+
     output.seek(0)
 
     return StreamingResponse(

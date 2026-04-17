@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from "react";
-import * as XLSX from "xlsx";
+import axios from "axios";
 import { saveAs } from "file-saver";
+
+const API_URL = process.env.REACT_APP_API_URL || "";
 
 const NUMBER_COLS = new Set([
   "LT", "2023년", "2024년", "2025년", "2026년", "23~25추이", "25-26(w/BL)",
@@ -30,7 +32,7 @@ function DataTable({ columns, rows, sheetName, totalRows }) {
     );
   }, [rows, search, columns]);
 
-  const handleExport = () => {
+  const handleExport = async () => {
     const exportData = filtered.map((row) => {
       const obj = {};
       columns.forEach((col) => {
@@ -39,27 +41,13 @@ function DataTable({ columns, rows, sheetName, totalRows }) {
       return obj;
     });
 
-    const ws = XLSX.utils.json_to_sheet(exportData, { header: columns });
+    const res = await axios.post(
+      `${API_URL}/api/export`,
+      { data: exportData, columns },
+      { responseType: "blob" }
+    );
 
-    // 컬럼 너비 자동 설정
-    const colWidths = columns.map((col) => {
-      const maxLen = Math.max(
-        col.length * 2,
-        ...filtered.slice(0, 100).map((r) => String(r[col] ?? "").length)
-      );
-      return { wch: Math.min(maxLen + 2, 30) };
-    });
-    ws["!cols"] = colWidths;
-
-    // 필터 옵션 설정
-    const lastCol = XLSX.utils.encode_col(columns.length - 1);
-    const lastRow = exportData.length + 1;
-    ws["!autofilter"] = { ref: `A1:${lastCol}${lastRow}` };
-
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "마이크로칩(매칭)");
-    const buf = XLSX.write(wb, { bookType: "xlsx", type: "array" });
-    saveAs(new Blob([buf]), `마이크로칩_매칭_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    saveAs(res.data, `마이크로칩_매칭_${new Date().toISOString().slice(0, 10)}.xlsx`);
   };
 
   return (
