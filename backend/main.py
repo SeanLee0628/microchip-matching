@@ -220,6 +220,15 @@ async def upload_excel(file: UploadFile = File(...), db: Session = Depends(get_d
     }
 
 
+@app.delete("/api/data")
+async def reset_data(db: Session = Depends(get_db)):
+    """DB 전체 초기화"""
+    count = db.query(MicrochipMatching).count()
+    db.query(MicrochipMatching).delete()
+    db.commit()
+    return {"deleted": count}
+
+
 @app.get("/api/data")
 async def get_data(db: Session = Depends(get_db)):
     """DB에서 저장된 데이터 조회"""
