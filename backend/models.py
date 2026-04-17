@@ -11,7 +11,7 @@ class MicrochipMatching(Base):
     uploaded_at = Column(DateTime, server_default=func.now())
 
     고객코드 = Column(String)
-    믹스 = Column("mix_key", String)            # 믹스#
+    믹스 = Column("mix_key", String, unique=True, index=True)  # 믹스# - 고유 키
     sales = Column(String)
     고객 = Column(String)
     end_customer = Column(String)               # END
@@ -36,7 +36,7 @@ class MicrochipMatching(Base):
     m10 = Column(Float)                          # 10월
     m11 = Column(Float)                          # 11월
     m12 = Column(Float)                          # 12월
-    mix_customer_part = Column(String, unique=True, index=True)  # 믹스#(customer&part) - 중복 체크 키
+    mix_customer_part = Column(String)           # 믹스#(customer&part)
 
 
 # DB 컬럼명 ↔ 엑셀 컬럼명 매핑

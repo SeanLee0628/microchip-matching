@@ -168,18 +168,18 @@ async def upload_excel(file: UploadFile = File(...), db: Session = Depends(get_d
     if records is None:
         return {"error": "헤더 행을 찾을 수 없습니다."}
 
-    # DB 저장: 믹스#(customer&part) 기준으로 중복 체크
+    # DB 저장: 믹스# (고객코드+PART#) 기준으로 중복 체크
     batch_id = datetime.now().strftime("%Y%m%d_%H%M%S") + "_" + uuid.uuid4().hex[:8]
     inserted = 0
     updated = 0
 
     for r in records:
-        key = r.get("믹스#(customer&part)")
+        key = r.get("믹스#")
         if not key:
             continue
 
         existing = db.query(MicrochipMatching).filter(
-            MicrochipMatching.mix_customer_part == key
+            MicrochipMatching.믹스 == key
         ).first()
 
         if existing:
