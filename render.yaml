@@ -6,12 +6,11 @@ databases:
 
 services:
   - type: web
-    name: microchip-matching-api
+    name: microchip-matching
     runtime: python
     plan: free
-    rootDir: backend
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    buildCommand: chmod +x build.sh && ./build.sh
+    startCommand: cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -19,19 +18,5 @@ services:
           property: connectionString
       - key: PYTHON_VERSION
         value: "3.11.0"
-
-  - type: web
-    name: microchip-matching-web
-    runtime: static
-    plan: free
-    rootDir: frontend
-    buildCommand: npm install && npm run build
-    staticPublishPath: build
-    headers:
-      - path: /*
-        name: Cache-Control
-        value: no-cache
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
+      - key: NODE_VERSION
+        value: "18.20.0"

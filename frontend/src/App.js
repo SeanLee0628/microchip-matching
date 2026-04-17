@@ -5,7 +5,7 @@ import FileUpload from "./components/FileUpload";
 import DataTable from "./components/DataTable";
 import "./App.css";
 
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8001";
+const API_URL = process.env.REACT_APP_API_URL || "";
 
 function App() {
   const [data, setData] = useState(null);
