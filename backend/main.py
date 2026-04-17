@@ -500,6 +500,14 @@ async def reset_ublox(db: Session = Depends(get_db)):
     return {"deleted": count}
 
 
+@app.post("/api/reset-tables")
+async def reset_tables():
+    """DB 테이블 재생성 (스키마 변경 시)"""
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
+    return {"status": "ok", "message": "All tables recreated"}
+
+
 # 프론트엔드 정적 파일 서빙 (배포용)
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 if os.path.isdir(STATIC_DIR):
