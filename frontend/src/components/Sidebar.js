@@ -15,7 +15,7 @@ function Sidebar({ activeMenu, setActiveMenu }) {
           onClick={() => setActiveMenu("matching")}
         >
           <span className="icon">&#9679;</span>
-          Unitron AI
+          Microchip 매칭
         </button>
       </div>
 
