@@ -428,31 +428,65 @@ async def upload_ublox(file: UploadFile = File(...), db: Session = Depends(get_d
 
 @app.get("/api/ublox/data")
 async def get_ublox_data(db: Session = Depends(get_db)):
-    """최신 u-blox 데이터 조회"""
-    latest_version = db.query(UbloxBacklog.upload_version).order_by(
+    """최신 u-blox 데이터 조회 (전일 비교 포함)"""
+    versions = db.query(UbloxBacklog.upload_version).distinct().order_by(
         UbloxBacklog.upload_version.desc()
-    ).first()
+    ).limit(2).all()
 
-    if not latest_version:
+    if not versions:
         return {"data": [], "columns": UBLOX_DISPLAY_COLUMNS, "total_rows": 0}
 
-    latest_version = latest_version[0]
+    latest_version = versions[0][0]
+    prev_version = versions[1][0] if len(versions) > 1 else None
+
     rows = db.query(UbloxBacklog).filter(
         UbloxBacklog.upload_version == latest_version
     ).order_by(UbloxBacklog.id).all()
 
     records = [ublox_db_to_record(r) for r in rows]
-    for r in records:
-        r["_change"] = {"type": None, "changed_fields": []}
+
+    # 전일 비교
+    prev_records_map = {}
+    deleted = []
+    if prev_version:
+        prev_rows = db.query(UbloxBacklog).filter(
+            UbloxBacklog.upload_version == prev_version
+        ).all()
+        for r in prev_rows:
+            prev_records_map[r.order_name] = ublox_db_to_record(r)
+
+        for r in records:
+            order_name = r.get("Order Name")
+            change_info = {"type": None, "changed_fields": []}
+            if order_name not in prev_records_map:
+                change_info["type"] = "new"
+            else:
+                prev = prev_records_map[order_name]
+                changed = []
+                for col in ["Delivery Date", "Qty Ordered", "Price per unit", "Order Status"]:
+                    if str(r.get(col, "")) != str(prev.get(col, "")):
+                        changed.append(col)
+                if changed:
+                    change_info["type"] = "modified"
+                    change_info["changed_fields"] = changed
+                del prev_records_map[order_name]
+            r["_change"] = change_info
+
+        for order_name, prev in prev_records_map.items():
+            prev["_change"] = {"type": "deleted", "changed_fields": []}
+            deleted.append(prev)
+    else:
+        for r in records:
+            r["_change"] = {"type": None, "changed_fields": []}
 
     return {
         "columns": UBLOX_DISPLAY_COLUMNS,
         "data": records,
-        "deleted": [],
+        "deleted": deleted,
         "total_rows": len(records),
         "upload_date": str(rows[0].upload_date) if rows else None,
         "version": latest_version,
-        "has_prev": False,
+        "has_prev": prev_version is not None,
     }
 
 
