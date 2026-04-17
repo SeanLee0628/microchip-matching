@@ -336,8 +336,8 @@ def parse_ublox_excel(contents: bytes):
     return records, prev_date_header
 
 
-def ublox_record_to_db(record: dict, upload_date) -> UbloxBacklog:
-    kwargs = {"upload_date": upload_date}
+def ublox_record_to_db(record: dict, upload_date, version: int) -> UbloxBacklog:
+    kwargs = {"upload_date": upload_date, "upload_version": version}
     for col_idx, (db_field, display_name, dtype) in UBLOX_COLUMN_MAP.items():
         val = record.get(display_name)
         if dtype == "float":
@@ -362,29 +362,28 @@ async def upload_ublox(file: UploadFile = File(...), db: Session = Depends(get_d
     if not records:
         return {"error": "데이터를 찾을 수 없습니다."}
 
-    # 업로드 날짜 결정
     today = datetime.now().date()
 
-    # 이전 데이터 조회 (전일 비교용)
-    prev_dates = db.query(UbloxBacklog.upload_date).distinct().order_by(
-        UbloxBacklog.upload_date.desc()
-    ).all()
-    prev_dates = [d[0] for d in prev_dates if d[0] != today]
+    # 최신 버전 번호 조회
+    latest_version = db.query(UbloxBacklog.upload_version).order_by(
+        UbloxBacklog.upload_version.desc()
+    ).first()
+    prev_version = latest_version[0] if latest_version else None
+    new_version = (prev_version or 0) + 1
 
+    # 이전 데이터 조회 (직전 업로드와 비교)
     prev_records_map = {}
-    if prev_dates:
-        prev_date = prev_dates[0]
+    if prev_version:
         prev_rows = db.query(UbloxBacklog).filter(
-            UbloxBacklog.upload_date == prev_date
+            UbloxBacklog.upload_version == prev_version
         ).all()
         for r in prev_rows:
             key = r.order_name
             prev_records_map[key] = ublox_db_to_record(r)
 
-    # 오늘 데이터 삭제 후 새로 저장
-    db.query(UbloxBacklog).filter(UbloxBacklog.upload_date == today).delete()
+    # 새 버전으로 저장
     for r in records:
-        db.add(ublox_record_to_db(r, today))
+        db.add(ublox_record_to_db(r, today, new_version))
     db.commit()
 
     # 변경 비교
@@ -420,8 +419,9 @@ async def upload_ublox(file: UploadFile = File(...), db: Session = Depends(get_d
         "data": records,
         "deleted": deleted,
         "total_rows": len(records),
-        "has_prev": len(prev_dates) > 0,
-        "prev_date": str(prev_dates[0]) if prev_dates else None,
+        "has_prev": prev_version is not None,
+        "prev_version": prev_version,
+        "version": new_version,
         "upload_date": str(today),
     }
 
@@ -429,16 +429,16 @@ async def upload_ublox(file: UploadFile = File(...), db: Session = Depends(get_d
 @app.get("/api/ublox/data")
 async def get_ublox_data(db: Session = Depends(get_db)):
     """최신 u-blox 데이터 조회"""
-    latest_date = db.query(UbloxBacklog.upload_date).distinct().order_by(
-        UbloxBacklog.upload_date.desc()
+    latest_version = db.query(UbloxBacklog.upload_version).order_by(
+        UbloxBacklog.upload_version.desc()
     ).first()
 
-    if not latest_date:
+    if not latest_version:
         return {"data": [], "columns": UBLOX_DISPLAY_COLUMNS, "total_rows": 0}
 
-    latest_date = latest_date[0]
+    latest_version = latest_version[0]
     rows = db.query(UbloxBacklog).filter(
-        UbloxBacklog.upload_date == latest_date
+        UbloxBacklog.upload_version == latest_version
     ).order_by(UbloxBacklog.id).all()
 
     records = [ublox_db_to_record(r) for r in rows]
@@ -450,7 +450,8 @@ async def get_ublox_data(db: Session = Depends(get_db)):
         "data": records,
         "deleted": [],
         "total_rows": len(records),
-        "upload_date": str(latest_date),
+        "upload_date": str(rows[0].upload_date) if rows else None,
+        "version": latest_version,
         "has_prev": False,
     }
 
@@ -458,15 +459,15 @@ async def get_ublox_data(db: Session = Depends(get_db)):
 @app.get("/api/ublox/search/{type_number}")
 async def search_ublox(type_number: str, db: Session = Depends(get_db)):
     """품명으로 백로그 조회"""
-    latest_date = db.query(UbloxBacklog.upload_date).distinct().order_by(
-        UbloxBacklog.upload_date.desc()
+    latest_version = db.query(UbloxBacklog.upload_version).order_by(
+        UbloxBacklog.upload_version.desc()
     ).first()
 
-    if not latest_date:
+    if not latest_version:
         return {"data": [], "summary": None}
 
     rows = db.query(UbloxBacklog).filter(
-        UbloxBacklog.upload_date == latest_date[0],
+        UbloxBacklog.upload_version == latest_version[0],
         UbloxBacklog.type_number.ilike(f"%{type_number}%")
     ).order_by(UbloxBacklog.request_date).all()
 

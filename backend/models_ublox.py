@@ -7,7 +7,8 @@ class UbloxBacklog(Base):
     __tablename__ = "ublox_backlog"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    upload_date = Column(Date, index=True)      # 업로드 날짜 (전일 비교용)
+    upload_version = Column(Integer, index=True)  # 업로드 회차 (비교용)
+    upload_date = Column(Date, index=True)
     uploaded_at = Column(DateTime, server_default=func.now())
 
     order_name = Column(String)
