@@ -9,7 +9,6 @@ function Sidebar({ activeMenu, setActiveMenu }) {
       </div>
 
       <div className="sidebar-section">
-        <div className="sidebar-section-title">MICROCHIP MATCHING</div>
         <button
           className={`sidebar-menu-item ${activeMenu === "matching" ? "active" : ""}`}
           onClick={() => setActiveMenu("matching")}
@@ -17,10 +16,7 @@ function Sidebar({ activeMenu, setActiveMenu }) {
           <span className="icon">&#9679;</span>
           Microchip 매칭
         </button>
-      </div>
 
-      <div className="sidebar-section">
-        <div className="sidebar-section-title">UBLOX 백로그</div>
         <button
           className={`sidebar-menu-item ${activeMenu === "ublox" ? "active" : ""}`}
           onClick={() => setActiveMenu("ublox")}
@@ -28,10 +24,7 @@ function Sidebar({ activeMenu, setActiveMenu }) {
           <span className="icon">&#9679;</span>
           UBLOX 백로그
         </button>
-      </div>
 
-      <div className="sidebar-section">
-        <div className="sidebar-section-title">2실 영업실적</div>
         <button
           className={`sidebar-menu-item ${activeMenu === "sales" ? "active" : ""}`}
           onClick={() => setActiveMenu("sales")}
