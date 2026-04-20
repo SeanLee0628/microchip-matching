@@ -736,6 +736,115 @@ async def reset_tables():
     return {"status": "ok", "message": "All tables recreated"}
 
 
+# ==================== 마이크론 재고 ====================
+
+MICRON_COLUMNS = [
+    "Status", "Type", "PO", "DID", "MPN", "CPN (MOBIS ID 포함)", "BOX_TYPE",
+    "QTY", "DNNo.", "Ship Date", "MicronInvoice#", "수입면장번호", "BL번호",
+    "수입신고일", "FSE", "End customer", "Date Code",
+    "Booking Customer & FSE", "Qty_booking", "비고",
+]
+
+micron_data = []  # 로컬 메모리 저장
+
+
+@app.post("/api/micron/upload")
+async def upload_micron(file: UploadFile = File(...)):
+    global micron_data
+    contents = await file.read()
+    try:
+        df = pd.read_excel(io.BytesIO(contents), sheet_name="Detail", header=0)
+    except Exception:
+        return {"error": "Detail 시트를 찾을 수 없습니다."}
+
+    records = []
+    for idx, row in df.iterrows():
+        rec = {}
+        for col in df.columns:
+            v = row[col]
+            if isinstance(v, float) and (math.isnan(v) or math.isinf(v)):
+                rec[col] = None
+            elif isinstance(v, pd.Timestamp):
+                rec[col] = v.strftime("%Y-%m-%d")
+            elif v is not None:
+                rec[col] = str(v) if not isinstance(v, (int, float)) else v
+            else:
+                rec[col] = None
+        rec["_id"] = str(idx)
+        records.append(rec)
+
+    micron_data = records
+
+    return {
+        "columns": MICRON_COLUMNS,
+        "data": records,
+        "total_rows": len(records),
+    }
+
+
+@app.get("/api/micron/data")
+async def get_micron_data(
+    status: str = "",
+    did: str = "",
+    mpn: str = "",
+    notes_only: str = "",
+):
+    filtered = micron_data
+    if status:
+        filtered = [r for r in filtered if status in str(r.get("Status", ""))]
+    if did:
+        filtered = [r for r in filtered if did.lower() in str(r.get("DID", "")).lower()]
+    if mpn:
+        filtered = [r for r in filtered if mpn.lower() in str(r.get("MPN", "")).lower()]
+    if notes_only == "true":
+        filtered = [r for r in filtered if r.get("비고") and str(r.get("비고")) not in ("None", "", "nan")]
+
+    return {"columns": MICRON_COLUMNS, "data": filtered, "total_rows": len(filtered)}
+
+
+@app.get("/api/micron/summary/{did}")
+async def micron_summary(did: str):
+    """DID 기준 재고+입고예정 통합 조회"""
+    items = [r for r in micron_data if str(r.get("DID", "")).upper() == did.upper()]
+    if not items:
+        return {"error": "해당 DID 없음"}
+
+    by_status = {}
+    for r in items:
+        s = str(r.get("Status", "기타"))
+        if s not in by_status:
+            by_status[s] = {"count": 0, "qty": 0, "items": []}
+        by_status[s]["count"] += 1
+        by_status[s]["qty"] += to_float(r.get("QTY")) or 0
+        by_status[s]["items"].append(r)
+
+    total_qty = sum(v["qty"] for v in by_status.values())
+    mpns = list(set(str(r.get("MPN", "")) for r in items))
+
+    return {
+        "did": did, "mpns": mpns, "total_qty": total_qty,
+        "by_status": {k: {"count": v["count"], "qty": v["qty"]} for k, v in by_status.items()},
+        "items": items,
+    }
+
+
+@app.post("/api/micron/update")
+async def update_micron(data: dict):
+    """R~T열 수정 (CS팀 권한)"""
+    item_id = data.get("_id")
+    if item_id is None:
+        return {"error": "ID 없음"}
+
+    for r in micron_data:
+        if str(r.get("_id")) == str(item_id):
+            r["Booking Customer & FSE"] = data.get("Booking Customer & FSE", r.get("Booking Customer & FSE"))
+            r["Qty_booking"] = data.get("Qty_booking", r.get("Qty_booking"))
+            r["비고"] = data.get("비고", r.get("비고"))
+            return {"updated": item_id}
+
+    return {"error": "not found"}
+
+
 # ==================== 거래명세서 ====================
 
 import requests as http_requests
