@@ -32,6 +32,14 @@ function Sidebar({ activeMenu, setActiveMenu }) {
           <span className="icon">&#9679;</span>
           2실 영업실적
         </button>
+
+        <button
+          className={`sidebar-menu-item ${activeMenu === "invoice" ? "active" : ""}`}
+          onClick={() => setActiveMenu("invoice")}
+        >
+          <span className="icon">&#9679;</span>
+          거래명세서
+        </button>
       </div>
     </nav>
   );
