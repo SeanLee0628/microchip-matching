@@ -234,11 +234,11 @@ async def upload_ublox(file: UploadFile = File(...)):
             d = json.loads(item.get("data", "{}"))
             prev_map[d.get("Order Name", "")] = d
 
-    # 저장
-    for r in records:
+    # 저장 (order_name + 행번호로 unique SK)
+    for i, r in enumerate(records):
         ublox_tb.put({
             "upload_version": new_version,
-            "order_name": r.get("Order Name", ""),
+            "order_name": f"{r.get('Order Name', '')}_{i}",
             "data": json.dumps(r, ensure_ascii=False, default=str),
         })
 
