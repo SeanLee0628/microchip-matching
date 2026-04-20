@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { saveAs } from "file-saver";
 
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8001";
+const API_URL = process.env.REACT_APP_API_URL || "";
 
 function Invoice() {
   const [rate, setRate] = useState(1400);

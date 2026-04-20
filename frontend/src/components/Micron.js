@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { saveAs } from "file-saver";
 
-const API = process.env.REACT_APP_API_URL || "http://localhost:8001";
+const API = process.env.REACT_APP_API_URL || "";
 
 const EDITABLE_COLS = new Set(["Booking Customer & FSE", "Qty_booking", "비고"]);
 const NUM_COLS = new Set(["QTY", "Qty_booking"]);
