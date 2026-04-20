@@ -57,8 +57,15 @@ class DTable:
         return resp.get("Item")
 
     def query(self, pk_name, pk_value):
-        resp = self.table.query(KeyConditionExpression=Key(pk_name).eq(pk_value))
-        return resp.get("Items", [])
+        items = []
+        kwargs = {"KeyConditionExpression": Key(pk_name).eq(pk_value)}
+        while True:
+            resp = self.table.query(**kwargs)
+            items.extend(resp.get("Items", []))
+            if "LastEvaluatedKey" not in resp:
+                break
+            kwargs["ExclusiveStartKey"] = resp["LastEvaluatedKey"]
+        return items
 
     def scan_all(self):
         items = []

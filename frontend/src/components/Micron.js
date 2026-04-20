@@ -133,17 +133,19 @@ function Micron() {
           {/* 통합 조회 결과 */}
           {summary && (
             <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 8, padding: 16, marginBottom: 12 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                 <h3 style={{ fontSize: 15, fontWeight: 700 }}>
                   {summary.did} 통합 조회 — {summary.mpns?.join(", ")}
                 </h3>
                 <button style={{ background: "none", border: "none", cursor: "pointer", color: "#999", fontSize: 18 }}
                   onClick={() => setSummary(null)}>&times;</button>
               </div>
-              <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+
+              {/* 요약 카드 */}
+              <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
                 {Object.entries(summary.by_status || {}).map(([status, info]) => (
                   <div key={status} style={{ background: "#fff", borderRadius: 6, padding: "8px 16px", border: "1px solid #e5e5e5" }}>
-                    <div style={{ fontSize: 11, color: "#888" }}>{status}</div>
+                    <div style={{ fontSize: 11, color: "#888" }}>{status === "재고" ? "📦 " : status.includes("입고") ? "🚚 " : ""}{status}</div>
                     <div style={{ fontSize: 20, fontWeight: 700 }}>{info.qty?.toLocaleString()}</div>
                     <div style={{ fontSize: 11, color: "#aaa" }}>{info.count}건</div>
                   </div>
@@ -153,6 +155,63 @@ function Micron() {
                   <div style={{ fontSize: 20, fontWeight: 700 }}>{summary.total_qty?.toLocaleString()}</div>
                 </div>
               </div>
+
+              {/* 입고일별 상세 테이블 */}
+              {(() => {
+                const items = summary.items || [];
+                const statusGroups = {};
+                items.forEach(item => {
+                  const s = item.Status || "기타";
+                  if (!statusGroups[s]) statusGroups[s] = [];
+                  statusGroups[s].push(item);
+                });
+                // 각 그룹 내 입고일 정렬
+                Object.values(statusGroups).forEach(arr => arr.sort((a, b) => {
+                  const da = a["Ship Date"] || "9999";
+                  const db2 = b["Ship Date"] || "9999";
+                  return da < db2 ? -1 : da > db2 ? 1 : 0;
+                }));
+
+                return Object.entries(statusGroups).map(([status, groupItems]) => (
+                  <div key={status} style={{ marginBottom: 12 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6, color: status === "재고" ? "#2e7d32" : status.includes("입고") ? "#e67e22" : "#666" }}>
+                      {status === "재고" ? "📦" : "🚚"} {status} ({groupItems.length}건, {groupItems.reduce((s, i) => s + (Number(i.QTY) || 0), 0).toLocaleString()}개)
+                    </div>
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12, background: "#fff", borderRadius: 4 }}>
+                      <thead>
+                        <tr style={{ background: "#f5f5f5" }}>
+                          <th style={{ padding: "6px 8px", textAlign: "left", borderBottom: "1px solid #eee" }}>입고일</th>
+                          <th style={{ padding: "6px 8px", textAlign: "left", borderBottom: "1px solid #eee" }}>PO</th>
+                          <th style={{ padding: "6px 8px", textAlign: "left", borderBottom: "1px solid #eee" }}>MPN</th>
+                          <th style={{ padding: "6px 8px", textAlign: "right", borderBottom: "1px solid #eee" }}>수량</th>
+                          <th style={{ padding: "6px 8px", textAlign: "left", borderBottom: "1px solid #eee" }}>Type</th>
+                          <th style={{ padding: "6px 8px", textAlign: "left", borderBottom: "1px solid #eee" }}>End Customer</th>
+                          <th style={{ padding: "6px 8px", textAlign: "left", borderBottom: "1px solid #eee" }}>비고</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {groupItems.map((item, j) => {
+                          const shipDate = item["Ship Date"];
+                          const displayDate = shipDate && shipDate !== "None" && shipDate !== "nan" ? shipDate : "미정";
+                          const note = item["비고"];
+                          const displayNote = note && note !== "None" && note !== "nan" ? note : "";
+                          return (
+                            <tr key={j} style={{ borderBottom: "1px solid #f5f5f5" }}>
+                              <td style={{ padding: "5px 8px", fontWeight: 600 }}>{displayDate}</td>
+                              <td style={{ padding: "5px 8px" }}>{item.PO || ""}</td>
+                              <td style={{ padding: "5px 8px" }}>{item.MPN || ""}</td>
+                              <td style={{ padding: "5px 8px", textAlign: "right", fontWeight: 700 }}>{Number(item.QTY || 0).toLocaleString()}</td>
+                              <td style={{ padding: "5px 8px", color: "#888" }}>{item.Type || ""}</td>
+                              <td style={{ padding: "5px 8px", color: "#888" }}>{item["End customer"] || ""}</td>
+                              <td style={{ padding: "5px 8px", color: displayNote ? "#e74c3c" : "#ccc" }}>{displayNote || "-"}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                ));
+              })()}
             </div>
           )}
 
