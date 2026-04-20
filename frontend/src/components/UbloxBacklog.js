@@ -32,7 +32,10 @@ function UbloxBacklog() {
 
   useEffect(() => {
     axios.get(`${API_URL}/api/ublox/data`).then((res) => {
-      if (res.data.total_rows > 0) setData(res.data);
+      if (res.data.total_rows > 0) {
+        setData(res.data);
+        if (!res.data.has_prev) setShowChangedOnly(false);
+      }
     }).catch(() => {});
   }, []);
 
