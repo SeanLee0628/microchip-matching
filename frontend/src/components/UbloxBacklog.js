@@ -62,6 +62,7 @@ function UbloxBacklog() {
       setError("업로드 실패: " + (err.response?.data?.detail || err.message));
     } finally {
       setLoading(false);
+      if (fileRef.current) fileRef.current.value = "";
     }
   };
 
