@@ -215,9 +215,16 @@ async def upload_ublox(file: UploadFile = File(...)):
 
     # 버전 관리
     all_existing = ublox_tb.scan_all()
-    versions = set(item.get("upload_version", "0") for item in all_existing)
-    prev_version = max(versions) if versions else None
-    new_version = str(int(prev_version or "0") + 1)
+    version_nums = set()
+    for item in all_existing:
+        try:
+            version_nums.add(int(item.get("upload_version", "0")))
+        except ValueError:
+            pass
+    prev_version_num = max(version_nums) if version_nums else 0
+    new_version_num = prev_version_num + 1
+    prev_version = str(prev_version_num) if prev_version_num > 0 else None
+    new_version = str(new_version_num)
 
     # 전일 비교
     prev_map = {}
@@ -270,9 +277,9 @@ async def get_ublox_data():
     if not all_items:
         return {"data": [], "columns": UBLOX_DISPLAY_COLUMNS, "total_rows": 0}
 
-    versions = sorted(set(item.get("upload_version", "0") for item in all_items))
-    latest = versions[-1]
-    prev = versions[-2] if len(versions) > 1 else None
+    version_nums = sorted(set(int(item.get("upload_version", "0")) for item in all_items))
+    latest = str(version_nums[-1])
+    prev = str(version_nums[-2]) if len(version_nums) > 1 else None
 
     latest_items = [json.loads(i.get("data", "{}")) for i in all_items if i.get("upload_version") == latest]
     prev_map = {}
