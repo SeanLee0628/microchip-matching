@@ -4,8 +4,8 @@ function Sidebar({ activeMenu, setActiveMenu }) {
   return (
     <nav className="sidebar">
       <div className="sidebar-logo">
-        <h2>Uniquant</h2>
-        <span>Sales Intelligence Remix</span>
+        <h2 style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.5px" }}>Uniquant</h2>
+        <span style={{ fontSize: 12, color: "#888", display: "block", marginTop: 2, letterSpacing: "0.5px" }}>Sales Intelligence Remix</span>
       </div>
 
       <div className="sidebar-section">
@@ -48,6 +48,12 @@ function Sidebar({ activeMenu, setActiveMenu }) {
           <span className="icon">&#9679;</span>
           <b>[5실]</b>&nbsp;Microchip 매칭
         </button>
+      </div>
+
+      <div className="sidebar-footer">
+        <div className="sidebar-footer-title">문의</div>
+        <div className="sidebar-footer-text">경영기획팀 이희서 매니저</div>
+        <div className="sidebar-footer-email">seanlee@unitrontech.com</div>
       </div>
     </nav>
   );

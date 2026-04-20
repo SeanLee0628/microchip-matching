@@ -15,7 +15,7 @@ function App() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [activeMenu, setActiveMenu] = useState("matching");
+  const [activeMenu, setActiveMenu] = useState("micron");
   const [dbInfo, setDbInfo] = useState(null);
   const [uploadResult, setUploadResult] = useState(null);
 

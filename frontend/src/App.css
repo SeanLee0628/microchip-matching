@@ -25,16 +25,21 @@ body {
   flex-shrink: 0;
 }
 
+.sidebar-footer { margin-top: auto; padding: 16px 20px; border-top: 1px solid rgba(255,255,255,0.1); }
+.sidebar-footer-title { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+.sidebar-footer-text { font-size: 11px; color: #aaa; }
+.sidebar-footer-email { font-size: 10px; color: #666; margin-top: 2px; }
+
 .sidebar-logo {
-  padding: 20px;
+  padding: 24px 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   text-align: center;
 }
 
 .sidebar-logo h2 {
-  font-size: 16px;
-  font-weight: 700;
-  color: #e0e0e0;
+  font-size: 22px;
+  font-weight: 800;
+  color: #fff;
   letter-spacing: 1px;
 }
 
