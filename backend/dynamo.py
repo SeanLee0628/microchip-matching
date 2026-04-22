@@ -20,7 +20,6 @@ def create_tables():
     existing = client.list_tables()["TableNames"]
 
     tables = {
-        "matching": {"pk": "mix_key"},
         "ublox": {"pk": "upload_version", "sk": "order_name"},
         "sales": {"pk": "batch_id", "sk": "item_id"},
     }

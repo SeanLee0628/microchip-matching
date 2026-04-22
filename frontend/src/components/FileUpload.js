@@ -59,8 +59,8 @@ function FileUpload({ onSuccess, onError, loading, setLoading }) {
       ) : (
         <>
           <div className="upload-icon">&#128196;</div>
-          <div className="upload-text">마이크로칩 매칭 엑셀 파일을 드래그하거나 클릭하여 업로드</div>
-          <div className="upload-hint">.xlsx 파일 지원</div>
+          <div className="upload-text">백록 + 출고내역 원본 파일을 드래그하거나 클릭하여 업로드</div>
+          <div className="upload-hint">백록YYMMDD · 출고내역 · FAB2 시트 포함 .xlsx</div>
         </>
       )}
     </div>

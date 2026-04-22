@@ -7,6 +7,7 @@ import io
 import os
 import math
 import json
+import re
 import uuid
 from datetime import datetime
 
@@ -25,7 +26,6 @@ app.add_middleware(
     allow_methods=["*"], allow_headers=["*"],
 )
 
-matching_tb = DTable("matching")
 ublox_tb = DTable("ublox")
 sales_tb = DTable("sales")
 
@@ -58,103 +58,193 @@ def safe_str(v):
 
 # ==================== Microchip 매칭 ====================
 
-COLUMN_INDEX_MAP = {
-    0: "고객코드", 1: "믹스#", 2: "Sales", 3: "고객", 4: "END", 5: "PURCHASING",
-    6: "PART#", 7: "FAB2", 8: "LT", 9: "2023년", 10: "2024년", 11: "2025년",
-    12: "2026년", 13: "23~25추이", 14: "25-26(w/BL)", 15: "BLOG TTL",
-    16: "3월", 17: "4월", 18: "5월", 19: "6월", 20: "7월", 21: "8월",
-    22: "9월", 23: "10월", 24: "11월", 25: "12월", 26: "믹스#(customer&part)",
-}
-COLUMNS = list(COLUMN_INDEX_MAP.values())
+COLUMNS = [
+    "고객코드", "믹스#", "Sales", "고객", "END", "PURCHASING", "PART#", "FAB2", "LT",
+    "2023년", "2024년", "2025년", "2026년", "23~25추이", "25-26(w/BL)", "BLOG TTL",
+    "3월", "4월", "5월", "6월", "7월", "8월", "9월", "10월", "11월", "12월",
+    "믹스#(customer&part)",
+]
+MONTH_COLUMNS = ["3월", "4월", "5월", "6월", "7월", "8월", "9월", "10월", "11월", "12월"]
+
+
+def _s(v):
+    if v is None or (isinstance(v, float) and math.isnan(v)):
+        return None
+    s = str(v).strip()
+    return s if s and s.lower() != "nan" else None
+
+
+def _code_str(v):
+    if v is None or (isinstance(v, float) and math.isnan(v)):
+        return None
+    if isinstance(v, float) and v.is_integer():
+        return str(int(v))
+    return str(v).strip() or None
+
+
+def _parse_snapshot_date(sheet_name: str):
+    m = re.search(r"(\d{6})$", sheet_name)
+    if not m:
+        return None
+    s = m.group(1)
+    try:
+        return pd.Timestamp(2000 + int(s[:2]), int(s[2:4]), int(s[4:6]))
+    except ValueError:
+        return None
+
+
+def _bucket_month(crd, snapshot_date):
+    if not isinstance(crd, pd.Timestamp) or pd.isna(crd):
+        return None
+    if snapshot_date and crd < snapshot_date:
+        if snapshot_date.year == 2026 and 3 <= snapshot_date.month <= 12:
+            return snapshot_date.month
+        return None
+    if crd.year == 2026 and 3 <= crd.month <= 12:
+        return crd.month
+    return None
+
+
+def build_matching_records(contents: bytes):
+    """백록YYMMDD + 출고내역 + FAB2 → 출고기준(백록매칭) 포맷"""
+    xls = pd.ExcelFile(io.BytesIO(contents), engine="openpyxl")
+
+    shipment_sheet = None
+    backlog_sheet = None
+    fab2_sheet = None
+    for name in xls.sheet_names:
+        if name == "출고내역":
+            shipment_sheet = name
+        elif name.startswith("백록") and "피벗" not in name:
+            backlog_sheet = name
+        elif name == "FAB2":
+            fab2_sheet = name
+
+    if not shipment_sheet and not backlog_sheet:
+        return None, None, None
+
+    snapshot_date = _parse_snapshot_date(backlog_sheet) if backlog_sheet else None
+
+    ship_agg = {}
+    if shipment_sheet:
+        df = pd.read_excel(xls, sheet_name=shipment_sheet, header=0)
+        for _, row in df.iterrows():
+            mix = _s(row.get("믹스#"))
+            if not mix:
+                continue
+            qty = to_float(row.get("출고수량")) or 0
+            date = row.get("출고일자")
+            year = date.year if isinstance(date, pd.Timestamp) and not pd.isna(date) else None
+
+            if mix not in ship_agg:
+                ship_agg[mix] = {
+                    "고객코드": _code_str(row.get("고객코드")),
+                    "Sales": _s(row.get("담당자")),
+                    "고객": _s(row.get("고객")),
+                    "END": _s(row.get("END고객사명")),
+                    "PURCHASING": _s(row.get("PURCHSING")),
+                    "PART#": _s(row.get("품번")),
+                    "yearly": {},
+                }
+            if year:
+                ship_agg[mix]["yearly"][year] = ship_agg[mix]["yearly"].get(year, 0) + qty
+
+    bl_agg = {}
+    if backlog_sheet:
+        df = pd.read_excel(xls, sheet_name=backlog_sheet, header=0)
+        for _, row in df.iterrows():
+            mix = _s(row.get("믹스"))
+            if not mix:
+                continue
+            qty = to_float(row.get("Qty Due")) or 0
+            month = _bucket_month(row.get("CRD"), snapshot_date)
+            lt = to_float(row.get("Lead Time Weeks"))
+
+            if mix not in bl_agg:
+                bl_agg[mix] = {
+                    "고객코드": _code_str(row.get("업체코드")),
+                    "고객": _s(row.get("업체명")),
+                    "END": _s(row.get("End Customer Name")),
+                    "PURCHASING": _s(row.get("ODM/SubCon Name")),
+                    "PART#": _s(row.get("Customer Part Number")),
+                    "LT": lt,
+                    "monthly": {},
+                }
+            else:
+                if bl_agg[mix]["LT"] is None and lt is not None:
+                    bl_agg[mix]["LT"] = lt
+            if month:
+                bl_agg[mix]["monthly"][month] = bl_agg[mix]["monthly"].get(month, 0) + qty
+
+    fab2_map = {}
+    if fab2_sheet:
+        df = pd.read_excel(xls, sheet_name=fab2_sheet, header=0)
+        for _, row in df.iterrows():
+            pn = _s(row.get("PN"))
+            if pn:
+                fab2_map[pn] = _s(row.get("PCN Number")) or _s(row.get("Remark")) or "Y"
+
+    records = []
+    for mix in set(ship_agg) | set(bl_agg):
+        ship = ship_agg.get(mix, {})
+        bl = bl_agg.get(mix, {})
+        yearly = ship.get("yearly", {})
+        monthly = bl.get("monthly", {})
+
+        part_no = ship.get("PART#") or bl.get("PART#")
+        end = ship.get("END") or bl.get("END")
+
+        blog_ttl = sum(monthly.values()) if monthly else 0
+        y2025 = yearly.get(2025)
+        y2026 = yearly.get(2026)
+        if y2025 is None and y2026 is None and blog_ttl == 0:
+            wbl = None
+        else:
+            wbl = (y2026 or 0) + blog_ttl - (y2025 or 0)
+
+        rec = {
+            "고객코드": ship.get("고객코드") or bl.get("고객코드"),
+            "믹스#": mix,
+            "Sales": ship.get("Sales"),
+            "고객": ship.get("고객") or bl.get("고객"),
+            "END": end,
+            "PURCHASING": ship.get("PURCHASING") or bl.get("PURCHASING"),
+            "PART#": part_no,
+            "FAB2": fab2_map.get(part_no, "-") if part_no else "-",
+            "LT": bl.get("LT"),
+            "2023년": yearly.get(2023),
+            "2024년": yearly.get(2024),
+            "2025년": yearly.get(2025),
+            "2026년": yearly.get(2026),
+            "23~25추이": None,
+            "25-26(w/BL)": wbl,
+            "BLOG TTL": blog_ttl,
+        }
+        for i, col in enumerate(MONTH_COLUMNS, start=3):
+            rec[col] = monthly.get(i, 0)
+        rec["믹스#(customer&part)"] = (end or "") + (part_no or "")
+        records.append(rec)
+
+    records.sort(key=lambda r: ((r.get("PART#") or ""), (r.get("END") or "")))
+    return "출고기준(백록매칭)", COLUMNS, records
 
 
 @app.post("/api/upload")
 async def upload_excel(file: UploadFile = File(...)):
     contents = await file.read()
-    xls = pd.ExcelFile(io.BytesIO(contents), engine="openpyxl")
+    target_sheet, final_columns, records = build_matching_records(contents)
 
-    target_sheet = None
-    for name in xls.sheet_names:
-        if "출고기준" in name or "백록매칭" in name:
-            target_sheet = name
-            break
-    if not target_sheet:
-        return {"error": "출고기준(백록매칭) 시트를 찾을 수 없습니다."}
-
-    df = pd.read_excel(xls, sheet_name=target_sheet, header=None)
-    header_row = None
-    for i in range(min(10, len(df))):
-        if "고객코드" in [str(v).strip() for v in df.iloc[i].values if pd.notna(v)]:
-            header_row = i
-            break
-    if header_row is None:
-        return {"error": "헤더 행을 찾을 수 없습니다."}
-
-    df = df.iloc[header_row + 1:].reset_index(drop=True).dropna(how="all").reset_index(drop=True)
-    col_names = [COLUMN_INDEX_MAP.get(j, f"col_{j}") for j in range(df.shape[1])]
-    df.columns = col_names
-    final_columns = [c for c in COLUMNS if c in df.columns]
-    df = df[final_columns]
-
-    batch_id = datetime.now().strftime("%Y%m%d_%H%M%S")
-    inserted, updated = 0, 0
-
-    for _, row in df.iterrows():
-        record = {col: clean_value(row[col]) for col in final_columns}
-        if record.get("고객코드") is None:
-            continue
-        key = record.get("믹스#")
-        if not key:
-            continue
-
-        existing = None
-        try:
-            resp = matching_tb.table.get_item(Key={"mix_key": str(key)})
-            existing = resp.get("Item")
-        except Exception:
-            pass
-
-        item = {"mix_key": str(key), "batch_id": batch_id}
-        for col in final_columns:
-            v = record[col]
-            if v is not None:
-                item[col] = str(v) if not isinstance(v, (int, float)) else v
-
-        matching_tb.put(item)
-        if existing:
-            updated += 1
-        else:
-            inserted += 1
-
-    # 전체 반환
-    all_items = matching_tb.scan_all()
-    all_records = []
-    for item in all_items:
-        rec = {col: item.get(col) for col in final_columns}
-        all_records.append(rec)
+    if target_sheet is None:
+        return {"error": "백록 또는 출고내역 시트를 찾을 수 없습니다."}
+    if records is None:
+        return {"error": "데이터를 파싱할 수 없습니다."}
 
     return {
-        "sheet_name": target_sheet, "columns": final_columns,
-        "data": all_records, "total_rows": len(all_records),
-        "saved_to_db": True, "batch_id": batch_id,
-        "inserted": inserted, "updated": updated,
+        "sheet_name": target_sheet,
+        "columns": final_columns,
+        "data": records,
+        "total_rows": len(records),
     }
-
-
-@app.get("/api/data")
-async def get_data():
-    items = matching_tb.scan_all()
-    if not items:
-        return {"data": [], "columns": COLUMNS, "total_rows": 0}
-    records = [{col: item.get(col) for col in COLUMNS} for item in items]
-    return {"sheet_name": "마이크로칩(매칭)", "columns": COLUMNS,
-            "data": records, "total_rows": len(records)}
-
-
-@app.delete("/api/data")
-async def reset_data():
-    matching_tb.delete_all()
-    return {"deleted": "all"}
 
 
 # ==================== u-blox 백로그 ====================
@@ -793,7 +883,6 @@ async def generate_invoice(request: Request):
 
 @app.post("/api/reset-tables")
 async def reset_tables():
-    matching_tb.delete_all()
     ublox_tb.delete_all()
     sales_tb.delete_all()
     return {"status": "ok"}

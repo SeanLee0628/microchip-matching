@@ -7,11 +7,11 @@ import pandas as pd
 import io
 import os
 import math
+import re
 import uuid
 from datetime import datetime
 
 from database import engine, get_db, Base
-from models import MicrochipMatching, FIELD_MAP, REVERSE_MAP
 from models_ublox import UbloxBacklog, UBLOX_COLUMN_MAP, UBLOX_DISPLAY_COLUMNS
 from models_sales import SalesPerformance as SalesModel, SALES_FIELD_MAP, SALES_REVERSE_MAP
 
@@ -28,38 +28,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 열 인덱스 → 컬럼명 고정 매핑 (원본 시트 구조 기준)
-COLUMN_INDEX_MAP = {
-    0: "고객코드",
-    1: "믹스#",
-    2: "Sales",
-    3: "고객",
-    4: "END",
-    5: "PURCHASING",
-    6: "PART#",
-    7: "FAB2",
-    8: "LT",
-    9: "2023년",
-    10: "2024년",
-    11: "2025년",
-    12: "2026년",
-    13: "23~25추이",
-    14: "25-26(w/BL)",
-    15: "BLOG TTL",
-    16: "3월",
-    17: "4월",
-    18: "5월",
-    19: "6월",
-    20: "7월",
-    21: "8월",
-    22: "9월",
-    23: "10월",
-    24: "11월",
-    25: "12월",
-    26: "믹스#(customer&part)",
-}
+COLUMNS = [
+    "고객코드", "믹스#", "Sales", "고객", "END", "PURCHASING", "PART#", "FAB2", "LT",
+    "2023년", "2024년", "2025년", "2026년", "23~25추이", "25-26(w/BL)", "BLOG TTL",
+    "3월", "4월", "5월", "6월", "7월", "8월", "9월", "10월", "11월", "12월",
+    "믹스#(customer&part)",
+]
 
-COLUMNS = list(COLUMN_INDEX_MAP.values())
+MONTH_COLUMNS = ["3월", "4월", "5월", "6월", "7월", "8월", "9월", "10월", "11월", "12월"]
 
 
 def clean_value(v):
@@ -85,174 +61,193 @@ def to_float(v):
         return None
 
 
+def _s(v):
+    """str 변환, NaN/None은 None"""
+    if v is None or (isinstance(v, float) and math.isnan(v)):
+        return None
+    s = str(v).strip()
+    return s if s and s.lower() != "nan" else None
+
+
+def _code_str(v):
+    """고객코드: float(131112.0) → '131112'"""
+    if v is None or (isinstance(v, float) and math.isnan(v)):
+        return None
+    if isinstance(v, float) and v.is_integer():
+        return str(int(v))
+    return str(v).strip() or None
+
+
+def _parse_snapshot_date(sheet_name: str):
+    """'백록260324' → Timestamp(2026, 3, 24)"""
+    m = re.search(r"(\d{6})$", sheet_name)
+    if not m:
+        return None
+    s = m.group(1)
+    try:
+        return pd.Timestamp(2000 + int(s[:2]), int(s[2:4]), int(s[4:6]))
+    except ValueError:
+        return None
+
+
+def _bucket_month(crd, snapshot_date):
+    """CRD를 2026년 월 버킷에 배치. snapshot 이전이면 snapshot 월로 당김."""
+    if not isinstance(crd, pd.Timestamp) or pd.isna(crd):
+        return None
+    if snapshot_date and crd < snapshot_date:
+        if snapshot_date.year == 2026 and 3 <= snapshot_date.month <= 12:
+            return snapshot_date.month
+        return None
+    if crd.year == 2026 and 3 <= crd.month <= 12:
+        return crd.month
+    return None
+
+
 def parse_excel(contents: bytes):
-    """엑셀 파싱 → (sheet_name, columns, records)"""
+    """백록260324 + 출고내역 + FAB2 → 출고기준(백록매칭) 포맷 레코드 조립"""
     xls = pd.ExcelFile(io.BytesIO(contents), engine="openpyxl")
 
-    target_sheet = None
+    shipment_sheet = None
+    backlog_sheet = None
+    fab2_sheet = None
     for name in xls.sheet_names:
-        if "출고기준" in name or "백록매칭" in name:
-            target_sheet = name
-            break
+        if name == "출고내역":
+            shipment_sheet = name
+        elif name.startswith("백록") and "피벗" not in name:
+            backlog_sheet = name
+        elif name == "FAB2":
+            fab2_sheet = name
 
-    if not target_sheet:
+    if not shipment_sheet and not backlog_sheet:
         return None, None, None
 
-    df = pd.read_excel(xls, sheet_name=target_sheet, header=None)
+    snapshot_date = _parse_snapshot_date(backlog_sheet) if backlog_sheet else None
 
-    header_row = None
-    for i in range(min(10, len(df))):
-        row_values = [str(v).strip() for v in df.iloc[i].values if pd.notna(v)]
-        if "고객코드" in row_values:
-            header_row = i
-            break
+    # 출고내역 집계: 믹스# → 고객/PART 정보 + 연도별 출고수량 합계
+    ship_agg = {}
+    if shipment_sheet:
+        df = pd.read_excel(xls, sheet_name=shipment_sheet, header=0)
+        for _, row in df.iterrows():
+            mix = _s(row.get("믹스#"))
+            if not mix:
+                continue
+            qty = to_float(row.get("출고수량")) or 0
+            date = row.get("출고일자")
+            year = date.year if isinstance(date, pd.Timestamp) and not pd.isna(date) else None
 
-    if header_row is None:
-        return target_sheet, None, None
+            if mix not in ship_agg:
+                ship_agg[mix] = {
+                    "고객코드": _code_str(row.get("고객코드")),
+                    "Sales": _s(row.get("담당자")),
+                    "고객": _s(row.get("고객")),
+                    "END": _s(row.get("END고객사명")),
+                    "PURCHASING": _s(row.get("PURCHSING")),
+                    "PART#": _s(row.get("품번")),
+                    "yearly": {},
+                }
+            if year:
+                ship_agg[mix]["yearly"][year] = ship_agg[mix]["yearly"].get(year, 0) + qty
 
-    df = df.iloc[header_row + 1:].reset_index(drop=True)
-    df = df.dropna(how="all").reset_index(drop=True)
+    # 백록 집계: 믹스 → LT + 월별 Qty Due 합계
+    bl_agg = {}
+    if backlog_sheet:
+        df = pd.read_excel(xls, sheet_name=backlog_sheet, header=0)
+        for _, row in df.iterrows():
+            mix = _s(row.get("믹스"))
+            if not mix:
+                continue
+            qty = to_float(row.get("Qty Due")) or 0
+            month = _bucket_month(row.get("CRD"), snapshot_date)
+            lt = to_float(row.get("Lead Time Weeks"))
 
-    col_names = []
-    for j in range(df.shape[1]):
-        if j in COLUMN_INDEX_MAP:
-            col_names.append(COLUMN_INDEX_MAP[j])
-        else:
-            col_names.append(f"col_{j}")
-    df.columns = col_names
+            if mix not in bl_agg:
+                bl_agg[mix] = {
+                    "고객코드": _code_str(row.get("업체코드")),
+                    "고객": _s(row.get("업체명")),
+                    "END": _s(row.get("End Customer Name")),
+                    "PURCHASING": _s(row.get("ODM/SubCon Name")),
+                    "PART#": _s(row.get("Customer Part Number")),
+                    "LT": lt,
+                    "monthly": {},
+                }
+            else:
+                # LT가 비어있던 행이 있으면 보충
+                if bl_agg[mix]["LT"] is None and lt is not None:
+                    bl_agg[mix]["LT"] = lt
+            if month:
+                bl_agg[mix]["monthly"][month] = bl_agg[mix]["monthly"].get(month, 0) + qty
 
-    final_columns = [c for c in COLUMNS if c in df.columns]
-    df = df[final_columns]
+    # FAB2 매핑: PART# → PCN 마킹
+    fab2_map = {}
+    if fab2_sheet:
+        df = pd.read_excel(xls, sheet_name=fab2_sheet, header=0)
+        for _, row in df.iterrows():
+            pn = _s(row.get("PN"))
+            if pn:
+                fab2_map[pn] = _s(row.get("PCN Number")) or _s(row.get("Remark")) or "Y"
 
+    # 병합
     records = []
-    for _, row in df.iterrows():
-        record = {}
-        for col in final_columns:
-            record[col] = clean_value(row[col])
-        if record.get("고객코드") is not None:
-            records.append(record)
+    for mix in set(ship_agg) | set(bl_agg):
+        ship = ship_agg.get(mix, {})
+        bl = bl_agg.get(mix, {})
+        yearly = ship.get("yearly", {})
+        monthly = bl.get("monthly", {})
 
-    return target_sheet, final_columns, records
+        part_no = ship.get("PART#") or bl.get("PART#")
+        end = ship.get("END") or bl.get("END")
 
-
-def record_to_db_row(record: dict, batch_id: str) -> MicrochipMatching:
-    """엑셀 레코드 → DB 모델 변환"""
-    float_fields = {
-        "LT", "2023년", "2024년", "2025년", "2026년", "23~25추이",
-        "25-26(w/BL)", "BLOG TTL", "3월", "4월", "5월", "6월",
-        "7월", "8월", "9월", "10월", "11월", "12월",
-    }
-
-    kwargs = {"upload_batch": batch_id}
-    for excel_col, db_field in FIELD_MAP.items():
-        val = record.get(excel_col)
-        if excel_col in float_fields:
-            kwargs[db_field] = to_float(val)
+        blog_ttl = sum(monthly.values()) if monthly else 0
+        y2025 = yearly.get(2025)
+        y2026 = yearly.get(2026)
+        if y2025 is None and y2026 is None and blog_ttl == 0:
+            wbl = None
         else:
-            kwargs[db_field] = str(val) if val is not None else None
+            wbl = (y2026 or 0) + blog_ttl - (y2025 or 0)
 
-    return MicrochipMatching(**kwargs)
+        rec = {
+            "고객코드": ship.get("고객코드") or bl.get("고객코드"),
+            "믹스#": mix,
+            "Sales": ship.get("Sales"),
+            "고객": ship.get("고객") or bl.get("고객"),
+            "END": end,
+            "PURCHASING": ship.get("PURCHASING") or bl.get("PURCHASING"),
+            "PART#": part_no,
+            "FAB2": fab2_map.get(part_no, "-") if part_no else "-",
+            "LT": bl.get("LT"),
+            "2023년": yearly.get(2023),
+            "2024년": yearly.get(2024),
+            "2025년": yearly.get(2025),
+            "2026년": yearly.get(2026),
+            "23~25추이": None,
+            "25-26(w/BL)": wbl,
+            "BLOG TTL": blog_ttl,
+        }
+        for i, col in enumerate(MONTH_COLUMNS, start=3):
+            rec[col] = monthly.get(i, 0)
+        rec["믹스#(customer&part)"] = (end or "") + (part_no or "")
+        records.append(rec)
 
+    records.sort(key=lambda r: ((r.get("PART#") or ""), (r.get("END") or "")))
 
-def db_row_to_record(row: MicrochipMatching) -> dict:
-    """DB 모델 → 엑셀 레코드 변환"""
-    record = {}
-    for excel_col, db_field in FIELD_MAP.items():
-        val = getattr(row, db_field)
-        record[excel_col] = val
-    return record
+    return "출고기준(백록매칭)", COLUMNS, records
 
 
 @app.post("/api/upload")
-async def upload_excel(file: UploadFile = File(...), db: Session = Depends(get_db)):
+async def upload_excel(file: UploadFile = File(...)):
     contents = await file.read()
     target_sheet, final_columns, records = parse_excel(contents)
 
     if target_sheet is None:
-        return {"error": "출고기준(백록매칭) 시트를 찾을 수 없습니다."}
+        return {"error": "백록 또는 출고내역 시트를 찾을 수 없습니다."}
     if records is None:
-        return {"error": "헤더 행을 찾을 수 없습니다."}
-
-    # DB 저장: 믹스# (고객코드+PART#) 기준으로 중복 체크
-    batch_id = datetime.now().strftime("%Y%m%d_%H%M%S") + "_" + uuid.uuid4().hex[:8]
-    inserted = 0
-    updated = 0
-
-    for r in records:
-        key = r.get("믹스#")
-        if not key:
-            continue
-
-        existing = db.query(MicrochipMatching).filter(
-            MicrochipMatching.믹스 == key
-        ).first()
-
-        if existing:
-            # 기존 데이터 → 최신 값으로 업데이트
-            float_fields = {
-                "LT", "2023년", "2024년", "2025년", "2026년", "23~25추이",
-                "25-26(w/BL)", "BLOG TTL", "3월", "4월", "5월", "6월",
-                "7월", "8월", "9월", "10월", "11월", "12월",
-            }
-            for excel_col, db_field in FIELD_MAP.items():
-                val = r.get(excel_col)
-                if excel_col in float_fields:
-                    setattr(existing, db_field, to_float(val))
-                else:
-                    setattr(existing, db_field, str(val) if val is not None else None)
-            existing.upload_batch = batch_id
-            updated += 1
-        else:
-            # 새로운 데이터 → 추가
-            db.add(record_to_db_row(r, batch_id))
-            inserted += 1
-
-    db.commit()
-
-    # 전체 데이터 반환
-    all_rows = db.query(MicrochipMatching).order_by(MicrochipMatching.id).all()
-    all_records = [db_row_to_record(row) for row in all_rows]
+        return {"error": "데이터를 파싱할 수 없습니다."}
 
     return {
         "sheet_name": target_sheet,
         "columns": final_columns,
-        "data": all_records,
-        "total_rows": len(all_records),
-        "saved_to_db": True,
-        "batch_id": batch_id,
-        "inserted": inserted,
-        "updated": updated,
-    }
-
-
-@app.delete("/api/data")
-async def reset_data(db: Session = Depends(get_db)):
-    """DB 전체 초기화"""
-    count = db.query(MicrochipMatching).count()
-    db.query(MicrochipMatching).delete()
-    db.commit()
-    return {"deleted": count}
-
-
-@app.get("/api/data")
-async def get_data(db: Session = Depends(get_db)):
-    """DB에서 저장된 데이터 조회"""
-    rows = db.query(MicrochipMatching).order_by(MicrochipMatching.id).all()
-
-    if not rows:
-        return {"data": [], "columns": COLUMNS, "total_rows": 0}
-
-    records = [db_row_to_record(r) for r in rows]
-    batch_id = rows[0].upload_batch
-    uploaded_at = rows[0].uploaded_at.strftime("%Y-%m-%d %H:%M") if rows[0].uploaded_at else None
-
-    return {
-        "sheet_name": "마이크로칩(매칭)",
-        "columns": COLUMNS,
         "data": records,
         "total_rows": len(records),
-        "batch_id": batch_id,
-        "uploaded_at": uploaded_at,
     }
 
 

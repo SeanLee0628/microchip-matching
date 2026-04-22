@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from "react";
-import axios from "axios";
+import React, { useState } from "react";
 import Sidebar from "./components/Sidebar";
 import FileUpload from "./components/FileUpload";
 import DataTable from "./components/DataTable";
@@ -9,43 +8,15 @@ import Invoice from "./components/Invoice";
 import Micron from "./components/Micron";
 import "./App.css";
 
-const API_URL = process.env.REACT_APP_API_URL || "";
-
 function App() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [activeMenu, setActiveMenu] = useState("micron");
-  const [dbInfo, setDbInfo] = useState(null);
-  const [uploadResult, setUploadResult] = useState(null);
-
-  // 페이지 진입 시 DB에서 데이터 자동 로드
-  useEffect(() => {
-    axios
-      .get(`${API_URL}/api/data`)
-      .then((res) => {
-        if (res.data.total_rows > 0) {
-          setData(res.data);
-          setDbInfo({
-            uploaded_at: res.data.uploaded_at,
-            batch_id: res.data.batch_id,
-          });
-        }
-      })
-      .catch(() => {});
-  }, []);
 
   const handleUploadSuccess = (result) => {
     setData(result);
     setError(null);
-    setDbInfo({
-      uploaded_at: new Date().toLocaleString("ko-KR"),
-      batch_id: result.batch_id,
-    });
-    if (result.inserted !== undefined) {
-      setUploadResult({ inserted: result.inserted, updated: result.updated });
-      setTimeout(() => setUploadResult(null), 5000);
-    }
   };
 
   const handleError = (msg) => {
@@ -62,11 +33,6 @@ function App() {
               <h1>Unitron AI</h1>
               <p className="subtitle">
                 마이크로칩 End Customer / Purchasing Customer 매칭 현황
-                {dbInfo?.uploaded_at && (
-                  <span className="db-status">
-                    {" "}| DB 저장: {dbInfo.uploaded_at}
-                  </span>
-                )}
               </p>
             </div>
 
@@ -76,12 +42,6 @@ function App() {
               loading={loading}
               setLoading={setLoading}
             />
-
-            {uploadResult && (
-              <div className="success-banner">
-                신규 {uploadResult.inserted}건 추가 / 기존 {uploadResult.updated}건 업데이트
-              </div>
-            )}
 
             {error && <div className="error-banner">{error}</div>}
 
