@@ -7,6 +7,7 @@ const API_URL = process.env.REACT_APP_API_URL || "";
 function Invoice() {
   const [rate, setRate] = useState(1400);
   const [rateSource, setRateSource] = useState("");
+  const [rateLabel, setRateLabel] = useState("");
   const [customer, setCustomer] = useState("");
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [items, setItems] = useState([{ part: "", qty: "", price: "" }]);
@@ -16,6 +17,7 @@ function Invoice() {
     axios.get(`${API_URL}/api/exchange-rate`).then((r) => {
       setRate(r.data.rate);
       setRateSource(r.data.source);
+      setRateLabel(r.data.label || "");
     }).catch(() => {});
   }, []);
 
@@ -68,8 +70,8 @@ function Invoice() {
           </div>
           <div style={{ width: 150 }}>
             <label style={{ fontSize: 12, color: "#888", display: "block", marginBottom: 4 }}>
-              환율 (USD/KRW) <span style={{ fontSize: 10, color: rateSource === "exchangerate-api" ? "#27ae60" : "#e67e22" }}>
-                {rateSource === "exchangerate-api" ? "실시간" : "수동"}
+              환율 (USD/KRW) <span style={{ fontSize: 10, color: rateSource === "koreaexim" ? "#059669" : rateSource === "frankfurter" ? "#3b82f6" : "#e67e22" }}>
+                {rateLabel || (rateSource === "exchangerate-api" ? "실시간" : "수동")}
               </span>
             </label>
             <input type="number" step="0.1" style={{ width: "100%", padding: "8px 10px", border: "1px solid #ddd", borderRadius: 4, fontSize: 13 }}

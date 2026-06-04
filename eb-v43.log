@@ -1,0 +1,525 @@
+----------------------------------------
+/var/log/eb-engine.log
+----------------------------------------
+2026/04/25 05:18:07.339915 [INFO] No hooks found in .platform/hooks/predeploy/, skipping
+2026/04/25 05:18:07.339919 [INFO] Executing instruction: stop X-Ray
+2026/04/25 05:18:07.339922 [INFO] stop X-Ray ...
+2026/04/25 05:18:07.339932 [INFO] Running command: systemctl show -p PartOf xray.service
+2026/04/25 05:18:07.353331 [WARN] stopProcess Warning: process xray is not registered 
+2026/04/25 05:18:07.353360 [INFO] Running command: systemctl stop xray.service
+2026/04/25 05:18:07.367675 [INFO] Executing instruction: stop proxy
+2026/04/25 05:18:07.367725 [INFO] Running command: systemctl show -p PartOf httpd.service
+2026/04/25 05:18:07.382040 [WARN] deregisterProcess Warning: process httpd is not registered, skipping...
+
+2026/04/25 05:18:07.382073 [INFO] Running command: systemctl show -p PartOf nginx.service
+2026/04/25 05:18:07.393999 [INFO] Running command: systemctl is-active nginx.service
+2026/04/25 05:18:07.402105 [INFO] Running command: systemctl show -p PartOf nginx.service
+2026/04/25 05:18:07.410938 [INFO] Running command: systemctl stop nginx.service
+2026/04/25 05:18:07.656647 [INFO] Running command: systemctl disable nginx.service
+2026/04/25 05:18:07.916730 [INFO] Running command: systemctl daemon-reload
+2026/04/25 05:18:08.155675 [INFO] Running command: systemctl reset-failed
+2026/04/25 05:18:08.164121 [INFO] Executing instruction: FlipApplication
+2026/04/25 05:18:08.164147 [INFO] Fetching environment variables...
+2026/04/25 05:18:08.164406 [INFO] Purge old process...
+2026/04/25 05:18:08.164424 [INFO] Running command: systemctl stop eb-app.target
+2026/04/25 05:18:08.173552 [INFO] Running command: systemctl show -p ConsistsOf eb-app.target | cut -d= -f2
+2026/04/25 05:18:08.183515 [INFO] web.service
+
+2026/04/25 05:18:08.183538 [INFO] deregistering process: web
+2026/04/25 05:18:08.183548 [INFO] Running command: systemctl show -p PartOf web.service
+2026/04/25 05:18:08.194259 [INFO] Running command: systemctl is-active web.service
+2026/04/25 05:18:08.201432 [INFO] Running command: systemctl disable web.service
+2026/04/25 05:18:08.415788 [INFO] Removed "/etc/systemd/system/multi-user.target.wants/web.service".
+
+2026/04/25 05:18:08.415863 [INFO] Running command: systemctl daemon-reload
+2026/04/25 05:18:08.642910 [INFO] Running command: systemctl reset-failed
+2026/04/25 05:18:08.651541 [INFO] Running command: systemctl is-active web.service
+2026/04/25 05:18:08.658863 [INFO] Process web has been fully terminated
+2026/04/25 05:18:08.658877 [INFO] All processes have been fully terminated
+2026/04/25 05:18:08.658882 [INFO] Removing /var/app/current/ if it exists
+2026/04/25 05:18:08.659579 [INFO] Renaming /var/app/staging/ to /var/app/current/
+2026/04/25 05:18:08.659628 [INFO] Register application processes...
+2026/04/25 05:18:08.659632 [INFO] Registering the proc: web
+
+2026/04/25 05:18:08.659641 [INFO] Running command: systemctl show -p PartOf web.service
+2026/04/25 05:18:08.671248 [INFO] Running command: systemctl daemon-reload
+2026/04/25 05:18:08.904107 [INFO] Running command: systemctl reset-failed
+2026/04/25 05:18:08.912969 [INFO] Running command: systemctl is-enabled eb-app.target
+2026/04/25 05:18:08.920872 [INFO] Running command: systemctl enable eb-app.target
+2026/04/25 05:18:09.162544 [INFO] Running command: systemctl start eb-app.target
+2026/04/25 05:18:09.172125 [INFO] Running command: systemctl enable web.service
+2026/04/25 05:18:09.404727 [INFO] Created symlink /etc/systemd/system/multi-user.target.wants/web.service â†’ /etc/systemd/system/web.service.
+
+2026/04/25 05:18:09.404779 [INFO] Running command: systemctl show -p PartOf web.service
+2026/04/25 05:18:09.416243 [INFO] Running command: systemctl is-active web.service
+2026/04/25 05:18:09.424157 [INFO] Running command: systemctl start web.service
+2026/04/25 05:18:11.490193 [INFO] Executing instruction: start X-Ray
+2026/04/25 05:18:11.490204 [INFO] X-Ray is not enabled.
+2026/04/25 05:18:11.490207 [INFO] Executing instruction: start proxy with new configuration
+2026/04/25 05:18:11.490234 [INFO] Running command: /usr/sbin/nginx -t -c /var/proxy/staging/nginx/nginx.conf
+2026/04/25 05:18:11.517659 [INFO] nginx: [warn] could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+nginx: the configuration file /var/proxy/staging/nginx/nginx.conf syntax is ok
+nginx: configuration file /var/proxy/staging/nginx/nginx.conf test is successful
+
+2026/04/25 05:18:11.518059 [INFO] Running command: cp -rp /var/proxy/staging/nginx/* /etc/nginx
+2026/04/25 05:18:11.521795 [INFO] Running command: systemctl show -p PartOf nginx.service
+2026/04/25 05:18:11.545476 [INFO] Running command: systemctl daemon-reload
+2026/04/25 05:18:11.966341 [INFO] Running command: systemctl reset-failed
+2026/04/25 05:18:11.978675 [INFO] Running command: systemctl show -p PartOf nginx.service
+2026/04/25 05:18:12.000133 [INFO] Running command: systemctl is-active nginx.service
+2026/04/25 05:18:12.014549 [INFO] Running command: systemctl start nginx.service
+2026/04/25 05:18:12.162835 [INFO] Executing instruction: configureSqsd
+2026/04/25 05:18:12.162854 [INFO] This is a web server environment instance, skip configure sqsd daemon ...
+2026/04/25 05:18:12.162858 [INFO] Executing instruction: startSqsd
+2026/04/25 05:18:12.162861 [INFO] This is a web server environment instance, skip start sqsd daemon ...
+2026/04/25 05:18:12.162865 [INFO] Executing instruction: Track pids in healthd
+2026/04/25 05:18:12.162869 [INFO] This is an enhanced health env...
+2026/04/25 05:18:12.162882 [INFO] Running command: systemctl show -p ConsistsOf aws-eb.target | cut -d= -f2
+2026/04/25 05:18:12.179305 [INFO] cfn-hup.service nginx.service healthd.service
+
+2026/04/25 05:18:12.179351 [INFO] Running command: systemctl show -p ConsistsOf eb-app.target | cut -d= -f2
+2026/04/25 05:18:12.195779 [INFO] web.service
+
+2026/04/25 05:18:12.196011 [INFO] Executing instruction: RunAppDeployPostDeployHooks
+2026/04/25 05:18:12.196028 [INFO] No hooks found in .platform/hooks/postdeploy/, skipping
+2026/04/25 05:18:12.196032 [INFO] Executing cleanup logic
+2026/04/25 05:18:12.196141 [INFO] CommandService Response: {"status":"SUCCESS","api_version":"1.0","results":[{"status":"SUCCESS","msg":"Engine execution has succeeded.","returncode":0,"events":[{"msg":"Instance deployment used the commands in your 'Procfile' to initiate startup of your application.","timestamp":1777094284383,"severity":"INFO"},{"msg":"Instance deployment completed successfully.","timestamp":1777094292196,"severity":"INFO"}]}]}
+
+2026/04/25 05:18:12.223414 [INFO] Platform Engine finished execution on command: app-deploy
+
+2026/04/25 05:19:21.396910 [INFO] Starting...
+2026/04/25 05:19:21.396961 [INFO] Starting EBPlatform-PlatformEngine
+2026/04/25 05:19:21.396983 [INFO] reading event message file
+2026/04/25 05:19:21.397335 [INFO] Engine received EB command cfn-hup-exec
+
+2026/04/25 05:19:21.462586 [INFO] Running command: /opt/aws/bin/cfn-get-metadata -s arn:aws:cloudformation:ap-northeast-2:376798132745:stack/awseb-e-jtq2v3kzrt-stack/924a2a30-3df2-11f1-916c-06bc62a629a9 -r AWSEBAutoScalingGroup --region ap-northeast-2
+2026/04/25 05:19:21.756746 [INFO] Running command: /opt/aws/bin/cfn-get-metadata -s arn:aws:cloudformation:ap-northeast-2:376798132745:stack/awseb-e-jtq2v3kzrt-stack/924a2a30-3df2-11f1-916c-06bc62a629a9 -r AWSEBBeanstalkMetadata --region ap-northeast-2
+2026/04/25 05:19:22.048706 [INFO] checking whether command tail-log is applicable to this instance...
+2026/04/25 05:19:22.048720 [INFO] this command is applicable to the instance, thus instance should execute command
+2026/04/25 05:19:22.048724 [INFO] Engine command: (tail-log)
+
+2026/04/25 05:19:22.048774 [INFO] Executing instruction: GetTailLogs
+2026/04/25 05:19:22.048777 [INFO] Tail Logs...
+2026/04/25 05:19:22.051258 [INFO] Running command: tail -n 100 /var/log/eb-engine.log
+
+
+----------------------------------------
+/var/log/eb-hooks.log
+----------------------------------------
+
+2026/04/24 05:59:12.257782 [INFO] Running command: .platform/hooks/prebuild/01_libreoffice.sh
+2026/04/24 05:59:14.362656 [INFO] [prebuild] Installing Korean CJK fonts...
+Last metadata expiration check: 22:58:38 ago on Thu Apr 23 07:00:34 2026.
+Package google-noto-cjk-fonts-20230817-2.amzn2023.0.1.noarch is already installed.
+Dependencies resolved.
+Nothing to do.
+Complete!
+[prebuild] Done.
+
+2026/04/24 06:07:09.658288 [INFO] Running command: .platform/hooks/prebuild/01_libreoffice.sh
+2026/04/24 06:07:11.619389 [INFO] [prebuild] Installing Korean CJK fonts...
+Last metadata expiration check: 23:06:36 ago on Thu Apr 23 07:00:34 2026.
+Package google-noto-cjk-fonts-20230817-2.amzn2023.0.1.noarch is already installed.
+Dependencies resolved.
+Nothing to do.
+Complete!
+[prebuild] Done.
+
+2026/04/24 06:12:14.945656 [INFO] Running command: .platform/hooks/prebuild/01_libreoffice.sh
+2026/04/24 06:12:16.886247 [INFO] [prebuild] Installing Korean CJK fonts...
+Last metadata expiration check: 23:11:41 ago on Thu Apr 23 07:00:34 2026.
+Package google-noto-cjk-fonts-20230817-2.amzn2023.0.1.noarch is already installed.
+Dependencies resolved.
+Nothing to do.
+Complete!
+[prebuild] Done.
+
+2026/04/24 06:24:12.084281 [INFO] Running command: .platform/hooks/prebuild/01_libreoffice.sh
+2026/04/24 06:24:13.831523 [INFO] [prebuild] Installing Korean CJK fonts...
+Last metadata expiration check: 23:23:38 ago on Thu Apr 23 07:00:34 2026.
+Package google-noto-cjk-fonts-20230817-2.amzn2023.0.1.noarch is already installed.
+Dependencies resolved.
+Nothing to do.
+Complete!
+[prebuild] Done.
+
+2026/04/24 06:31:41.716667 [INFO] Running command: .platform/hooks/prebuild/01_libreoffice.sh
+2026/04/24 06:31:43.463482 [INFO] [prebuild] Installing Korean CJK fonts...
+Last metadata expiration check: 23:31:08 ago on Thu Apr 23 07:00:34 2026.
+Package google-noto-cjk-fonts-20230817-2.amzn2023.0.1.noarch is already installed.
+Dependencies resolved.
+Nothing to do.
+Complete!
+[prebuild] Done.
+
+2026/04/24 06:38:02.907016 [INFO] Running command: .platform/hooks/prebuild/01_libreoffice.sh
+2026/04/24 06:38:04.639218 [INFO] [prebuild] Installing Korean CJK fonts...
+Last metadata expiration check: 23:37:29 ago on Thu Apr 23 07:00:34 2026.
+Package google-noto-cjk-fonts-20230817-2.amzn2023.0.1.noarch is already installed.
+Dependencies resolved.
+Nothing to do.
+Complete!
+[prebuild] Done.
+
+2026/04/24 06:43:12.789957 [INFO] Running command: .platform/hooks/prebuild/01_libreoffice.sh
+2026/04/24 06:43:14.514286 [INFO] [prebuild] Installing Korean CJK fonts...
+Last metadata expiration check: 23:42:39 ago on Thu Apr 23 07:00:34 2026.
+Package google-noto-cjk-fonts-20230817-2.amzn2023.0.1.noarch is already installed.
+Dependencies resolved.
+Nothing to do.
+Complete!
+[prebuild] Done.
+
+2026/04/24 06:52:34.244687 [INFO] Running command: .platform/hooks/prebuild/01_libreoffice.sh
+2026/04/24 06:52:35.985638 [INFO] [prebuild] Installing Korean CJK fonts...
+Last metadata expiration check: 23:52:00 ago on Thu Apr 23 07:00:34 2026.
+Package google-noto-cjk-fonts-20230817-2.amzn2023.0.1.noarch is already installed.
+Dependencies resolved.
+Nothing to do.
+Complete!
+[prebuild] Done.
+
+2026/04/25 05:05:15.428934 [INFO] Running command: .platform/hooks/prebuild/01_libreoffice.sh
+2026/04/25 05:05:17.161011 [INFO] [prebuild] Installing Korean CJK fonts...
+Last metadata expiration check: 1 day, 22:04:41 ago on Thu Apr 23 07:00:34 2026.
+Package google-noto-cjk-fonts-20230817-2.amzn2023.0.1.noarch is already installed.
+Dependencies resolved.
+Nothing to do.
+Complete!
+[prebuild] Done.
+
+2026/04/25 05:16:30.393391 [INFO] Running command: .platform/hooks/prebuild/01_libreoffice.sh
+2026/04/25 05:16:32.131006 [INFO] [prebuild] Installing Korean CJK fonts...
+Last metadata expiration check: 1 day, 22:15:56 ago on Thu Apr 23 07:00:34 2026.
+Package google-noto-cjk-fonts-20230817-2.amzn2023.0.1.noarch is already installed.
+Dependencies resolved.
+Nothing to do.
+Complete!
+[prebuild] Done.
+
+2026/04/25 05:18:01.757168 [INFO] Running command: .platform/hooks/prebuild/01_libreoffice.sh
+2026/04/25 05:18:03.942010 [INFO] [prebuild] Installing Korean CJK fonts...
+Last metadata expiration check: 1 day, 22:17:28 ago on Thu Apr 23 07:00:34 2026.
+Package google-noto-cjk-fonts-20230817-2.amzn2023.0.1.noarch is already installed.
+Dependencies resolved.
+Nothing to do.
+Complete!
+[prebuild] Done.
+
+
+
+----------------------------------------
+/var/log/nginx/access.log
+----------------------------------------
+158.158.74.32 - - [24/Apr/2026:23:41:23 +0000] "GET /makecvs.php HTTP/1.1" 200 902 "-" "-" "-"
+158.158.74.32 - - [24/Apr/2026:23:41:23 +0000] "GET /phpreleaseinfo.php HTTP/1.1" 200 902 "-" "-" "-"
+158.158.74.32 - - [24/Apr/2026:23:41:24 +0000] "GET /configuration.php HTTP/1.1" 200 902 "-" "-" "-"
+158.158.74.32 - - [24/Apr/2026:23:41:24 +0000] "GET /ay.php HTTP/1.1" 200 902 "-" "-" "-"
+158.158.74.32 - - [24/Apr/2026:23:41:24 +0000] "GET /hkvkjguw.php HTTP/1.1" 200 902 "-" "-" "-"
+158.158.74.32 - - [24/Apr/2026:23:41:24 +0000] "GET /Black.php HTTP/1.1" 200 902 "-" "-" "-"
+158.158.74.32 - - [24/Apr/2026:23:41:24 +0000] "GET /infoinfo.php HTTP/1.1" 200 902 "-" "-" "-"
+147.185.132.88 - - [24/Apr/2026:23:43:40 +0000] "GET / HTTP/1.0" 400 30 "-" "Hello from Palo Alto Networks, find out more about our scans in https://docs-cortex.paloaltonetworks.com/r/1/Cortex-Xpanse/Scanning-activity" "-"
+145.223.59.33 - - [24/Apr/2026:23:45:45 +0000] "GET /.env HTTP/1.1" 200 902 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.5845.140 Safari/537.36" "-"
+145.223.59.33 - - [24/Apr/2026:23:45:45 +0000] "POST / HTTP/1.1" 405 31 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.5845.140 Safari/537.36" "-"
+204.76.203.206 - - [24/Apr/2026:23:49:59 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0" "-"
+204.76.203.206 - - [24/Apr/2026:23:57:34 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0" "-"
+64.62.197.197 - - [25/Apr/2026:00:02:14 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/101.0.4951.41 Safari/537.36" "-"
+64.62.197.197 - - [25/Apr/2026:00:03:21 +0000] "GET /webui/ HTTP/1.1" 200 902 "-" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36" "-"
+64.62.197.206 - - [25/Apr/2026:00:05:08 +0000] "GET /favicon.ico HTTP/1.1" 200 3870 "-" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36" "-"
+204.76.203.206 - - [25/Apr/2026:00:05:34 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0" "-"
+64.62.197.197 - - [25/Apr/2026:00:06:22 +0000] "GET /geoserver/web/ HTTP/1.1" 200 902 "-" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/101.0.4951.41 Safari/537.36" "-"
+5.61.209.107 - - [25/Apr/2026:00:13:42 +0000] "GET /SDK/webLanguage HTTP/1.1" 200 902 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.85 Safari/537.36 Edg/90.0.818.46" "-"
+204.76.203.206 - - [25/Apr/2026:00:15:03 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0" "-"
+204.76.203.206 - - [25/Apr/2026:00:25:09 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0" "-"
+204.76.203.206 - - [25/Apr/2026:00:29:27 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0" "-"
+204.76.203.206 - - [25/Apr/2026:00:40:14 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0" "-"
+204.76.203.206 - - [25/Apr/2026:00:50:44 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0" "-"
+204.76.203.206 - - [25/Apr/2026:00:57:09 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0" "-"
+204.76.203.206 - - [25/Apr/2026:01:04:36 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0" "-"
+204.76.203.206 - - [25/Apr/2026:01:13:33 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0" "-"
+102.88.55.30 - - [25/Apr/2026:01:16:25 +0000] "GET /.env HTTP/1.1" 200 902 "-" "python-requests/2.26.0" "-"
+102.88.55.30 - - [25/Apr/2026:01:16:25 +0000] "POST / HTTP/1.1" 405 31 "-" "python-requests/2.26.0" "-"
+204.76.203.206 - - [25/Apr/2026:01:22:32 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0" "-"
+58.145.168.170 - - [25/Apr/2026:01:29:02 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36" "-"
+205.166.28.11 - - [25/Apr/2026:01:30:37 +0000] "CONNECT cloudflare.com:443 HTTP/1.1" 400 150 "-" "-" "-"
+204.76.203.206 - - [25/Apr/2026:01:33:55 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0" "-"
+198.235.24.155 - - [25/Apr/2026:01:37:19 +0000] "GET / HTTP/1.0" 400 30 "-" "Hello from Palo Alto Networks, find out more about our scans in https://docs-cortex.paloaltonetworks.com/r/1/Cortex-Xpanse/Scanning-activity" "-"
+204.76.203.206 - - [25/Apr/2026:01:41:56 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0" "-"
+170.106.152.218 - - [25/Apr/2026:01:44:59 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1" "-"
+204.76.203.206 - - [25/Apr/2026:01:47:41 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0" "-"
+204.76.203.206 - - [25/Apr/2026:01:56:05 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0" "-"
+152.32.235.85 - - [25/Apr/2026:02:00:17 +0000] "\xFF\x00\x00\x00\x00\x00\x00\x00\x00\x7F\x03\x01NULL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" 400 150 "-" "-" "-"
+152.32.235.85 - - [25/Apr/2026:02:00:19 +0000] "\xFF\x00\x00\x00\x00\x00\x00\x00\x00\x7F\x03\x01NULL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" 400 150 "-" "-" "-"
+152.32.235.85 - - [25/Apr/2026:02:00:21 +0000] "\xFF\x00\x00\x00\x00\x00\x00\x00\x00\x7F\x03\x01NULL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" 400 150 "-" "-" "-"
+152.32.235.85 - - [25/Apr/2026:02:00:29 +0000] "GET /version HTTP/1.1" 200 902 "-" "-" "-"
+152.32.235.85 - - [25/Apr/2026:02:00:29 +0000] "GET / HTTP/1.1" 200 902 "-" "-" "-"
+152.32.235.85 - - [25/Apr/2026:02:00:30 +0000] "GET / HTTP/1.1" 200 902 "-" "-" "-"
+152.32.235.85 - - [25/Apr/2026:02:00:30 +0000] "GET /v1 HTTP/1.1" 200 902 "-" "-" "-"
+152.32.235.85 - - [25/Apr/2026:02:00:30 +0000] "GET / HTTP/1.1" 200 902 "-" "-" "-"
+152.32.235.85 - - [25/Apr/2026:02:00:31 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.112 Safari/537.36" "-"
+152.32.235.85 - - [25/Apr/2026:02:00:32 +0000] "GET /favicon.ico HTTP/1.1" 200 3870 "http://13.124.98.116:80" "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.112 Safari/537.36" "-"
+152.32.235.85 - - [25/Apr/2026:02:00:33 +0000] "GET /static/js/main.b72d7aa8.js HTTP/1.1" 200 313595 "-" "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.112 Safari/537.36" "-"
+204.76.203.206 - - [25/Apr/2026:02:13:53 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0" "-"
+204.76.203.206 - - [25/Apr/2026:02:21:44 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0" "-"
+204.76.203.206 - - [25/Apr/2026:02:32:12 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0" "-"
+204.76.203.206 - - [25/Apr/2026:02:40:03 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0" "-"
+204.76.203.206 - - [25/Apr/2026:02:51:48 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0" "-"
+204.76.203.206 - - [25/Apr/2026:02:57:15 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0" "-"
+172.98.168.61 - - [25/Apr/2026:03:05:16 +0000] "GET /.env HTTP/1.1" 200 902 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.5845.140 Safari/537.36" "-"
+172.98.168.61 - - [25/Apr/2026:03:05:17 +0000] "POST / HTTP/1.1" 405 31 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.5845.140 Safari/537.36" "-"
+204.76.203.206 - - [25/Apr/2026:03:07:17 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0" "-"
+204.76.203.206 - - [25/Apr/2026:03:17:13 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0" "-"
+204.76.203.206 - - [25/Apr/2026:03:24:11 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0" "-"
+204.76.203.206 - - [25/Apr/2026:03:33:27 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0" "-"
+204.76.203.206 - - [25/Apr/2026:03:42:11 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0" "-"
+204.76.203.206 - - [25/Apr/2026:03:48:27 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0" "-"
+119.28.177.175 - - [25/Apr/2026:03:52:42 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1" "-"
+204.76.203.206 - - [25/Apr/2026:04:00:50 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0" "-"
+204.76.203.206 - - [25/Apr/2026:04:08:47 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0" "-"
+204.76.203.206 - - [25/Apr/2026:04:14:39 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0" "-"
+204.76.203.206 - - [25/Apr/2026:04:25:21 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0" "-"
+204.76.203.206 - - [25/Apr/2026:04:30:30 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0" "-"
+204.76.203.206 - - [25/Apr/2026:04:39:18 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0" "-"
+204.76.203.206 - - [25/Apr/2026:04:50:51 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0" "-"
+66.132.195.70 - - [25/Apr/2026:04:51:56 +0000] "\x16\x03\x01\x00\xEE\x01\x00\x00\xEA\x03\x03f&*\x94Q\xBA\x09\x01/\x22/K\xB9\xB4}\xEFq+\xE9\xB8\xB1\x8D\xCE.\xE0m#]\x96\xB3)8 \xCDa\x05G,1\xCB\x1FB\xC1B\x1E\x05I\xFFQ-Q\x84/\xA7\xF6j<\xAF\x1C\xB3\xA3at\xF3\xF4\x00&\xCC\xA8\xCC\xA9\xC0/\xC00\xC0+\xC0,\xC0\x13\xC0\x09\xC0\x14\xC0" 400 150 "-" "-" "-"
+66.132.195.70 - - [25/Apr/2026:04:51:57 +0000] "GET /robots.txt HTTP/1.1" 200 57 "-" "Mozilla/5.0 (compatible; CensysInspect/1.1; +https://about.censys.io/)" "-"
+66.132.195.70 - - [25/Apr/2026:04:52:02 +0000] "GET /favicon.ico HTTP/1.1" 200 3870 "-" "Mozilla/5.0 (compatible; CensysInspect/1.1; +https://about.censys.io/)" "-"
+66.132.195.70 - - [25/Apr/2026:04:52:22 +0000] "\x16\x03\x01\x00\xEE\x01\x00\x00\xEA\x03\x03A\xDA\xC8\xE1\x8C\xCE,\xAEg\xD7\x87\xC6q\x12\xDB\xD2\xF1q\xC1\xAA9 \xE6\xD4`Q\x97#\xB6\xCDn( \x8A\x1Ca\x1Fy\xC2\xD1\x81uc7?T\x94\xDF\xDFc\xCF\x83@\xC1^\x1E3=\x93$\x22]/\x85\xC4\x00&\xCC\xA8\xCC\xA9\xC0/\xC00\xC0+\xC0,\xC0\x13\xC0\x09\xC0\x14\xC0" 400 150 "-" "-" "-"
+66.132.195.70 - - [25/Apr/2026:04:52:23 +0000] "GET /bz28b5t95kay8 HTTP/1.1" 200 902 "-" "Mozilla/5.0 (compatible; CensysInspect/1.1; +https://about.censys.io/)" "-"
+66.132.195.72 - - [25/Apr/2026:04:52:25 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0 (compatible; CensysInspect/1.1; +https://about.censys.io/)" "-"
+66.132.195.70 - - [25/Apr/2026:04:52:26 +0000] "GET /logo192.png HTTP/1.1" 200 902 "-" "Mozilla/5.0 (compatible; CensysInspect/1.1; +https://about.censys.io/)" "-"
+93.174.93.12 - - [25/Apr/2026:04:52:26 +0000] "\x16\x03\x02\x01o\x01\x00\x01k\x03\x02RH\xC5\x1A#\xF7:N\xDF\xE2\xB4\x82/\xFF\x09T\x9F\xA7\xC4y\xB0h\xC6\x13\x8C\xA4\x1C=\x22\xE1\x1A\x98 \x84\xB4,\x85\xAFn\xE3Y\xBBbhl\xFF(=':\xA9\x82\xD9o\xC8\xA2\xD7\x93\x98\xB4\xEF\x80\xE5\xB9\x90\x00(\xC0" 400 150 "-" "-" "-"
+66.132.195.72 - - [25/Apr/2026:04:52:28 +0000] "PRI * HTTP/2.0" 400 150 "-" "-" "-"
+66.132.195.72 - - [25/Apr/2026:04:52:29 +0000] "GET /favicon.ico HTTP/1.1" 200 3870 "-" "Mozilla/5.0 (compatible; CensysInspect/1.1; +https://about.censys.io/)" "-"
+66.132.195.72 - - [25/Apr/2026:04:52:36 +0000] "GET /logo192.png HTTP/1.1" 200 902 "-" "Mozilla/5.0 (compatible; CensysInspect/1.1; +https://about.censys.io/)" "-"
+66.132.195.72 - - [25/Apr/2026:04:55:20 +0000] "GET /sitemap.xml HTTP/1.1" 200 902 "-" "Mozilla/5.0 (compatible; CensysInspect/1.1; +https://about.censys.io/)" "-"
+66.132.195.72 - - [25/Apr/2026:04:55:21 +0000] "GET /logo192.png HTTP/1.1" 200 902 "-" "Mozilla/5.0 (compatible; CensysInspect/1.1; +https://about.censys.io/)" "-"
+66.132.195.72 - - [25/Apr/2026:04:55:22 +0000] "GET /9mxffvncre HTTP/1.1" 200 902 "-" "Mozilla/5.0 (compatible; CensysInspect/1.1; +https://about.censys.io/)" "-"
+66.132.195.72 - - [25/Apr/2026:04:55:22 +0000] "GET /logo192.png HTTP/1.1" 200 902 "-" "Mozilla/5.0 (compatible; CensysInspect/1.1; +https://about.censys.io/)" "-"
+66.132.195.72 - - [25/Apr/2026:04:55:23 +0000] "\x16\x03\x01\x00\xEE\x01\x00\x00\xEA\x03\x03\xC0\x04\xA2AK\xC9zU\x02hm\x8E=\x8Be\xC3LZzD\xD88e\xB6\xE0\xC5\xF7~\x1D\x1A\x8C\x7F \xEA\x84)0\x92/\xDF\xDF\xF0\x94\x89GL\x1C\xD5O\xAFH\x0BC@\x87S\xF8Q\xB3\x95)\x98\x04\x8B\xC2\x00&\xCC\xA8\xCC\xA9\xC0/\xC00\xC0+\xC0,\xC0\x13\xC0\x09\xC0\x14\xC0" 400 150 "-" "-" "-"
+66.132.195.72 - - [25/Apr/2026:04:55:26 +0000] "\x16\x03\x01\x00\xEE\x01\x00\x00\xEA\x03\x03\xBC\x80\xC7\xB7\xF0\xE4A\x1B\xBA\xD1\x8A\x04<\xDA,\x848\xAC5\x08I\xA6\x94\xE30\x1CF\xC3\xF2\xB9\x88\xCF \xBE\xD0`y\x9A1\xD1]\xF1\xAC8\xE3\x87\x80\x8B\xD5!\xC2\x99K\xAEv\xD9\xCBu\xDC\x83\x84L\x0COd\x00&\xCC\xA8\xCC\xA9\xC0/\xC00\xC0+\xC0,\xC0\x13\xC0\x09\xC0\x14\xC0" 400 150 "-" "-" "-"
+204.76.203.206 - - [25/Apr/2026:04:59:17 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0" "-"
+223.38.228.98 - - [25/Apr/2026:05:06:00 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+223.38.228.98 - - [25/Apr/2026:05:06:00 +0000] "GET /static/css/main.e2a7b3c1.css HTTP/1.1" 200 5553 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+223.38.228.98 - - [25/Apr/2026:05:06:00 +0000] "GET /static/js/main.b72d7aa8.js HTTP/1.1" 200 313595 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+223.38.228.98 - - [25/Apr/2026:05:06:00 +0000] "GET /manifest.json HTTP/1.1" 200 492 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+223.38.228.98 - - [25/Apr/2026:05:06:00 +0000] "GET /favicon.ico HTTP/1.1" 200 3870 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+223.38.228.98 - - [25/Apr/2026:05:06:30 +0000] "POST /api/price-check/validate HTTP/1.1" 200 2240 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+204.76.203.206 - - [25/Apr/2026:05:06:30 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0" "-"
+195.178.110.204 - - [25/Apr/2026:05:12:26 +0000] "GET / HTTP/1.0" 200 902 "-" "-" "-"
+204.76.203.206 - - [25/Apr/2026:05:13:32 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0" "-"
+82.22.232.106 - - [25/Apr/2026:05:15:48 +0000] "GET /.env HTTP/1.1" 200 902 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.5845.140 Safari/537.36" "-"
+82.22.232.106 - - [25/Apr/2026:05:15:49 +0000] "POST / HTTP/1.1" 405 31 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.5845.140 Safari/537.36" "-"
+223.38.228.98 - - [25/Apr/2026:05:19:08 +0000] "GET / HTTP/1.1" 502 150 "-" "curl/8.17.0" "-"
+
+
+----------------------------------------
+/var/log/nginx/error.log
+----------------------------------------
+2026/04/24 17:46:46 [warn] 146257#146257: *236 using uninitialized "day" variable while logging request, client: 159.89.121.138, server: , request: "¬ ¨ºwÜ¾Ñ®:·ûùáJ"Ý.]‡­KS6¡ïÝY4?È 3á’)5t<DÒÔì¼4 L#fg™õ"
+2026/04/24 17:46:46 [warn] 146257#146257: *236 using uninitialized "hour" variable while logging request, client: 159.89.121.138, server: , request: "¬ ¨ºwÜ¾Ñ®:·ûùáJ"Ý.]‡­KS6¡ïÝY4?È 3á’)5t<DÒÔì¼4 L#fg™õ"
+2026/04/24 17:46:46 [warn] 146257#146257: *237 using uninitialized "year" variable while logging request, client: 159.89.121.138, server: , request: " MQTT  xcan"
+2026/04/24 17:46:46 [warn] 146257#146257: *237 using uninitialized "month" variable while logging request, client: 159.89.121.138, server: , request: " MQTT  xcan"
+2026/04/24 17:46:46 [warn] 146257#146257: *237 using uninitialized "day" variable while logging request, client: 159.89.121.138, server: , request: " MQTT  xcan"
+2026/04/24 17:46:46 [warn] 146257#146257: *237 using uninitialized "hour" variable while logging request, client: 159.89.121.138, server: , request: " MQTT  xcan"
+2026/04/24 18:19:03 [warn] 146257#146257: *250 using uninitialized "year" variable while logging request, client: 3.18.213.8, server: 
+2026/04/24 18:19:03 [warn] 146257#146257: *250 using uninitialized "month" variable while logging request, client: 3.18.213.8, server: 
+2026/04/24 18:19:03 [warn] 146257#146257: *250 using uninitialized "day" variable while logging request, client: 3.18.213.8, server: 
+2026/04/24 18:19:03 [warn] 146257#146257: *250 using uninitialized "hour" variable while logging request, client: 3.18.213.8, server: 
+2026/04/24 18:19:34 [warn] 146257#146257: *251 using uninitialized "year" variable while logging request, client: 3.18.213.8, server: , request: "SSH-2.0-Go"
+2026/04/24 18:19:34 [warn] 146257#146257: *251 using uninitialized "month" variable while logging request, client: 3.18.213.8, server: , request: "SSH-2.0-Go"
+2026/04/24 18:19:34 [warn] 146257#146257: *251 using uninitialized "day" variable while logging request, client: 3.18.213.8, server: , request: "SSH-2.0-Go"
+2026/04/24 18:19:34 [warn] 146257#146257: *251 using uninitialized "hour" variable while logging request, client: 3.18.213.8, server: , request: "SSH-2.0-Go"
+2026/04/24 18:21:39 [warn] 146257#146257: *254 using uninitialized "year" variable while logging request, client: 3.18.213.8, server: , request: " {  wÏÒ\”c2ŸÝ3lu(9d¤ìz§%”(Lœï9º¬û˜  À/À+ÀÀÀÀ	ÀÀ"
+2026/04/24 18:21:39 [warn] 146257#146257: *254 using uninitialized "month" variable while logging request, client: 3.18.213.8, server: , request: " {  wÏÒ\”c2ŸÝ3lu(9d¤ìz§%”(Lœï9º¬û˜  À/À+ÀÀÀÀ	ÀÀ"
+2026/04/24 18:21:39 [warn] 146257#146257: *254 using uninitialized "day" variable while logging request, client: 3.18.213.8, server: , request: " {  wÏÒ\”c2ŸÝ3lu(9d¤ìz§%”(Lœï9º¬û˜  À/À+ÀÀÀÀ	ÀÀ"
+2026/04/24 18:21:39 [warn] 146257#146257: *254 using uninitialized "hour" variable while logging request, client: 3.18.213.8, server: , request: " {  wÏÒ\”c2ŸÝ3lu(9d¤ìz§%”(Lœï9º¬û˜  À/À+ÀÀÀÀ	ÀÀ"
+2026/04/24 18:25:18 [warn] 146257#146257: *255 using uninitialized "year" variable while logging request, client: 144.31.234.20, server: , request: "POST /cgi-bin/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/bin/sh HTTP/1.1"
+2026/04/24 18:25:18 [warn] 146257#146257: *255 using uninitialized "month" variable while logging request, client: 144.31.234.20, server: , request: "POST /cgi-bin/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/bin/sh HTTP/1.1"
+2026/04/24 18:25:18 [warn] 146257#146257: *255 using uninitialized "day" variable while logging request, client: 144.31.234.20, server: , request: "POST /cgi-bin/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/bin/sh HTTP/1.1"
+2026/04/24 18:25:18 [warn] 146257#146257: *255 using uninitialized "hour" variable while logging request, client: 144.31.234.20, server: , request: "POST /cgi-bin/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/bin/sh HTTP/1.1"
+2026/04/24 18:25:18 [warn] 146257#146257: *256 using uninitialized "year" variable while logging request, client: 144.31.234.20, server: , request: "POST /cgi-bin/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/bin/sh HTTP/1.1"
+2026/04/24 18:25:18 [warn] 146257#146257: *256 using uninitialized "month" variable while logging request, client: 144.31.234.20, server: , request: "POST /cgi-bin/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/bin/sh HTTP/1.1"
+2026/04/24 18:25:18 [warn] 146257#146257: *256 using uninitialized "day" variable while logging request, client: 144.31.234.20, server: , request: "POST /cgi-bin/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/bin/sh HTTP/1.1"
+2026/04/24 18:25:18 [warn] 146257#146257: *256 using uninitialized "hour" variable while logging request, client: 144.31.234.20, server: , request: "POST /cgi-bin/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/bin/sh HTTP/1.1"
+2026/04/24 19:29:30 [warn] 146256#146256: *329 using uninitialized "year" variable while logging request, client: 198.235.24.8, server: , request: " î  êß_v´Q÷å»¦îÿ„ã¹{Ø%/ÿ\°èW+©íT m2[àåÅ5tS¨Ði@w Õîåí¸eŽª£šs!í &À+À/À,À0Ì©Ì¨À	ÀÀ"
+2026/04/24 19:29:30 [warn] 146256#146256: *329 using uninitialized "month" variable while logging request, client: 198.235.24.8, server: , request: " î  êß_v´Q÷å»¦îÿ„ã¹{Ø%/ÿ\°èW+©íT m2[àåÅ5tS¨Ði@w Õîåí¸eŽª£šs!í &À+À/À,À0Ì©Ì¨À	ÀÀ"
+2026/04/24 19:29:30 [warn] 146256#146256: *329 using uninitialized "day" variable while logging request, client: 198.235.24.8, server: , request: " î  êß_v´Q÷å»¦îÿ„ã¹{Ø%/ÿ\°èW+©íT m2[àåÅ5tS¨Ði@w Õîåí¸eŽª£šs!í &À+À/À,À0Ì©Ì¨À	ÀÀ"
+2026/04/24 19:29:30 [warn] 146256#146256: *329 using uninitialized "hour" variable while logging request, client: 198.235.24.8, server: , request: " î  êß_v´Q÷å»¦îÿ„ã¹{Ø%/ÿ\°èW+©íT m2[àåÅ5tS¨Ði@w Õîåí¸eŽª£šs!í &À+À/À,À0Ì©Ì¨À	ÀÀ"
+2026/04/24 19:29:30 [warn] 146256#146256: *330 using uninitialized "year" variable while logging request, client: 198.235.24.8, server: , request: " Ê  Æ´Z^$<ª‚«½¦Nua¦n0aSÅ®ñùÉÀ  hÌÌÀ/À+À0À,ÀÀÀ'À#ÀÀ	À(À$ÀÀ"
+2026/04/24 19:29:30 [warn] 146256#146256: *330 using uninitialized "month" variable while logging request, client: 198.235.24.8, server: , request: " Ê  Æ´Z^$<ª‚«½¦Nua¦n0aSÅ®ñùÉÀ  hÌÌÀ/À+À0À,ÀÀÀ'À#ÀÀ	À(À$ÀÀ"
+2026/04/24 19:29:30 [warn] 146256#146256: *330 using uninitialized "day" variable while logging request, client: 198.235.24.8, server: , request: " Ê  Æ´Z^$<ª‚«½¦Nua¦n0aSÅ®ñùÉÀ  hÌÌÀ/À+À0À,ÀÀÀ'À#ÀÀ	À(À$ÀÀ"
+2026/04/24 19:29:30 [warn] 146256#146256: *330 using uninitialized "hour" variable while logging request, client: 198.235.24.8, server: , request: " Ê  Æ´Z^$<ª‚«½¦Nua¦n0aSÅ®ñùÉÀ  hÌÌÀ/À+À0À,ÀÀÀ'À#ÀÀ	À(À$ÀÀ"
+2026/04/24 20:52:24 [warn] 146257#146257: *356 using uninitialized "year" variable while logging request, client: 101.47.158.137, server: , request: "POST /cgi-bin/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/bin/sh HTTP/1.1"
+2026/04/24 20:52:24 [warn] 146257#146257: *356 using uninitialized "month" variable while logging request, client: 101.47.158.137, server: , request: "POST /cgi-bin/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/bin/sh HTTP/1.1"
+2026/04/24 20:52:24 [warn] 146257#146257: *356 using uninitialized "day" variable while logging request, client: 101.47.158.137, server: , request: "POST /cgi-bin/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/bin/sh HTTP/1.1"
+2026/04/24 20:52:24 [warn] 146257#146257: *356 using uninitialized "hour" variable while logging request, client: 101.47.158.137, server: , request: "POST /cgi-bin/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/bin/sh HTTP/1.1"
+2026/04/24 20:52:25 [warn] 146257#146257: *357 using uninitialized "year" variable while logging request, client: 101.47.158.137, server: , request: "POST /cgi-bin/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/bin/sh HTTP/1.1"
+2026/04/24 20:52:25 [warn] 146257#146257: *357 using uninitialized "month" variable while logging request, client: 101.47.158.137, server: , request: "POST /cgi-bin/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/bin/sh HTTP/1.1"
+2026/04/24 20:52:25 [warn] 146257#146257: *357 using uninitialized "day" variable while logging request, client: 101.47.158.137, server: , request: "POST /cgi-bin/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/bin/sh HTTP/1.1"
+2026/04/24 20:52:25 [warn] 146257#146257: *357 using uninitialized "hour" variable while logging request, client: 101.47.158.137, server: , request: "POST /cgi-bin/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/bin/sh HTTP/1.1"
+2026/04/24 21:04:07 [warn] 146256#146256: *409 using uninitialized "year" variable while logging request, client: 195.184.76.62, server: , request: "¦ ¢ïd“¡"øüòp3€ö¤í $Ž1,4¢‚r½ìûw1 61Mo{-1ú*ûïˆ¥¨ š 2(Êoª þò‚Ò Š  3 gÀžÀ¢ ž 9 kÀŸÀ£ Ÿ E ¾ ˆ Ä šÀÀ	À#À¬À®À+À"
+2026/04/24 21:04:07 [warn] 146256#146256: *409 using uninitialized "month" variable while logging request, client: 195.184.76.62, server: , request: "¦ ¢ïd“¡"øüòp3€ö¤í $Ž1,4¢‚r½ìûw1 61Mo{-1ú*ûïˆ¥¨ š 2(Êoª þò‚Ò Š  3 gÀžÀ¢ ž 9 kÀŸÀ£ Ÿ E ¾ ˆ Ä šÀÀ	À#À¬À®À+À"
+2026/04/24 21:04:07 [warn] 146256#146256: *409 using uninitialized "day" variable while logging request, client: 195.184.76.62, server: , request: "¦ ¢ïd“¡"øüòp3€ö¤í $Ž1,4¢‚r½ìûw1 61Mo{-1ú*ûïˆ¥¨ š 2(Êoª þò‚Ò Š  3 gÀžÀ¢ ž 9 kÀŸÀ£ Ÿ E ¾ ˆ Ä šÀÀ	À#À¬À®À+À"
+2026/04/24 21:04:07 [warn] 146256#146256: *409 using uninitialized "hour" variable while logging request, client: 195.184.76.62, server: , request: "¦ ¢ïd“¡"øüòp3€ö¤í $Ž1,4¢‚r½ìûw1 61Mo{-1ú*ûïˆ¥¨ š 2(Êoª þò‚Ò Š  3 gÀžÀ¢ ž 9 kÀŸÀ£ Ÿ E ¾ ˆ Ä šÀÀ	À#À¬À®À+À"
+2026/04/24 21:39:15 [warn] 146256#146256: *426 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/1/00/0000000001 while reading upstream, client: 216.81.248.173, server: , request: "GET /static/js/main.b72d7aa8.js HTTP/1.1", upstream: "http://127.0.0.1:8000/static/js/main.b72d7aa8.js", host: "13.124.98.116"
+2026/04/25 01:30:37 [warn] 146257#146257: *566 using uninitialized "year" variable while logging request, client: 205.166.28.11, server: , request: "CONNECT cloudflare.com:443 HTTP/1.1"
+2026/04/25 01:30:37 [warn] 146257#146257: *566 using uninitialized "month" variable while logging request, client: 205.166.28.11, server: , request: "CONNECT cloudflare.com:443 HTTP/1.1"
+2026/04/25 01:30:37 [warn] 146257#146257: *566 using uninitialized "day" variable while logging request, client: 205.166.28.11, server: , request: "CONNECT cloudflare.com:443 HTTP/1.1"
+2026/04/25 01:30:37 [warn] 146257#146257: *566 using uninitialized "hour" variable while logging request, client: 205.166.28.11, server: , request: "CONNECT cloudflare.com:443 HTTP/1.1"
+2026/04/25 02:00:17 [warn] 146256#146256: *579 using uninitialized "year" variable while logging request, client: 152.32.235.85, server: , request: "ÿ        NULL                                                "
+2026/04/25 02:00:17 [warn] 146256#146256: *579 using uninitialized "month" variable while logging request, client: 152.32.235.85, server: , request: "ÿ        NULL                                                "
+2026/04/25 02:00:17 [warn] 146256#146256: *579 using uninitialized "day" variable while logging request, client: 152.32.235.85, server: , request: "ÿ        NULL                                                "
+2026/04/25 02:00:17 [warn] 146256#146256: *579 using uninitialized "hour" variable while logging request, client: 152.32.235.85, server: , request: "ÿ        NULL                                                "
+2026/04/25 02:00:19 [warn] 146256#146256: *580 using uninitialized "year" variable while logging request, client: 152.32.235.85, server: , request: "ÿ        NULL                                                "
+2026/04/25 02:00:19 [warn] 146256#146256: *580 using uninitialized "month" variable while logging request, client: 152.32.235.85, server: , request: "ÿ        NULL                                                "
+2026/04/25 02:00:19 [warn] 146256#146256: *580 using uninitialized "day" variable while logging request, client: 152.32.235.85, server: , request: "ÿ        NULL                                                "
+2026/04/25 02:00:19 [warn] 146256#146256: *580 using uninitialized "hour" variable while logging request, client: 152.32.235.85, server: , request: "ÿ        NULL                                                "
+2026/04/25 02:00:21 [warn] 146256#146256: *581 using uninitialized "year" variable while logging request, client: 152.32.235.85, server: , request: "ÿ        NULL                                                "
+2026/04/25 02:00:21 [warn] 146256#146256: *581 using uninitialized "month" variable while logging request, client: 152.32.235.85, server: , request: "ÿ        NULL                                                "
+2026/04/25 02:00:21 [warn] 146256#146256: *581 using uninitialized "day" variable while logging request, client: 152.32.235.85, server: , request: "ÿ        NULL                                                "
+2026/04/25 02:00:21 [warn] 146256#146256: *581 using uninitialized "hour" variable while logging request, client: 152.32.235.85, server: , request: "ÿ        NULL                                                "
+2026/04/25 02:00:32 [warn] 146256#146256: *597 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/2/00/0000000002 while reading upstream, client: 152.32.235.85, server: , request: "GET /static/js/main.b72d7aa8.js HTTP/1.1", upstream: "http://127.0.0.1:8000/static/js/main.b72d7aa8.js", host: "13.124.98.116:80"
+2026/04/25 04:51:56 [warn] 146256#146256: *643 using uninitialized "year" variable while logging request, client: 66.132.195.70, server: , request: " î  êf&*”Qº	/"/K¹´}ïq+é¸±Î.àm#]–³)8 ÍaG,1ËBÁBIÿQ-Q„/§öj<¯³£atóô &Ì¨Ì©À/À0À+À,ÀÀ	ÀÀ"
+2026/04/25 04:51:56 [warn] 146256#146256: *643 using uninitialized "month" variable while logging request, client: 66.132.195.70, server: , request: " î  êf&*”Qº	/"/K¹´}ïq+é¸±Î.àm#]–³)8 ÍaG,1ËBÁBIÿQ-Q„/§öj<¯³£atóô &Ì¨Ì©À/À0À+À,ÀÀ	ÀÀ"
+2026/04/25 04:51:56 [warn] 146256#146256: *643 using uninitialized "day" variable while logging request, client: 66.132.195.70, server: , request: " î  êf&*”Qº	/"/K¹´}ïq+é¸±Î.àm#]–³)8 ÍaG,1ËBÁBIÿQ-Q„/§öj<¯³£atóô &Ì¨Ì©À/À0À+À,ÀÀ	ÀÀ"
+2026/04/25 04:51:56 [warn] 146256#146256: *643 using uninitialized "hour" variable while logging request, client: 66.132.195.70, server: , request: " î  êf&*”Qº	/"/K¹´}ïq+é¸±Î.àm#]–³)8 ÍaG,1ËBÁBIÿQ-Q„/§öj<¯³£atóô &Ì¨Ì©À/À0À+À,ÀÀ	ÀÀ"
+2026/04/25 04:52:22 [warn] 146256#146256: *648 using uninitialized "year" variable while logging request, client: 66.132.195.70, server: , request: " î  êAÚÈáŒÎ,®g×‡ÆqÛÒñqÁª9 æÔ`Q—#¶Ín( ŠayÂÑuc7?T”ßßcÏƒ@Á^3=“$"]/…Ä &Ì¨Ì©À/À0À+À,ÀÀ	ÀÀ"
+2026/04/25 04:52:22 [warn] 146256#146256: *648 using uninitialized "month" variable while logging request, client: 66.132.195.70, server: , request: " î  êAÚÈáŒÎ,®g×‡ÆqÛÒñqÁª9 æÔ`Q—#¶Ín( ŠayÂÑuc7?T”ßßcÏƒ@Á^3=“$"]/…Ä &Ì¨Ì©À/À0À+À,ÀÀ	ÀÀ"
+2026/04/25 04:52:22 [warn] 146256#146256: *648 using uninitialized "day" variable while logging request, client: 66.132.195.70, server: , request: " î  êAÚÈáŒÎ,®g×‡ÆqÛÒñqÁª9 æÔ`Q—#¶Ín( ŠayÂÑuc7?T”ßßcÏƒ@Á^3=“$"]/…Ä &Ì¨Ì©À/À0À+À,ÀÀ	ÀÀ"
+2026/04/25 04:52:22 [warn] 146256#146256: *648 using uninitialized "hour" variable while logging request, client: 66.132.195.70, server: , request: " î  êAÚÈáŒÎ,®g×‡ÆqÛÒñqÁª9 æÔ`Q—#¶Ín( ŠayÂÑuc7?T”ßßcÏƒ@Á^3=“$"]/…Ä &Ì¨Ì©À/À0À+À,ÀÀ	ÀÀ"
+2026/04/25 04:52:26 [warn] 146256#146256: *652 using uninitialized "year" variable while logging request, client: 93.174.93.12, server: , request: "o kRHÅ#÷:Nßâ´‚/ÿ	TŸ§Äy°hÆŒ¤="á˜ „´,…¯nãY»bhlÿ(=':©‚ÙoÈ¢×“˜´ï€å¹ (À"
+2026/04/25 04:52:26 [warn] 146256#146256: *652 using uninitialized "month" variable while logging request, client: 93.174.93.12, server: , request: "o kRHÅ#÷:Nßâ´‚/ÿ	TŸ§Äy°hÆŒ¤="á˜ „´,…¯nãY»bhlÿ(=':©‚ÙoÈ¢×“˜´ï€å¹ (À"
+2026/04/25 04:52:26 [warn] 146256#146256: *652 using uninitialized "day" variable while logging request, client: 93.174.93.12, server: , request: "o kRHÅ#÷:Nßâ´‚/ÿ	TŸ§Äy°hÆŒ¤="á˜ „´,…¯nãY»bhlÿ(=':©‚ÙoÈ¢×“˜´ï€å¹ (À"
+2026/04/25 04:52:26 [warn] 146256#146256: *652 using uninitialized "hour" variable while logging request, client: 93.174.93.12, server: , request: "o kRHÅ#÷:Nßâ´‚/ÿ	TŸ§Äy°hÆŒ¤="á˜ „´,…¯nãY»bhlÿ(=':©‚ÙoÈ¢×“˜´ï€å¹ (À"
+2026/04/25 04:52:28 [warn] 146256#146256: *656 using uninitialized "year" variable while logging request, client: 66.132.195.72, server: , request: "PRI * HTTP/2.0"
+2026/04/25 04:52:28 [warn] 146256#146256: *656 using uninitialized "month" variable while logging request, client: 66.132.195.72, server: , request: "PRI * HTTP/2.0"
+2026/04/25 04:52:28 [warn] 146256#146256: *656 using uninitialized "day" variable while logging request, client: 66.132.195.72, server: , request: "PRI * HTTP/2.0"
+2026/04/25 04:52:28 [warn] 146256#146256: *656 using uninitialized "hour" variable while logging request, client: 66.132.195.72, server: , request: "PRI * HTTP/2.0"
+2026/04/25 04:55:23 [warn] 146256#146256: *661 using uninitialized "year" variable while logging request, client: 66.132.195.72, server: , request: " î  êÀ¢AKÉzUhmŽ=‹eÃLZzDØ8e¶àÅ÷~Œ ê„)0’/ßßð”‰GLÕO¯HC@‡SøQ³•)˜‹Â &Ì¨Ì©À/À0À+À,ÀÀ	ÀÀ"
+2026/04/25 04:55:23 [warn] 146256#146256: *661 using uninitialized "month" variable while logging request, client: 66.132.195.72, server: , request: " î  êÀ¢AKÉzUhmŽ=‹eÃLZzDØ8e¶àÅ÷~Œ ê„)0’/ßßð”‰GLÕO¯HC@‡SøQ³•)˜‹Â &Ì¨Ì©À/À0À+À,ÀÀ	ÀÀ"
+2026/04/25 04:55:23 [warn] 146256#146256: *661 using uninitialized "day" variable while logging request, client: 66.132.195.72, server: , request: " î  êÀ¢AKÉzUhmŽ=‹eÃLZzDØ8e¶àÅ÷~Œ ê„)0’/ßßð”‰GLÕO¯HC@‡SøQ³•)˜‹Â &Ì¨Ì©À/À0À+À,ÀÀ	ÀÀ"
+2026/04/25 04:55:23 [warn] 146256#146256: *661 using uninitialized "hour" variable while logging request, client: 66.132.195.72, server: , request: " î  êÀ¢AKÉzUhmŽ=‹eÃLZzDØ8e¶àÅ÷~Œ ê„)0’/ßßð”‰GLÕO¯HC@‡SøQ³•)˜‹Â &Ì¨Ì©À/À0À+À,ÀÀ	ÀÀ"
+2026/04/25 04:55:26 [warn] 146257#146257: *666 using uninitialized "year" variable while logging request, client: 66.132.195.72, server: , request: " î  ê¼€Ç·ðäAºÑŠ<Ú,„8¬5I¦”ã0FÃò¹ˆÏ ¾Ð`yš1Ñ]ñ¬8ã‡€‹Õ!Â™K®vÙËuÜƒ„LOd &Ì¨Ì©À/À0À+À,ÀÀ	ÀÀ"
+2026/04/25 04:55:26 [warn] 146257#146257: *666 using uninitialized "month" variable while logging request, client: 66.132.195.72, server: , request: " î  ê¼€Ç·ðäAºÑŠ<Ú,„8¬5I¦”ã0FÃò¹ˆÏ ¾Ð`yš1Ñ]ñ¬8ã‡€‹Õ!Â™K®vÙËuÜƒ„LOd &Ì¨Ì©À/À0À+À,ÀÀ	ÀÀ"
+2026/04/25 04:55:26 [warn] 146257#146257: *666 using uninitialized "day" variable while logging request, client: 66.132.195.72, server: , request: " î  ê¼€Ç·ðäAºÑŠ<Ú,„8¬5I¦”ã0FÃò¹ˆÏ ¾Ð`yš1Ñ]ñ¬8ã‡€‹Õ!Â™K®vÙËuÜƒ„LOd &Ì¨Ì©À/À0À+À,ÀÀ	ÀÀ"
+2026/04/25 04:55:26 [warn] 146257#146257: *666 using uninitialized "hour" variable while logging request, client: 66.132.195.72, server: , request: " î  ê¼€Ç·ðäAºÑŠ<Ú,„8¬5I¦”ã0FÃò¹ˆÏ ¾Ð`yš1Ñ]ñ¬8ã‡€‹Õ!Â™K®vÙËuÜƒ„LOd &Ì¨Ì©À/À0À+À,ÀÀ	ÀÀ"
+2026/04/25 05:05:24 [warn] 189939#189939: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/25 05:05:25 [warn] 189972#189972: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/25 05:05:25 [warn] 189973#189973: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/25 05:06:00 [warn] 189975#189975: *2 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/1/00/0000000001 while reading upstream, client: 223.38.228.98, server: , request: "GET /static/js/main.b72d7aa8.js HTTP/1.1", upstream: "http://127.0.0.1:8000/static/js/main.b72d7aa8.js", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/25 05:06:19 [warn] 189975#189975: *2 a client request body is buffered to a temporary file /var/lib/nginx/tmp/client_body/0000000002, client: 223.38.228.98, server: , request: "POST /api/price-check/validate HTTP/1.1", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/25 05:16:40 [warn] 190776#190776: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/25 05:16:40 [warn] 190810#190810: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/25 05:16:40 [warn] 190811#190811: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/25 05:18:11 [warn] 191328#191328: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/25 05:18:12 [warn] 191362#191362: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/25 05:18:12 [warn] 191363#191363: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/25 05:19:08 [error] 191367#191367: *1 connect() failed (111: Connection refused) while connecting to upstream, client: 223.38.228.98, server: , request: "GET / HTTP/1.1", upstream: "http://127.0.0.1:8000/", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com"
+
+
+----------------------------------------
+/var/log/web.stdout.log
+----------------------------------------
+Apr 25 05:18:19 ip-172-31-7-177 web[191402]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/uvicorn/main.py", line 410, in main
+Apr 25 05:18:19 ip-172-31-7-177 web[191402]:    run(
+Apr 25 05:18:19 ip-172-31-7-177 web[191402]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/uvicorn/main.py", line 577, in run
+Apr 25 05:18:19 ip-172-31-7-177 web[191402]:    server.run()
+Apr 25 05:18:19 ip-172-31-7-177 web[191402]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/uvicorn/server.py", line 65, in run
+Apr 25 05:18:19 ip-172-31-7-177 web[191402]:    return asyncio.run(self.serve(sockets=sockets))
+Apr 25 05:18:19 ip-172-31-7-177 web[191402]:           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Apr 25 05:18:19 ip-172-31-7-177 web[191402]:  File "/usr/lib64/python3.11/asyncio/runners.py", line 190, in run
+Apr 25 05:18:19 ip-172-31-7-177 web[191402]:    return runner.run(main)
+Apr 25 05:18:19 ip-172-31-7-177 web[191402]:           ^^^^^^^^^^^^^^^^
+Apr 25 05:18:19 ip-172-31-7-177 web[191402]:  File "/usr/lib64/python3.11/asyncio/runners.py", line 118, in run
+Apr 25 05:18:19 ip-172-31-7-177 web[191402]:    return self._loop.run_until_complete(task)
+Apr 25 05:18:19 ip-172-31-7-177 web[191402]:           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Apr 25 05:18:19 ip-172-31-7-177 web[191402]:  File "/usr/lib64/python3.11/asyncio/base_events.py", line 654, in run_until_complete
+Apr 25 05:18:19 ip-172-31-7-177 web[191402]:    return future.result()
+Apr 25 05:18:19 ip-172-31-7-177 web[191402]:           ^^^^^^^^^^^^^^^
+Apr 25 05:18:19 ip-172-31-7-177 web[191402]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/uvicorn/server.py", line 69, in serve
+Apr 25 05:18:19 ip-172-31-7-177 web[191402]:    await self._serve(sockets)
+Apr 25 05:18:19 ip-172-31-7-177 web[191402]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/uvicorn/server.py", line 76, in _serve
+Apr 25 05:18:19 ip-172-31-7-177 web[191402]:    config.load()
+Apr 25 05:18:19 ip-172-31-7-177 web[191402]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/uvicorn/config.py", line 434, in load
+Apr 25 05:18:19 ip-172-31-7-177 web[191402]:    self.loaded_app = import_from_string(self.app)
+Apr 25 05:18:19 ip-172-31-7-177 web[191402]:                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Apr 25 05:18:19 ip-172-31-7-177 web[191402]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/uvicorn/importer.py", line 19, in import_from_string
+Apr 25 05:18:19 ip-172-31-7-177 web[191402]:    module = importlib.import_module(module_str)
+Apr 25 05:18:19 ip-172-31-7-177 web[191402]:             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Apr 25 05:18:19 ip-172-31-7-177 web[191402]:  File "/usr/lib64/python3.11/importlib/__init__.py", line 126, in import_module
+Apr 25 05:18:19 ip-172-31-7-177 web[191402]:    return _bootstrap._gcd_import(name[level:], package, level)
+Apr 25 05:18:19 ip-172-31-7-177 web[191402]:           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Apr 25 05:18:19 ip-172-31-7-177 web[191402]:  File "<frozen importlib._bootstrap>", line 1204, in _gcd_import
+Apr 25 05:18:19 ip-172-31-7-177 web[191402]:  File "<frozen importlib._bootstrap>", line 1176, in _find_and_load
+Apr 25 05:18:19 ip-172-31-7-177 web[191402]:  File "<frozen importlib._bootstrap>", line 1147, in _find_and_load_unlocked
+Apr 25 05:18:19 ip-172-31-7-177 web[191402]:  File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+Apr 25 05:18:19 ip-172-31-7-177 web[191402]:  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+Apr 25 05:18:19 ip-172-31-7-177 web[191402]:  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+Apr 25 05:18:19 ip-172-31-7-177 web[191402]:  File "/var/app/current/backend/main_aws.py", line 2651, in <module>
+Apr 25 05:18:19 ip-172-31-7-177 web[191402]:    app.mount("/static", StaticFiles(directory=os.path.join(STATIC_DIR, "static")), name="static-assets")
+Apr 25 05:18:19 ip-172-31-7-177 web[191402]:                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Apr 25 05:18:19 ip-172-31-7-177 web[191402]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/starlette/staticfiles.py", line 56, in __init__
+Apr 25 05:18:19 ip-172-31-7-177 web[191402]:    raise RuntimeError(f"Directory '{directory}' does not exist")
+Apr 25 05:18:19 ip-172-31-7-177 web[191402]: RuntimeError: Directory '/var/app/current/backend/static/static' does not exist
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]: /var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.6.3) or chardet (7.4.3)/charset_normalizer (3.4.7) doesn't match a supported version!
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]:  warnings.warn(
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]: Traceback (most recent call last):
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]:  File "/var/app/venv/staging-LQM1lest/bin/uvicorn", line 6, in <module>
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]:    sys.exit(main())
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]:             ^^^^^^
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/click/core.py", line 1485, in __call__
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]:    return self.main(*args, **kwargs)
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]:           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/click/core.py", line 1406, in main
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]:    rv = self.invoke(ctx)
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]:         ^^^^^^^^^^^^^^^^
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/click/core.py", line 1269, in invoke
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]:    return ctx.invoke(self.callback, **ctx.params)
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]:           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/click/core.py", line 824, in invoke
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]:    return callback(*args, **kwargs)
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]:           ^^^^^^^^^^^^^^^^^^^^^^^^^
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/uvicorn/main.py", line 410, in main
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]:    run(
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/uvicorn/main.py", line 577, in run
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]:    server.run()
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/uvicorn/server.py", line 65, in run
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]:    return asyncio.run(self.serve(sockets=sockets))
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]:           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]:  File "/usr/lib64/python3.11/asyncio/runners.py", line 190, in run
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]:    return runner.run(main)
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]:           ^^^^^^^^^^^^^^^^
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]:  File "/usr/lib64/python3.11/asyncio/runners.py", line 118, in run
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]:    return self._loop.run_until_complete(task)
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]:           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]:  File "/usr/lib64/python3.11/asyncio/base_events.py", line 654, in run_until_complete
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]:    return future.result()
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]:           ^^^^^^^^^^^^^^^
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/uvicorn/server.py", line 69, in serve
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]:    await self._serve(sockets)
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/uvicorn/server.py", line 76, in _serve
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]:    config.load()
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/uvicorn/config.py", line 434, in load
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]:    self.loaded_app = import_from_string(self.app)
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]:                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/uvicorn/importer.py", line 19, in import_from_string
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]:    module = importlib.import_module(module_str)
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]:             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]:  File "/usr/lib64/python3.11/importlib/__init__.py", line 126, in import_module
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]:    return _bootstrap._gcd_import(name[level:], package, level)
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]:           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]:  File "<frozen importlib._bootstrap>", line 1204, in _gcd_import
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]:  File "<frozen importlib._bootstrap>", line 1176, in _find_and_load
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]:  File "<frozen importlib._bootstrap>", line 1147, in _find_and_load_unlocked
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]:  File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]:  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]:  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]:  File "/var/app/current/backend/main_aws.py", line 2651, in <module>
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]:    app.mount("/static", StaticFiles(directory=os.path.join(STATIC_DIR, "static")), name="static-assets")
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]:                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/starlette/staticfiles.py", line 56, in __init__
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]:    raise RuntimeError(f"Directory '{directory}' does not exist")
+Apr 25 05:18:21 ip-172-31-7-177 web[191408]: RuntimeError: Directory '/var/app/current/backend/static/static' does not exist
+
+

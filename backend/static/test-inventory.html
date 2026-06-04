@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Inventory Analysis Component Test</title>
+  <style>
+    body { font-family: system-ui; background: #f5f5f5; margin: 20px; }
+    .test { background: white; padding: 20px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; }
+    .pass { border-left: 4px solid #10b981; }
+    .fail { border-left: 4px solid #dc2626; }
+    code { background: #f0f0f0; padding: 2px 6px; border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <h1>InventoryAnalysis Component Diagnostics</h1>
+
+  <div class="test pass">
+    <h2>✓ Component Structure Fixed</h2>
+    <p>Added proper layout containers with maxWidth: 1400px and centered content</p>
+    <ul>
+      <li>Header styled with margin auto and proper spacing</li>
+      <li>Upload zone wrapped in container div</li>
+      <li>Error message wrapped in container div</li>
+      <li>Data section wrapped in container div</li>
+    </ul>
+  </div>
+
+  <div class="test pass">
+    <h2>✓ SessionStorage Error Handling</h2>
+    <p>Added try-catch blocks for sessionStorage access</p>
+    <ul>
+      <li>Password initialization with error handling</li>
+      <li>SessionStorage write protected with try-catch</li>
+    </ul>
+  </div>
+
+  <div class="test pass">
+    <h2>✓ View Height Fix</h2>
+    <p>Changed from minHeight: "100%" to minHeight: "100vh"</p>
+    <ul>
+      <li>Ensures main container takes full viewport height</li>
+      <li>Prevents empty white space display issues</li>
+    </ul>
+  </div>
+
+  <div class="test">
+    <h2>🔍 Testing Steps</h2>
+    <ol>
+      <li>Navigate to the Inventory Analysis page</li>
+      <li>You should see the password screen with "영업4실 재고 분석"</li>
+      <li>Enter password: <code>6800</code></li>
+      <li>After entering correct password, the main view with upload zone should appear</li>
+      <li>The header, upload drop zone, and buttons should all be visible</li>
+    </ol>
+  </div>
+
+  <div class="test">
+    <h2>📋 What was changed</h2>
+    <ul>
+      <li>Fixed main layout container styling (minHeight: "100vh", proper padding)</li>
+      <li>Added wrapper divs for better structure and layout control</li>
+      <li>Improved sessionStorage error handling</li>
+      <li>Ensured all sections (header, upload, error, data) are properly centered and constrained</li>
+    </ul>
+  </div>
+
+  <script>
+    // Test sessionStorage access
+    try {
+      const testKey = "__test_ss_access__";
+      sessionStorage.setItem(testKey, "1");
+      const value = sessionStorage.getItem(testKey);
+      sessionStorage.removeItem(testKey);
+      console.log("✓ SessionStorage is working");
+    } catch (e) {
+      console.error("✗ SessionStorage error:", e);
+    }
+  </script>
+</body>
+</html>

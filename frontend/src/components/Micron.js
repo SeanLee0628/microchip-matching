@@ -4,14 +4,19 @@ import { saveAs } from "file-saver";
 
 const API = process.env.REACT_APP_API_URL || "";
 
-const EDITABLE_COLS = new Set(["Booking Customer & FSE", "Qty_booking", "비고"]);
+const EDITABLE_COLS = new Set([
+  "Status", "수입면장번호", "BL번호",
+  "Booking Customer & FSE", "Qty_booking", "비고",
+]);
 const NUM_COLS = new Set(["QTY", "Qty_booking"]);
+const STATUS_OPTIONS = ["재고", "입고예정", "출고"];
+const STATUS_FILTER_OPTIONS = ["재고", "입고예정", "출고"];
 
 function Micron() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [statusFilter, setStatusFilter] = useState("");
+  const [statusFilters, setStatusFilters] = useState([]);
   const [didFilter, setDidFilter] = useState("");
   const [mpnFilter, setMpnFilter] = useState("");
   const [notesOnly, setNotesOnly] = useState(false);
@@ -22,10 +27,20 @@ function Micron() {
 
   const fetchData = async () => {
     const res = await axios.get(`${API}/api/micron/data`, {
-      params: { status: statusFilter, did: didFilter, mpn: mpnFilter, notes_only: notesOnly ? "true" : "" },
+      params: { status: statusFilters.join(","), did: didFilter, mpn: mpnFilter, notes_only: notesOnly ? "true" : "" },
     });
     setData(res.data);
   };
+
+  const toggleStatusFilter = (s) => {
+    setStatusFilters(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
+  };
+
+  // 페이지 로드 시 DB에서 자동 조회
+  useEffect(() => {
+    fetchData();
+    // eslint-disable-next-line
+  }, []);
 
   const handleUpload = async (file) => {
     if (!file) return;
@@ -54,6 +69,9 @@ function Micron() {
   const startEdit = (row) => {
     setEditingId(row["_id"]);
     setEditValues({
+      "Status": row["Status"] || "",
+      "수입면장번호": row["수입면장번호"] || "",
+      "BL번호": row["BL번호"] || "",
       "Booking Customer & FSE": row["Booking Customer & FSE"] || "",
       "Qty_booking": row["Qty_booking"] || "",
       "비고": row["비고"] || "",
@@ -63,6 +81,19 @@ function Micron() {
   const saveEdit = async () => {
     await axios.post(`${API}/api/micron/update`, { _id: editingId, ...editValues });
     setEditingId(null);
+    fetchData();
+  };
+
+  const handleStatusInlineChange = async (row, newStatus) => {
+    await axios.post(`${API}/api/micron/update`, {
+      _id: row["_id"],
+      Status: newStatus,
+      "수입면장번호": row["수입면장번호"] || "",
+      "BL번호": row["BL번호"] || "",
+      "Booking Customer & FSE": row["Booking Customer & FSE"] || "",
+      "Qty_booking": row["Qty_booking"] || "",
+      "비고": row["비고"] || "",
+    });
     fetchData();
   };
 
@@ -107,13 +138,26 @@ function Micron() {
       {data && (
         <>
           <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap", alignItems: "center" }}>
-            <select style={{ padding: "6px 10px", border: "1px solid #ddd", borderRadius: 4, fontSize: 13 }}
-              value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-              <option value="">Status (전체)</option>
-              <option value="재고">재고</option>
-              <option value="입고 예정">입고 예정 자재</option>
-              <option value="무상샘플">무상샘플 재고</option>
-            </select>
+            <div style={{ display: "flex", gap: 10, alignItems: "center", padding: "6px 12px", border: "1px solid #ddd", borderRadius: 4, fontSize: 13, background: "#fff" }}>
+              <span style={{ color: "#64748b", fontWeight: 600 }}>Status:</span>
+              {STATUS_FILTER_OPTIONS.map(s => (
+                <label key={s} style={{ display: "flex", alignItems: "center", gap: 4, cursor: "pointer", whiteSpace: "nowrap" }}>
+                  <input
+                    type="checkbox"
+                    checked={statusFilters.includes(s)}
+                    onChange={() => toggleStatusFilter(s)}
+                  />
+                  {s}
+                </label>
+              ))}
+              {statusFilters.length > 0 && (
+                <button
+                  onClick={() => setStatusFilters([])}
+                  style={{ background: "transparent", border: 0, color: "#64748b", cursor: "pointer", fontSize: 12, padding: "0 4px" }}
+                  title="전체 해제"
+                >초기화</button>
+              )}
+            </div>
             <input style={{ padding: "6px 10px", border: "1px solid #ddd", borderRadius: 4, fontSize: 13, width: 100 }}
               placeholder="DID" value={didFilter} onChange={(e) => setDidFilter(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSearch()} />
@@ -239,7 +283,8 @@ function Micron() {
               <tbody>
                 {rows.map((row, i) => (
                   <tr key={i} style={
-                    row.Status === "입고 예정 자재" ? { background: "#fff8e1" } :
+                    row.Status === "입고예정" || row.Status === "입고 예정 자재" ? { background: "#fff8e1" } :
+                    row.Status === "출고" ? { background: "#e0f2fe" } :
                     row.Status === "무상샘플 재고" ? { background: "#f3e5f5" } : {}
                   }>
                     <td style={{ color: "#999", textAlign: "center" }}>{i + 1}</td>
@@ -262,7 +307,21 @@ function Micron() {
                               )}
                             </td>
                           )}
-                          {isEditing ? (
+                          {col === "Status" ? (
+                            <td style={{ background: "#f0fff0", padding: 2 }}>
+                              <select
+                                style={{ width: "100%", padding: "3px 4px", border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12, background: "#fff" }}
+                                value={display || ""}
+                                onChange={(e) => handleStatusInlineChange(row, e.target.value)}
+                              >
+                                <option value="">-</option>
+                                {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+                                {display && !STATUS_OPTIONS.includes(display) && (
+                                  <option value={display}>{display}</option>
+                                )}
+                              </select>
+                            </td>
+                          ) : isEditing ? (
                             <td>
                               <input style={{ width: "100%", padding: 4, border: "1px solid #4caf50", borderRadius: 3, fontSize: 12 }}
                                 value={editValues[col] || ""}

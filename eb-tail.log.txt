@@ -1,0 +1,418 @@
+----------------------------------------
+/var/log/nginx/error.log
+----------------------------------------
+2026/04/22 02:53:17 [warn] 2964#2964: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/22 02:53:18 [warn] 2997#2997: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/22 02:53:18 [warn] 2998#2998: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/22 02:53:38 [warn] 3001#3001: *5 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/1/00/0000000001 while reading upstream, client: 222.107.157.9, server: , request: "GET /api/ublox/data HTTP/1.1", upstream: "http://127.0.0.1:8000/api/ublox/data", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com"
+2026/04/22 02:54:09 [warn] 3001#3001: *11 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/2/00/0000000002 while reading upstream, client: 222.107.157.9, server: , request: "GET /static/js/main.603c64eb.js HTTP/1.1", upstream: "http://127.0.0.1:8000/static/js/main.603c64eb.js", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/22 02:54:15 [error] 3001#3001: *11 client intended to send too large body: 1821833 bytes, client: 222.107.157.9, server: , request: "POST /api/upload HTTP/1.1", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/22 03:53:51 [warn] 5408#5408: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/22 03:53:51 [warn] 5441#5441: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/22 03:53:51 [warn] 5442#5442: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/22 03:54:27 [warn] 5444#5444: *1 a client request body is buffered to a temporary file /var/lib/nginx/tmp/client_body/0000000001, client: 222.107.157.9, server: , request: "POST /api/upload HTTP/1.1", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com"
+2026/04/22 03:54:30 [warn] 5444#5444: *1 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/2/00/0000000002 while reading upstream, client: 222.107.157.9, server: , request: "POST /api/upload HTTP/1.1", upstream: "http://127.0.0.1:8000/api/upload", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com"
+2026/04/22 06:11:43 [warn] 10410#10410: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/22 06:11:43 [warn] 10443#10443: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/22 06:11:43 [warn] 10444#10444: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/22 06:12:28 [warn] 10447#10447: *3 a client request body is buffered to a temporary file /var/lib/nginx/tmp/client_body/0000000001, client: 222.107.157.9, server: , request: "POST /api/auo/upload HTTP/1.1", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com"
+2026/04/22 06:12:58 [warn] 10446#10446: *5 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/2/00/0000000002 while reading upstream, client: 222.107.157.9, server: , request: "GET /api/auo/data HTTP/1.1", upstream: "http://127.0.0.1:8000/api/auo/data", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com"
+2026/04/22 06:13:42 [warn] 10446#10446: *7 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/3/00/0000000003 while reading upstream, client: 222.107.157.9, server: , request: "GET /static/js/main.99372e69.js HTTP/1.1", upstream: "http://127.0.0.1:8000/static/js/main.99372e69.js", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/22 06:13:44 [warn] 10446#10446: *7 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/4/00/0000000004 while reading upstream, client: 222.107.157.9, server: , request: "GET /api/auo/data HTTP/1.1", upstream: "http://127.0.0.1:8000/api/auo/data", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/22 06:19:00 [warn] 11109#11109: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/22 06:19:01 [warn] 11142#11142: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/22 06:19:01 [warn] 11143#11143: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/22 06:19:32 [warn] 11145#11145: *1 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/1/00/0000000001 while reading upstream, client: 222.107.157.9, server: , request: "GET /static/js/main.1427b60b.js HTTP/1.1", upstream: "http://127.0.0.1:8000/static/js/main.1427b60b.js", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/22 06:19:34 [warn] 11145#11145: *1 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/2/00/0000000002 while reading upstream, client: 222.107.157.9, server: , request: "GET /api/auo/data HTTP/1.1", upstream: "http://127.0.0.1:8000/api/auo/data", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/22 06:22:57 [warn] 11145#11145: *9 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/3/00/0000000003 while reading upstream, client: 222.107.157.9, server: , request: "GET /api/auo/data HTTP/1.1", upstream: "http://127.0.0.1:8000/api/auo/data", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/22 06:23:09 [warn] 11733#11733: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/22 06:23:09 [warn] 11766#11766: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/22 06:23:10 [warn] 11767#11767: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/22 06:23:50 [warn] 11769#11769: *1 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/1/00/0000000001 while reading upstream, client: 222.107.157.9, server: , request: "GET /static/js/main.1619c62c.js HTTP/1.1", upstream: "http://127.0.0.1:8000/static/js/main.1619c62c.js", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/22 06:23:52 [warn] 11769#11769: *1 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/2/00/0000000002 while reading upstream, client: 222.107.157.9, server: , request: "GET /api/auo/data HTTP/1.1", upstream: "http://127.0.0.1:8000/api/auo/data", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/22 06:24:47 [warn] 11769#11769: *9 using uninitialized "year" variable while logging request, client: 198.235.24.129, server: , request: " �  �����n�\S!v����!�ɁO�A6��P�sS ���b�� ����;��3ŗ���gM���1�� &�+�/�,�0̨̩�	��"
+2026/04/22 06:24:47 [warn] 11769#11769: *9 using uninitialized "month" variable while logging request, client: 198.235.24.129, server: , request: " �  �����n�\S!v����!�ɁO�A6��P�sS ���b�� ����;��3ŗ���gM���1�� &�+�/�,�0̨̩�	��"
+2026/04/22 06:24:47 [warn] 11769#11769: *9 using uninitialized "day" variable while logging request, client: 198.235.24.129, server: , request: " �  �����n�\S!v����!�ɁO�A6��P�sS ���b�� ����;��3ŗ���gM���1�� &�+�/�,�0̨̩�	��"
+2026/04/22 06:24:47 [warn] 11769#11769: *9 using uninitialized "hour" variable while logging request, client: 198.235.24.129, server: , request: " �  �����n�\S!v����!�ɁO�A6��P�sS ���b�� ����;��3ŗ���gM���1�� &�+�/�,�0̨̩�	��"
+2026/04/22 06:24:47 [warn] 11769#11769: *10 using uninitialized "year" variable while logging request, client: 198.235.24.129, server: , request: " �  ��j�'E�h�p����~�����:�]ӛ  h���/�+�0�,���'�#��	�(�$��"
+2026/04/22 06:24:47 [warn] 11769#11769: *10 using uninitialized "month" variable while logging request, client: 198.235.24.129, server: , request: " �  ��j�'E�h�p����~�����:�]ӛ  h���/�+�0�,���'�#��	�(�$��"
+2026/04/22 06:24:47 [warn] 11769#11769: *10 using uninitialized "day" variable while logging request, client: 198.235.24.129, server: , request: " �  ��j�'E�h�p����~�����:�]ӛ  h���/�+�0�,���'�#��	�(�$��"
+2026/04/22 06:24:47 [warn] 11769#11769: *10 using uninitialized "hour" variable while logging request, client: 198.235.24.129, server: , request: " �  ��j�'E�h�p����~�����:�]ӛ  h���/�+�0�,���'�#��	�(�$��"
+2026/04/22 06:26:15 [warn] 12307#12307: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/22 06:26:15 [warn] 12340#12340: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/22 06:26:15 [warn] 12341#12341: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/22 06:29:32 [warn] 12879#12879: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/22 06:29:33 [warn] 12912#12912: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/22 06:29:33 [warn] 12913#12913: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/22 06:31:28 [warn] 12915#12915: *2 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/1/00/0000000001 while reading upstream, client: 222.107.157.9, server: , request: "GET /static/js/main.728a306d.js HTTP/1.1", upstream: "http://127.0.0.1:8000/static/js/main.728a306d.js", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/22 06:31:29 [warn] 12915#12915: *2 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/2/00/0000000002 while reading upstream, client: 222.107.157.9, server: , request: "GET /api/auo/data HTTP/1.1", upstream: "http://127.0.0.1:8000/api/auo/data", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/22 06:31:46 [warn] 12915#12915: *2 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/3/00/0000000003 while reading upstream, client: 222.107.157.9, server: , request: "GET /api/auo/data HTTP/1.1", upstream: "http://127.0.0.1:8000/api/auo/data", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/22 06:31:53 [warn] 12915#12915: *2 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/4/00/0000000004 while reading upstream, client: 222.107.157.9, server: , request: "GET /api/auo/data HTTP/1.1", upstream: "http://127.0.0.1:8000/api/auo/data", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/22 06:41:16 [warn] 13755#13755: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/22 06:41:17 [warn] 13788#13788: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/22 06:41:17 [warn] 13789#13789: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/22 06:50:32 [warn] 14520#14520: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/22 06:50:33 [warn] 14553#14553: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/22 06:50:33 [warn] 14554#14554: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/22 06:55:54 [warn] 14557#14557: *1 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/1/00/0000000001 while reading upstream, client: 222.107.157.9, server: , request: "GET /static/js/main.de853ed5.js HTTP/1.1", upstream: "http://127.0.0.1:8000/static/js/main.de853ed5.js", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/22 07:00:26 [warn] 15286#15286: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/22 07:00:26 [warn] 15319#15319: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/22 07:00:26 [warn] 15320#15320: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/22 07:01:12 [warn] 15322#15322: *1 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/1/00/0000000001 while reading upstream, client: 222.107.157.9, server: , request: "GET /static/js/main.e7dfd93d.js HTTP/1.1", upstream: "http://127.0.0.1:8000/static/js/main.e7dfd93d.js", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/22 07:01:47 [warn] 15322#15322: *1 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/2/00/0000000002 while reading upstream, client: 222.107.157.9, server: , request: "GET /api/auo/data HTTP/1.1", upstream: "http://127.0.0.1:8000/api/auo/data", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/22 07:04:43 [warn] 15927#15927: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/22 07:04:44 [warn] 15961#15961: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/22 07:04:44 [warn] 15962#15962: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/22 07:05:36 [warn] 15965#15965: *3 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/1/00/0000000001 while reading upstream, client: 222.107.157.9, server: , request: "GET /static/js/main.4691be4a.js HTTP/1.1", upstream: "http://127.0.0.1:8000/static/js/main.4691be4a.js", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/22 07:10:55 [warn] 15965#15965: *15 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/2/00/0000000002 while reading upstream, client: 222.107.157.9, server: , request: "GET /api/auo/data HTTP/1.1", upstream: "http://127.0.0.1:8000/api/auo/data", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com"
+2026/04/22 07:11:05 [warn] 15965#15965: *17 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/3/00/0000000003 while reading upstream, client: 222.107.157.9, server: , request: "GET /api/auo/data HTTP/1.1", upstream: "http://127.0.0.1:8000/api/auo/data", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com"
+2026/04/22 07:12:41 [warn] 16637#16637: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/22 07:12:41 [warn] 16670#16670: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/22 07:12:41 [warn] 16671#16671: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/22 07:17:50 [warn] 16674#16674: *3 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/1/00/0000000001 while reading upstream, client: 222.107.157.9, server: , request: "GET /static/js/main.fd03cc9e.js HTTP/1.1", upstream: "http://127.0.0.1:8000/static/js/main.fd03cc9e.js", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/22 07:18:06 [warn] 17275#17275: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/22 07:18:06 [warn] 17308#17308: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/22 07:18:06 [warn] 17309#17309: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/22 07:18:51 [warn] 17312#17312: *1 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/1/00/0000000001 while reading upstream, client: 222.107.157.9, server: , request: "GET /static/js/main.fd03cc9e.js HTTP/1.1", upstream: "http://127.0.0.1:8000/static/js/main.fd03cc9e.js", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/22 07:22:35 [warn] 17312#17312: *11 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/2/00/0000000002 while reading upstream, client: 222.107.157.9, server: , request: "GET /api/auo/data HTTP/1.1", upstream: "http://127.0.0.1:8000/api/auo/data", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/22 07:23:28 [warn] 17312#17312: *18 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/3/00/0000000003 while reading upstream, client: 222.107.157.9, server: , request: "GET /api/auo/data HTTP/1.1", upstream: "http://127.0.0.1:8000/api/auo/data", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com"
+2026/04/22 07:25:20 [warn] 17312#17312: *21 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/4/00/0000000004 while reading upstream, client: 222.107.157.9, server: , request: "GET /api/auo/data HTTP/1.1", upstream: "http://127.0.0.1:8000/api/auo/data", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/22 07:28:34 [warn] 17312#17312: *28 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/5/00/0000000005 while reading upstream, client: 222.107.157.9, server: , request: "GET /api/auo/data HTTP/1.1", upstream: "http://127.0.0.1:8000/api/auo/data", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/22 07:31:16 [warn] 17312#17312: *30 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/6/00/0000000006 while reading upstream, client: 222.107.157.9, server: , request: "GET /api/auo/data HTTP/1.1", upstream: "http://127.0.0.1:8000/api/auo/data", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/22 07:31:24 [warn] 18215#18215: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/22 07:31:24 [warn] 18248#18248: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/22 07:31:24 [warn] 18249#18249: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/22 07:32:56 [warn] 18251#18251: *1 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/1/00/0000000001 while reading upstream, client: 222.107.157.9, server: , request: "GET /static/js/main.0e4e617f.js HTTP/1.1", upstream: "http://127.0.0.1:8000/static/js/main.0e4e617f.js", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/22 07:32:57 [warn] 18251#18251: *1 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/2/00/0000000002 while reading upstream, client: 222.107.157.9, server: , request: "GET /api/auo/data HTTP/1.1", upstream: "http://127.0.0.1:8000/api/auo/data", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/22 07:34:30 [warn] 18784#18784: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/22 07:34:31 [warn] 18817#18817: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/22 07:34:31 [warn] 18818#18818: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/22 07:35:18 [warn] 18820#18820: *1 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/1/00/0000000001 while reading upstream, client: 222.107.157.9, server: , request: "GET /static/js/main.46579102.js HTTP/1.1", upstream: "http://127.0.0.1:8000/static/js/main.46579102.js", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/22 07:37:11 [warn] 19355#19355: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/22 07:37:11 [warn] 19388#19388: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/22 07:37:11 [warn] 19389#19389: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/22 07:38:58 [warn] 19391#19391: *1 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/1/00/0000000001 while reading upstream, client: 222.107.157.9, server: , request: "GET /static/js/main.24284bb1.js HTTP/1.1", upstream: "http://127.0.0.1:8000/static/js/main.24284bb1.js", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/22 07:47:52 [warn] 19391#19391: *8 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/2/00/0000000002 while reading upstream, client: 222.107.157.9, server: , request: "GET /api/ublox/data HTTP/1.1", upstream: "http://127.0.0.1:8000/api/ublox/data", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/22 07:51:23 [warn] 20298#20298: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/22 07:51:23 [warn] 20331#20331: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/22 07:51:23 [warn] 20332#20332: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2026/04/22 07:52:09 [warn] 20334#20334: *1 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/1/00/0000000001 while reading upstream, client: 222.107.157.9, server: , request: "GET /static/js/main.29ae1593.js HTTP/1.1", upstream: "http://127.0.0.1:8000/static/js/main.29ae1593.js", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/22 08:04:36 [warn] 20334#20334: *8 a client request body is buffered to a temporary file /var/lib/nginx/tmp/client_body/0000000002, client: 220.75.190.87, server: , request: "POST /api/invoice-batch/preview HTTP/1.1", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com", referrer: "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/"
+2026/04/22 08:06:35 [warn] 20334#20334: *17 an upstream response is buffered to a temporary file /var/lib/nginx/tmp/proxy/3/00/0000000003 while reading upstream, client: 220.75.190.87, server: , request: "GET /api/ublox/data HTTP/1.1", upstream: "http://127.0.0.1:8000/api/ublox/data", host: "microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com"
+
+
+----------------------------------------
+/var/log/web.stdout.log
+----------------------------------------
+Apr 22 08:05:45 ip-172-31-7-177 web[20293]:    await self.middleware_stack(scope, receive, send)
+Apr 22 08:05:45 ip-172-31-7-177 web[20293]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/starlette/middleware/errors.py", line 187, in __call__
+Apr 22 08:05:45 ip-172-31-7-177 web[20293]:    raise exc
+Apr 22 08:05:45 ip-172-31-7-177 web[20293]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/starlette/middleware/errors.py", line 165, in __call__
+Apr 22 08:05:45 ip-172-31-7-177 web[20293]:    await self.app(scope, receive, _send)
+Apr 22 08:05:45 ip-172-31-7-177 web[20293]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/starlette/middleware/cors.py", line 85, in __call__
+Apr 22 08:05:45 ip-172-31-7-177 web[20293]:    await self.app(scope, receive, send)
+Apr 22 08:05:45 ip-172-31-7-177 web[20293]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+Apr 22 08:05:45 ip-172-31-7-177 web[20293]:    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+Apr 22 08:05:45 ip-172-31-7-177 web[20293]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/starlette/_exception_handler.py", line 62, in wrapped_app
+Apr 22 08:05:45 ip-172-31-7-177 web[20293]:    raise exc
+Apr 22 08:05:45 ip-172-31-7-177 web[20293]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/starlette/_exception_handler.py", line 51, in wrapped_app
+Apr 22 08:05:45 ip-172-31-7-177 web[20293]:    await app(scope, receive, sender)
+Apr 22 08:05:45 ip-172-31-7-177 web[20293]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/starlette/routing.py", line 715, in __call__
+Apr 22 08:05:45 ip-172-31-7-177 web[20293]:    await self.middleware_stack(scope, receive, send)
+Apr 22 08:05:45 ip-172-31-7-177 web[20293]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/starlette/routing.py", line 735, in app
+Apr 22 08:05:45 ip-172-31-7-177 web[20293]:    await route.handle(scope, receive, send)
+Apr 22 08:05:45 ip-172-31-7-177 web[20293]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/starlette/routing.py", line 288, in handle
+Apr 22 08:05:45 ip-172-31-7-177 web[20293]:    await self.app(scope, receive, send)
+Apr 22 08:05:45 ip-172-31-7-177 web[20293]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/starlette/routing.py", line 76, in app
+Apr 22 08:05:45 ip-172-31-7-177 web[20293]:    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+Apr 22 08:05:45 ip-172-31-7-177 web[20293]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/starlette/_exception_handler.py", line 62, in wrapped_app
+Apr 22 08:05:45 ip-172-31-7-177 web[20293]:    raise exc
+Apr 22 08:05:45 ip-172-31-7-177 web[20293]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/starlette/_exception_handler.py", line 51, in wrapped_app
+Apr 22 08:05:45 ip-172-31-7-177 web[20293]:    await app(scope, receive, sender)
+Apr 22 08:05:45 ip-172-31-7-177 web[20293]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/starlette/routing.py", line 73, in app
+Apr 22 08:05:45 ip-172-31-7-177 web[20293]:    response = await f(request)
+Apr 22 08:05:45 ip-172-31-7-177 web[20293]:               ^^^^^^^^^^^^^^^^
+Apr 22 08:05:45 ip-172-31-7-177 web[20293]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/fastapi/routing.py", line 301, in app
+Apr 22 08:05:45 ip-172-31-7-177 web[20293]:    raw_response = await run_endpoint_function(
+Apr 22 08:05:45 ip-172-31-7-177 web[20293]:                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Apr 22 08:05:45 ip-172-31-7-177 web[20293]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/fastapi/routing.py", line 212, in run_endpoint_function
+Apr 22 08:05:45 ip-172-31-7-177 web[20293]:    return await dependant.call(**values)
+Apr 22 08:05:45 ip-172-31-7-177 web[20293]:           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Apr 22 08:05:45 ip-172-31-7-177 web[20293]:  File "/var/app/current/backend/main_aws.py", line 1853, in generate_invoice
+Apr 22 08:05:45 ip-172-31-7-177 web[20293]:    img = XlImage(stamp_path)
+Apr 22 08:05:45 ip-172-31-7-177 web[20293]:          ^^^^^^^^^^^^^^^^^^^
+Apr 22 08:05:45 ip-172-31-7-177 web[20293]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/openpyxl/drawing/image.py", line 32, in __init__
+Apr 22 08:05:45 ip-172-31-7-177 web[20293]:    image = _import_image(img)
+Apr 22 08:05:45 ip-172-31-7-177 web[20293]:            ^^^^^^^^^^^^^^^^^^
+Apr 22 08:05:45 ip-172-31-7-177 web[20293]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/openpyxl/drawing/image.py", line 13, in _import_image
+Apr 22 08:05:45 ip-172-31-7-177 web[20293]:    raise ImportError('You must install Pillow to fetch image objects')
+Apr 22 08:05:45 ip-172-31-7-177 web[20293]: ImportError: You must install Pillow to fetch image objects
+Apr 22 08:06:26 ip-172-31-7-177 web[20293]: INFO:     220.75.190.87:0 - "POST /api/invoice/generate HTTP/1.1" 500 Internal Server Error
+Apr 22 08:06:26 ip-172-31-7-177 web[20293]: ERROR:    Exception in ASGI application
+Apr 22 08:06:26 ip-172-31-7-177 web[20293]: Traceback (most recent call last):
+Apr 22 08:06:26 ip-172-31-7-177 web[20293]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/uvicorn/protocols/http/h11_impl.py", line 406, in run_asgi
+Apr 22 08:06:26 ip-172-31-7-177 web[20293]:    result = await app(  # type: ignore[func-returns-value]
+Apr 22 08:06:26 ip-172-31-7-177 web[20293]:             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Apr 22 08:06:26 ip-172-31-7-177 web[20293]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/uvicorn/middleware/proxy_headers.py", line 70, in __call__
+Apr 22 08:06:26 ip-172-31-7-177 web[20293]:    return await self.app(scope, receive, send)
+Apr 22 08:06:26 ip-172-31-7-177 web[20293]:           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Apr 22 08:06:26 ip-172-31-7-177 web[20293]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/fastapi/applications.py", line 1054, in __call__
+Apr 22 08:06:26 ip-172-31-7-177 web[20293]:    await super().__call__(scope, receive, send)
+Apr 22 08:06:26 ip-172-31-7-177 web[20293]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/starlette/applications.py", line 113, in __call__
+Apr 22 08:06:26 ip-172-31-7-177 web[20293]:    await self.middleware_stack(scope, receive, send)
+Apr 22 08:06:26 ip-172-31-7-177 web[20293]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/starlette/middleware/errors.py", line 187, in __call__
+Apr 22 08:06:26 ip-172-31-7-177 web[20293]:    raise exc
+Apr 22 08:06:26 ip-172-31-7-177 web[20293]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/starlette/middleware/errors.py", line 165, in __call__
+Apr 22 08:06:26 ip-172-31-7-177 web[20293]:    await self.app(scope, receive, _send)
+Apr 22 08:06:26 ip-172-31-7-177 web[20293]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/starlette/middleware/cors.py", line 85, in __call__
+Apr 22 08:06:26 ip-172-31-7-177 web[20293]:    await self.app(scope, receive, send)
+Apr 22 08:06:26 ip-172-31-7-177 web[20293]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+Apr 22 08:06:26 ip-172-31-7-177 web[20293]:    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+Apr 22 08:06:26 ip-172-31-7-177 web[20293]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/starlette/_exception_handler.py", line 62, in wrapped_app
+Apr 22 08:06:26 ip-172-31-7-177 web[20293]:    raise exc
+Apr 22 08:06:26 ip-172-31-7-177 web[20293]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/starlette/_exception_handler.py", line 51, in wrapped_app
+Apr 22 08:06:26 ip-172-31-7-177 web[20293]:    await app(scope, receive, sender)
+Apr 22 08:06:26 ip-172-31-7-177 web[20293]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/starlette/routing.py", line 715, in __call__
+Apr 22 08:06:26 ip-172-31-7-177 web[20293]:    await self.middleware_stack(scope, receive, send)
+Apr 22 08:06:26 ip-172-31-7-177 web[20293]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/starlette/routing.py", line 735, in app
+Apr 22 08:06:26 ip-172-31-7-177 web[20293]:    await route.handle(scope, receive, send)
+Apr 22 08:06:26 ip-172-31-7-177 web[20293]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/starlette/routing.py", line 288, in handle
+Apr 22 08:06:26 ip-172-31-7-177 web[20293]:    await self.app(scope, receive, send)
+Apr 22 08:06:26 ip-172-31-7-177 web[20293]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/starlette/routing.py", line 76, in app
+Apr 22 08:06:26 ip-172-31-7-177 web[20293]:    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+Apr 22 08:06:26 ip-172-31-7-177 web[20293]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/starlette/_exception_handler.py", line 62, in wrapped_app
+Apr 22 08:06:26 ip-172-31-7-177 web[20293]:    raise exc
+Apr 22 08:06:26 ip-172-31-7-177 web[20293]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/starlette/_exception_handler.py", line 51, in wrapped_app
+Apr 22 08:06:26 ip-172-31-7-177 web[20293]:    await app(scope, receive, sender)
+Apr 22 08:06:26 ip-172-31-7-177 web[20293]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/starlette/routing.py", line 73, in app
+Apr 22 08:06:26 ip-172-31-7-177 web[20293]:    response = await f(request)
+Apr 22 08:06:26 ip-172-31-7-177 web[20293]:               ^^^^^^^^^^^^^^^^
+Apr 22 08:06:26 ip-172-31-7-177 web[20293]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/fastapi/routing.py", line 301, in app
+Apr 22 08:06:26 ip-172-31-7-177 web[20293]:    raw_response = await run_endpoint_function(
+Apr 22 08:06:26 ip-172-31-7-177 web[20293]:                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Apr 22 08:06:26 ip-172-31-7-177 web[20293]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/fastapi/routing.py", line 212, in run_endpoint_function
+Apr 22 08:06:26 ip-172-31-7-177 web[20293]:    return await dependant.call(**values)
+Apr 22 08:06:26 ip-172-31-7-177 web[20293]:           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Apr 22 08:06:26 ip-172-31-7-177 web[20293]:  File "/var/app/current/backend/main_aws.py", line 1853, in generate_invoice
+Apr 22 08:06:26 ip-172-31-7-177 web[20293]:    img = XlImage(stamp_path)
+Apr 22 08:06:26 ip-172-31-7-177 web[20293]:          ^^^^^^^^^^^^^^^^^^^
+Apr 22 08:06:26 ip-172-31-7-177 web[20293]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/openpyxl/drawing/image.py", line 32, in __init__
+Apr 22 08:06:26 ip-172-31-7-177 web[20293]:    image = _import_image(img)
+Apr 22 08:06:26 ip-172-31-7-177 web[20293]:            ^^^^^^^^^^^^^^^^^^
+Apr 22 08:06:26 ip-172-31-7-177 web[20293]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.11/site-packages/openpyxl/drawing/image.py", line 13, in _import_image
+Apr 22 08:06:26 ip-172-31-7-177 web[20293]:    raise ImportError('You must install Pillow to fetch image objects')
+Apr 22 08:06:26 ip-172-31-7-177 web[20293]: ImportError: You must install Pillow to fetch image objects
+Apr 22 08:06:35 ip-172-31-7-177 web[20293]: INFO:     220.75.190.87:0 - "GET /api/ublox/data HTTP/1.1" 200 OK
+Apr 22 08:06:36 ip-172-31-7-177 web[20293]: INFO:     220.75.190.87:0 - "GET /api/exchange-rate HTTP/1.1" 200 OK
+
+
+----------------------------------------
+/var/log/eb-engine.log
+----------------------------------------
+2026/04/22 07:51:19.923431 [INFO] deregistering process: web
+2026/04/22 07:51:19.923440 [INFO] Running command: systemctl show -p PartOf web.service
+2026/04/22 07:51:19.933146 [INFO] Running command: systemctl is-active web.service
+2026/04/22 07:51:19.940150 [INFO] Running command: systemctl disable web.service
+2026/04/22 07:51:20.205347 [INFO] Removed "/etc/systemd/system/multi-user.target.wants/web.service".
+
+2026/04/22 07:51:20.205426 [INFO] Running command: systemctl daemon-reload
+2026/04/22 07:51:20.493824 [INFO] Running command: systemctl reset-failed
+2026/04/22 07:51:20.502326 [INFO] Running command: systemctl is-active web.service
+2026/04/22 07:51:20.509939 [INFO] Process web has been fully terminated
+2026/04/22 07:51:20.509954 [INFO] All processes have been fully terminated
+2026/04/22 07:51:20.509958 [INFO] Removing /var/app/current/ if it exists
+2026/04/22 07:51:20.510476 [INFO] Renaming /var/app/staging/ to /var/app/current/
+2026/04/22 07:51:20.510513 [INFO] Register application processes...
+2026/04/22 07:51:20.510517 [INFO] Registering the proc: web
+
+2026/04/22 07:51:20.510524 [INFO] Running command: systemctl show -p PartOf web.service
+2026/04/22 07:51:20.521998 [INFO] Running command: systemctl daemon-reload
+2026/04/22 07:51:20.774482 [INFO] Running command: systemctl reset-failed
+2026/04/22 07:51:20.782717 [INFO] Running command: systemctl is-enabled eb-app.target
+2026/04/22 07:51:20.790256 [INFO] Running command: systemctl enable eb-app.target
+2026/04/22 07:51:21.065223 [INFO] Running command: systemctl start eb-app.target
+2026/04/22 07:51:21.074479 [INFO] Running command: systemctl enable web.service
+2026/04/22 07:51:21.303249 [INFO] Created symlink /etc/systemd/system/multi-user.target.wants/web.service → /etc/systemd/system/web.service.
+
+2026/04/22 07:51:21.303290 [INFO] Running command: systemctl show -p PartOf web.service
+2026/04/22 07:51:21.314674 [INFO] Running command: systemctl is-active web.service
+2026/04/22 07:51:21.322353 [INFO] Running command: systemctl start web.service
+2026/04/22 07:51:23.409095 [INFO] Executing instruction: start X-Ray
+2026/04/22 07:51:23.409104 [INFO] X-Ray is not enabled.
+2026/04/22 07:51:23.409108 [INFO] Executing instruction: start proxy with new configuration
+2026/04/22 07:51:23.409131 [INFO] Running command: /usr/sbin/nginx -t -c /var/proxy/staging/nginx/nginx.conf
+2026/04/22 07:51:23.428138 [INFO] nginx: [warn] could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+nginx: the configuration file /var/proxy/staging/nginx/nginx.conf syntax is ok
+nginx: configuration file /var/proxy/staging/nginx/nginx.conf test is successful
+
+2026/04/22 07:51:23.428406 [INFO] Running command: cp -rp /var/proxy/staging/nginx/* /etc/nginx
+2026/04/22 07:51:23.431370 [INFO] Running command: systemctl show -p PartOf nginx.service
+2026/04/22 07:51:23.447478 [INFO] Running command: systemctl daemon-reload
+2026/04/22 07:51:23.684977 [INFO] Running command: systemctl reset-failed
+2026/04/22 07:51:23.693689 [INFO] Running command: systemctl show -p PartOf nginx.service
+2026/04/22 07:51:23.706810 [INFO] Running command: systemctl is-active nginx.service
+2026/04/22 07:51:23.716397 [INFO] Running command: systemctl start nginx.service
+2026/04/22 07:51:23.828476 [INFO] Executing instruction: configureSqsd
+2026/04/22 07:51:23.828499 [INFO] This is a web server environment instance, skip configure sqsd daemon ...
+2026/04/22 07:51:23.828503 [INFO] Executing instruction: startSqsd
+2026/04/22 07:51:23.828506 [INFO] This is a web server environment instance, skip start sqsd daemon ...
+2026/04/22 07:51:23.828509 [INFO] Executing instruction: Track pids in healthd
+2026/04/22 07:51:23.828513 [INFO] This is an enhanced health env...
+2026/04/22 07:51:23.828526 [INFO] Running command: systemctl show -p ConsistsOf aws-eb.target | cut -d= -f2
+2026/04/22 07:51:23.839447 [INFO] cfn-hup.service nginx.service healthd.service
+
+2026/04/22 07:51:23.839475 [INFO] Running command: systemctl show -p ConsistsOf eb-app.target | cut -d= -f2
+2026/04/22 07:51:23.849481 [INFO] web.service
+
+2026/04/22 07:51:23.849714 [INFO] Executing instruction: RunAppDeployPostDeployHooks
+2026/04/22 07:51:23.849725 [INFO] No hooks found in .platform/hooks/postdeploy/, skipping
+2026/04/22 07:51:23.849728 [INFO] Executing cleanup logic
+2026/04/22 07:51:23.849808 [INFO] CommandService Response: {"status":"SUCCESS","api_version":"1.0","results":[{"status":"SUCCESS","msg":"Engine execution has succeeded.","returncode":0,"events":[{"msg":"Instance deployment used the commands in your 'Procfile' to initiate startup of your application.","timestamp":1776844275705,"severity":"INFO"},{"msg":"Instance deployment completed successfully.","timestamp":1776844283849,"severity":"INFO"}]}]}
+
+2026/04/22 07:51:23.886049 [INFO] Platform Engine finished execution on command: app-deploy
+
+2026/04/22 08:06:07.507423 [INFO] Starting...
+2026/04/22 08:06:07.507478 [INFO] Starting EBPlatform-PlatformEngine
+2026/04/22 08:06:07.507501 [INFO] reading event message file
+2026/04/22 08:06:07.507860 [INFO] Engine received EB command cfn-hup-exec
+
+2026/04/22 08:06:07.587742 [INFO] Running command: /opt/aws/bin/cfn-get-metadata -s arn:aws:cloudformation:ap-northeast-2:376798132745:stack/awseb-e-jtq2v3kzrt-stack/924a2a30-3df2-11f1-916c-06bc62a629a9 -r AWSEBAutoScalingGroup --region ap-northeast-2
+2026/04/22 08:06:07.886779 [INFO] Running command: /opt/aws/bin/cfn-get-metadata -s arn:aws:cloudformation:ap-northeast-2:376798132745:stack/awseb-e-jtq2v3kzrt-stack/924a2a30-3df2-11f1-916c-06bc62a629a9 -r AWSEBBeanstalkMetadata --region ap-northeast-2
+2026/04/22 08:06:08.181307 [INFO] checking whether command tail-log is applicable to this instance...
+2026/04/22 08:06:08.181322 [INFO] this command is applicable to the instance, thus instance should execute command
+2026/04/22 08:06:08.181329 [INFO] Engine command: (tail-log)
+
+2026/04/22 08:06:08.181375 [INFO] Executing instruction: GetTailLogs
+2026/04/22 08:06:08.181379 [INFO] Tail Logs...
+2026/04/22 08:06:08.181856 [INFO] Running command: tail -n 100 /var/log/eb-engine.log
+2026/04/22 08:06:08.183981 [INFO] Running command: tail -n 100 /var/log/nginx/access.log
+2026/04/22 08:06:08.187747 [INFO] Running command: tail -n 100 /var/log/nginx/error.log
+2026/04/22 08:06:08.190800 [INFO] Running command: tail -n 100 /var/log/web.stdout.log
+2026/04/22 08:06:08.252294 [INFO] Executing cleanup logic
+2026/04/22 08:06:08.252384 [INFO] CommandService Response: {"status":"SUCCESS","api_version":"1.0","results":[{"status":"SUCCESS","msg":"Engine execution has succeeded.","returncode":0,"events":[{"msg":"Instance deployment completed successfully.","timestamp":1776845168252,"severity":"INFO"}]}]}
+
+2026/04/22 08:06:08.252401 [INFO] Platform Engine finished execution on command: tail-log
+
+2026/04/22 08:07:20.555445 [INFO] Starting...
+2026/04/22 08:07:20.555495 [INFO] Starting EBPlatform-PlatformEngine
+2026/04/22 08:07:20.555515 [INFO] reading event message file
+2026/04/22 08:07:20.555867 [INFO] Engine received EB command cfn-hup-exec
+
+2026/04/22 08:07:20.646239 [INFO] Running command: /opt/aws/bin/cfn-get-metadata -s arn:aws:cloudformation:ap-northeast-2:376798132745:stack/awseb-e-jtq2v3kzrt-stack/924a2a30-3df2-11f1-916c-06bc62a629a9 -r AWSEBAutoScalingGroup --region ap-northeast-2
+2026/04/22 08:07:20.950799 [INFO] Running command: /opt/aws/bin/cfn-get-metadata -s arn:aws:cloudformation:ap-northeast-2:376798132745:stack/awseb-e-jtq2v3kzrt-stack/924a2a30-3df2-11f1-916c-06bc62a629a9 -r AWSEBBeanstalkMetadata --region ap-northeast-2
+2026/04/22 08:07:21.242324 [INFO] checking whether command tail-log is applicable to this instance...
+2026/04/22 08:07:21.242339 [INFO] this command is applicable to the instance, thus instance should execute command
+2026/04/22 08:07:21.242342 [INFO] Engine command: (tail-log)
+
+2026/04/22 08:07:21.242394 [INFO] Executing instruction: GetTailLogs
+2026/04/22 08:07:21.242398 [INFO] Tail Logs...
+2026/04/22 08:07:21.242728 [INFO] Running command: tail -n 100 /var/log/nginx/error.log
+2026/04/22 08:07:21.245044 [INFO] Running command: tail -n 100 /var/log/web.stdout.log
+2026/04/22 08:07:21.246949 [INFO] Running command: tail -n 100 /var/log/eb-engine.log
+
+
+----------------------------------------
+/var/log/nginx/access.log
+----------------------------------------
+222.107.157.9 - - [22/Apr/2026:06:19:32 +0000] "GET /static/js/main.1427b60b.js HTTP/1.1" 200 280015 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:06:19:32 +0000] "GET /manifest.json HTTP/1.1" 200 492 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:06:19:35 +0000] "GET /api/auo/data HTTP/1.1" 200 2258329 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:06:22:54 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:06:22:54 +0000] "GET /static/css/main.e2a7b3c1.css HTTP/1.1" 304 0 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:06:22:54 +0000] "GET /static/js/main.1427b60b.js HTTP/1.1" 304 0 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:06:22:55 +0000] "GET /manifest.json HTTP/1.1" 200 492 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:06:22:57 +0000] "GET /api/auo/data HTTP/1.1" 200 2258329 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:06:23:50 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:06:23:50 +0000] "GET /static/css/main.e2a7b3c1.css HTTP/1.1" 200 5553 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:06:23:50 +0000] "GET /manifest.json HTTP/1.1" 200 492 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:06:23:50 +0000] "GET /static/js/main.1619c62c.js HTTP/1.1" 200 280753 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:06:23:52 +0000] "GET /api/auo/data HTTP/1.1" 200 2258329 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+198.235.24.129 - - [22/Apr/2026:06:24:47 +0000] "\x16\x03\x01\x00\xEE\x01\x00\x00\xEA\x03\x03\x99\xB6\x16\xB5\xA6\x16n\xDB\x19\x5CS!v\xBD\xBA\x9A\xCD!\x92\xC9\x81\x05O\x87A6\xFD\x98P\xF1sS \x0C\xD0\xFD\x87b\xF2\xD3\x02 \xB8\xAC\xFC\xD2;\x13\xFC\xF33\xC5\x97\xDE\xC0\x83g\x06M\xB9\xBD\x821\xAF\x80\x00&\xC0+\xC0/\xC0,\xC00\xCC\xA9\xCC\xA8\xC0\x09\xC0\x13\xC0" 400 150 "-" "-" "-"
+198.235.24.129 - - [22/Apr/2026:06:24:47 +0000] "\x16\x03\x01\x00\xCA\x01\x00\x00\xC6\x03\x03\xF4j\x19\x11\xF7\x1E'E\xC7h\xD7p\xE3\xB0\x0E\x95\xFF\x88~\xE8\x88\xF3\x05\xAF\xB7\x1F\xDD:\xAF]\xD3\x9B\x00\x00h\xCC\x14\xCC\x13\xC0/\xC0+\xC00\xC0,\xC0\x11\xC0\x07\xC0'\xC0#\xC0\x13\xC0\x09\xC0(\xC0$\xC0\x14\xC0" 400 150 "-" "-" "-"
+222.107.157.9 - - [22/Apr/2026:06:31:27 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:06:31:28 +0000] "GET /static/css/main.e2a7b3c1.css HTTP/1.1" 200 5553 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:06:31:28 +0000] "GET /static/js/main.728a306d.js HTTP/1.1" 200 282252 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:06:31:28 +0000] "GET /manifest.json HTTP/1.1" 200 492 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:06:31:29 +0000] "GET /api/auo/data HTTP/1.1" 200 2258329 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:06:31:45 +0000] "POST /api/auo/update HTTP/1.1" 200 47 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:06:31:46 +0000] "GET /api/auo/data HTTP/1.1" 200 2258355 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:06:31:49 +0000] "POST /api/auo/update HTTP/1.1" 200 47 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:06:31:53 +0000] "GET /api/auo/data HTTP/1.1" 200 2258325 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:06:55:54 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:06:55:54 +0000] "GET /static/css/main.e2a7b3c1.css HTTP/1.1" 200 5553 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:06:55:54 +0000] "GET /static/js/main.de853ed5.js HTTP/1.1" 200 298432 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:06:55:54 +0000] "GET /manifest.json HTTP/1.1" 200 492 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:06:57:02 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:06:57:02 +0000] "GET /static/js/main.de853ed5.js HTTP/1.1" 304 0 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:06:57:02 +0000] "GET /static/css/main.e2a7b3c1.css HTTP/1.1" 304 0 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:06:57:02 +0000] "GET /manifest.json HTTP/1.1" 200 492 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:06:58:44 +0000] "POST /api/po-request/preview HTTP/1.1" 200 961 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:07:01:12 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:07:01:12 +0000] "GET /static/css/main.e2a7b3c1.css HTTP/1.1" 200 5553 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:07:01:12 +0000] "GET /static/js/main.e7dfd93d.js HTTP/1.1" 200 298298 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:07:01:12 +0000] "GET /manifest.json HTTP/1.1" 200 492 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:07:01:47 +0000] "GET /api/auo/data HTTP/1.1" 200 2258325 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+209.38.27.180 - - [22/Apr/2026:07:05:24 +0000] "GET /.git/config HTTP/1.1" 200 902 "-" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.129 Safari/537.36" "-"
+222.107.157.9 - - [22/Apr/2026:07:05:36 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:07:05:36 +0000] "GET /static/css/main.e2a7b3c1.css HTTP/1.1" 200 5553 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:07:05:36 +0000] "GET /static/js/main.4691be4a.js HTTP/1.1" 200 298316 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:07:05:36 +0000] "GET /manifest.json HTTP/1.1" 200 492 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:07:06:18 +0000] "POST /api/po-request/preview HTTP/1.1" 200 985 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+44.220.185.239 - - [22/Apr/2026:07:08:58 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0 (Windows NT 6.2;en-US) AppleWebKit/537.32.36 (KHTML, live Gecko) Chrome/60.0.3061.103 Safari/537.32" "-"
+44.220.185.239 - - [22/Apr/2026:07:08:59 +0000] "GET /favicon.ico HTTP/1.1" 200 3870 "-" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36" "-"
+222.107.157.9 - - [22/Apr/2026:07:10:55 +0000] "GET /api/auo/data HTTP/1.1" 200 2258325 "-" "curl/8.17.0" "-"
+222.107.157.9 - - [22/Apr/2026:07:11:05 +0000] "GET /api/auo/data HTTP/1.1" 200 2258325 "-" "curl/8.17.0" "-"
+5.61.209.107 - - [22/Apr/2026:07:17:07 +0000] "GET /SDK/webLanguage HTTP/1.1" 200 902 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.85 Safari/537.36 Edg/90.0.818.46" "-"
+222.107.157.9 - - [22/Apr/2026:07:17:50 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:07:17:50 +0000] "GET /static/css/main.e2a7b3c1.css HTTP/1.1" 200 5553 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:07:17:50 +0000] "GET /static/js/main.fd03cc9e.js HTTP/1.1" 200 298453 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:07:17:50 +0000] "GET /manifest.json HTTP/1.1" 200 492 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:07:18:51 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:07:18:51 +0000] "GET /static/css/main.e2a7b3c1.css HTTP/1.1" 200 5553 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:07:18:51 +0000] "GET /manifest.json HTTP/1.1" 200 492 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:07:18:51 +0000] "GET /static/js/main.fd03cc9e.js HTTP/1.1" 200 298453 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:07:18:52 +0000] "GET /favicon.ico HTTP/1.1" 200 3870 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:07:19:39 +0000] "POST /api/po-request/preview HTTP/1.1" 200 1164 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:07:22:32 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:07:22:33 +0000] "GET /static/js/main.fd03cc9e.js HTTP/1.1" 304 0 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:07:22:33 +0000] "GET /static/css/main.e2a7b3c1.css HTTP/1.1" 304 0 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:07:22:33 +0000] "GET /manifest.json HTTP/1.1" 200 492 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:07:22:35 +0000] "GET /api/auo/data HTTP/1.1" 200 2258325 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:07:23:28 +0000] "GET /api/auo/data HTTP/1.1" 200 2258325 "-" "curl/8.17.0" "-"
+222.107.157.9 - - [22/Apr/2026:07:25:16 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:07:25:17 +0000] "GET /static/js/main.fd03cc9e.js HTTP/1.1" 304 0 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:07:25:17 +0000] "GET /static/css/main.e2a7b3c1.css HTTP/1.1" 304 0 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:07:25:17 +0000] "GET /manifest.json HTTP/1.1" 200 492 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:07:25:21 +0000] "GET /api/auo/data HTTP/1.1" 200 2258325 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:07:28:34 +0000] "GET /api/auo/data HTTP/1.1" 200 2258325 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:07:31:16 +0000] "GET /api/auo/data HTTP/1.1" 200 2258325 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:07:32:56 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:07:32:56 +0000] "GET /static/css/main.e2a7b3c1.css HTTP/1.1" 200 5553 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:07:32:56 +0000] "GET /static/js/main.0e4e617f.js HTTP/1.1" 200 298471 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:07:32:56 +0000] "GET /manifest.json HTTP/1.1" 200 492 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:07:32:57 +0000] "GET /api/auo/data HTTP/1.1" 200 2258325 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+35.203.211.96 - - [22/Apr/2026:07:33:25 +0000] "GET / HTTP/1.1" 200 902 "-" "Hello from Palo Alto Networks, find out more about our scans in https://docs-cortex.paloaltonetworks.com/r/1/Cortex-Xpanse/Scanning-activity" "-"
+222.107.157.9 - - [22/Apr/2026:07:35:17 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:07:35:18 +0000] "GET /static/css/main.e2a7b3c1.css HTTP/1.1" 200 5553 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:07:35:18 +0000] "GET /manifest.json HTTP/1.1" 200 492 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:07:35:18 +0000] "GET /static/js/main.46579102.js HTTP/1.1" 200 299029 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:07:38:58 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:07:38:58 +0000] "GET /static/css/main.e2a7b3c1.css HTTP/1.1" 200 5553 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:07:38:58 +0000] "GET /static/js/main.24284bb1.js HTTP/1.1" 200 299029 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:07:38:58 +0000] "GET /manifest.json HTTP/1.1" 200 492 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:07:47:52 +0000] "GET /api/ublox/data HTTP/1.1" 200 1085108 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:07:47:52 +0000] "GET /api/sales/data HTTP/1.1" 200 16200 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:07:52:09 +0000] "GET / HTTP/1.1" 200 902 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:07:52:09 +0000] "GET /static/css/main.e2a7b3c1.css HTTP/1.1" 200 5553 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:07:52:09 +0000] "GET /static/js/main.29ae1593.js HTTP/1.1" 200 305773 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+222.107.157.9 - - [22/Apr/2026:07:52:09 +0000] "GET /manifest.json HTTP/1.1" 200 492 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+220.75.190.87 - - [22/Apr/2026:08:04:36 +0000] "POST /api/invoice-batch/preview HTTP/1.1" 200 2203 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+220.75.190.87 - - [22/Apr/2026:08:05:08 +0000] "POST /api/invoice/generate HTTP/1.1" 500 21 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+220.75.190.87 - - [22/Apr/2026:08:05:09 +0000] "POST /api/invoice/generate HTTP/1.1" 500 21 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+220.75.190.87 - - [22/Apr/2026:08:05:12 +0000] "POST /api/invoice/generate HTTP/1.1" 500 21 "http://microchip-matching-prod.eba-p2zrvmuk.ap-northeast-2.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0" "-"
+220.75.190.87 - - [22/Apr/2026:08:05:45 +0000] "POST /api/invoice/generate HTTP/1.1" 500 21 "-" "curl/8.17.0" "-"
+220.75.190.87 - - [22/Apr/2026:08:06:26 +0000] "POST /api/invoice/generate HTTP/1.1" 500 21 "-" "curl/8.17.0" "-"
+220.75.190.87 - - [22/Apr/2026:08:06:35 +0000] "GET /api/ublox/data HTTP/1.1" 200 1085108 "-" "curl/8.17.0" "-"
+220.75.190.87 - - [22/Apr/2026:08:06:36 +0000] "GET /api/exchange-rate HTTP/1.1" 200 44 "-" "curl/8.17.0" "-"
+
+
