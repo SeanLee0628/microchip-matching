@@ -2,8 +2,6 @@ import React, { useState, useMemo, useRef } from "react";
 import axios from "axios";
 
 const API_URL = process.env.REACT_APP_API_URL || "";
-const AUTH_KEY = "inventory_4sil_auth";
-const PASSWORD = "6800";
 
 const COLORS = {
   bg: "#fafbfc",
@@ -172,73 +170,6 @@ function InventoryAnalysis() {
   const [selected, setSelected] = useState(null);
   const [dragOver, setDragOver] = useState(false);
   const fileRef = useRef(null);
-  const [authed, setAuthed] = useState(() => {
-    try {
-      return sessionStorage.getItem(AUTH_KEY) === "1";
-    } catch (e) {
-      return false;
-    }
-  });
-  const [pwInput, setPwInput] = useState("");
-  const [pwError, setPwError] = useState("");
-
-  const handleUnlock = (e) => {
-    e.preventDefault();
-    if (pwInput === PASSWORD) {
-      try {
-        sessionStorage.setItem(AUTH_KEY, "1");
-      } catch (e) {
-        console.error("SessionStorage error:", e);
-      }
-      setAuthed(true);
-      setPwInput("");
-      setPwError("");
-    } else {
-      setPwError("비밀번호가 올바르지 않습니다");
-    }
-  };
-
-  if (!authed) {
-    return (
-      <div style={{ background: COLORS.bg, minHeight: "100%", margin: "-24px -24px -24px -24px", padding: "24px 28px", color: COLORS.text, fontFamily: "ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto" }}>
-        <div style={{ marginBottom: 20 }}>
-          <div style={{ fontSize: 12, color: COLORS.textMute, fontWeight: 600, letterSpacing: 0.5, textTransform: "uppercase" }}>영업4실</div>
-          <h1 style={{ fontSize: 26, fontWeight: 700, margin: "4px 0 6px", letterSpacing: "-0.02em" }}>재고 분석</h1>
-          <p style={{ fontSize: 13.5, color: COLORS.textMute, margin: 0 }}>🔒 접근하려면 비밀번호를 입력하세요</p>
-        </div>
-        <form onSubmit={handleUnlock} style={{
-          maxWidth: 360, background: COLORS.card, border: `1px solid ${COLORS.border}`,
-          borderRadius: 12, padding: 20, marginTop: 12,
-        }}>
-          <input
-            type="password"
-            value={pwInput}
-            onChange={(e) => setPwInput(e.target.value)}
-            placeholder="비밀번호"
-            autoFocus
-            style={{
-              width: "100%", padding: "10px 12px", fontSize: 14,
-              border: `1px solid ${COLORS.border}`, borderRadius: 8,
-              marginBottom: 12, boxSizing: "border-box", outline: "none",
-              color: COLORS.text, background: "#fff",
-            }}
-          />
-          {pwError && <div style={{ color: COLORS.rose, fontSize: 12.5, marginBottom: 12 }}>{pwError}</div>}
-          <button
-            type="submit"
-            style={{
-              padding: "9px 18px", borderRadius: 8, border: 0,
-              background: COLORS.accent, color: "#fff",
-              fontSize: 13, fontWeight: 600, cursor: "pointer",
-              boxShadow: "0 1px 2px rgba(79,70,229,0.25)",
-            }}
-          >
-            잠금 해제
-          </button>
-        </form>
-      </div>
-    );
-  }
 
   const onPickFile = (f) => { if (f) { setFile(f); setError(null); } };
 
