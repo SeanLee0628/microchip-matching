@@ -284,6 +284,33 @@ function InventoryAnalysis() {
     }
   };
 
+  // 화면에서 필터한 "필요한 것만" 단일 시트로 추출
+  const FILTER_LABELS = { all: "전체", stock: "재고보유", history: "판매이력", shortage: "재고부족", abc_a: "A등급", abc_b: "B등급", abc_c: "C등급" };
+  const exportFiltered = async () => {
+    if (!filteredSorted.length) return;
+    setExporting(true);
+    try {
+      const label = FILTER_LABELS[filter] || "추출";
+      const res = await axios.post(
+        `${API_URL}/api/inventory-analysis/export`,
+        { items: filteredSorted, single: true, label },
+        { responseType: "blob", timeout: 120000 }
+      );
+      const url = URL.createObjectURL(res.data);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `재고분석_${label}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      setError("엑셀 내보내기 실패: " + (e.response?.data?.detail || e.message));
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const filteredSorted = useMemo(() => {
     if (!data) return [];
     let arr = data.items.slice();
@@ -444,6 +471,13 @@ function InventoryAnalysis() {
               fontSize: 12, fontWeight: 600, cursor: exporting ? "default" : "pointer",
               boxShadow: exporting ? "none" : "0 1px 2px rgba(79,70,229,0.25)",
             }}>{exporting ? "내보내는 중…" : "📥 엑셀 내보내기 (분류별)"}</button>
+            <button onClick={exportFiltered} disabled={exporting || !filteredSorted.length}
+              title="현재 필터·검색으로 거른 행만 단일 시트로 추출" style={{
+              padding: "7px 12px", borderRadius: 8, border: `1px solid ${COLORS.accent}`,
+              background: COLORS.card, color: COLORS.accent,
+              fontSize: 12, fontWeight: 600, cursor: (exporting || !filteredSorted.length) ? "default" : "pointer",
+              opacity: (exporting || !filteredSorted.length) ? 0.5 : 1,
+            }}>📥 현재 분류만 ({FILTER_LABELS[filter]})</button>
             <button onClick={() => { setData(null); setFile(null); setSelected(null); setSearch(""); setFilter("all"); }} style={{
               padding: "7px 12px", borderRadius: 8, border: `1px solid ${COLORS.border}`,
               background: COLORS.card, color: COLORS.textMute, fontSize: 12, fontWeight: 500, cursor: "pointer",

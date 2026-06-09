@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Sidebar from "./components/Sidebar";
 import FileUpload from "./components/FileUpload";
 import DataTable from "./components/DataTable";
@@ -25,11 +25,38 @@ import FcstSalesDiff from "./components/FcstSalesDiff";
 import CrdBoard from "./components/CrdBoard";
 import "./App.css";
 
+// 섹션 키 ↔ URL 경로 라우팅. 각 섹션은 /<key> 로 직접 링크 가능.
+const VALID_MENUS = new Set([
+  "matching", "ublox", "sales", "invoice", "micron", "crd_board", "auo",
+  "po_request", "invoice_batch", "micron_invoice", "sales_report", "po_report",
+  "sales_summary", "shipping_invoice", "pos_report_fill", "materials",
+  "matching_ai", "matching_build", "inventory_analysis", "subul_filter",
+  "backlog_prd_diff", "fcst_sales_diff",
+]);
+
+function menuFromPath() {
+  const p = (window.location.pathname || "/").replace(/^\/+/, "").replace(/\/+$/, "").trim();
+  return VALID_MENUS.has(p) ? p : null;
+}
+
 function App() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [activeMenu, setActiveMenu] = useState(null);
+  const [activeMenu, setActiveMenu] = useState(menuFromPath);
+
+  // 섹션 ↔ URL 경로(/key) 동기화 — 링크 공유 · 새로고침 · 뒤로/앞으로 지원
+  useEffect(() => {
+    const onPop = () => setActiveMenu(menuFromPath());
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
+  const navigate = (key) => {
+    const target = key ? `/${key}` : "/";
+    if (window.location.pathname !== target) window.history.pushState({}, "", target);
+    setActiveMenu(key || null);
+  };
 
   const handleUploadSuccess = (result) => {
     setData(result);
@@ -42,7 +69,7 @@ function App() {
 
   return (
     <div className="app">
-      <Sidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} />
+      <Sidebar activeMenu={activeMenu} setActiveMenu={navigate} />
       <main className="main-content">
         {!activeMenu && (
           <div style={{ padding: 60, textAlign: "center", color: "#64748b" }}>

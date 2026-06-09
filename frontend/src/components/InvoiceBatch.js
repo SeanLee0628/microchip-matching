@@ -7,6 +7,8 @@ function InvoiceBatch() {
   const [invoices, setInvoices] = useState([]);
   // selectedMap: { [invIdx]: Set<itemIdx> } — 카드별로 체크된 품목 인덱스
   const [selectedMap, setSelectedMap] = useState({});
+  // rateOverride: { [invIdx]: string } — 카드별 환율 수동 입력값
+  const [rateOverride, setRateOverride] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const fileRef = useRef();
@@ -17,10 +19,11 @@ function InvoiceBatch() {
     setError(null);
     setInvoices([]);
     setSelectedMap({});
+    setRateOverride({});
     const fd = new FormData();
     fd.append("file", file);
     try {
-      const res = await axios.post(`${API_URL}/api/invoice-batch/preview`, fd);
+      const res = await axios.post(`${API_URL}/api/invoice-batch/preview`, fd, { timeout: 180000 });
       if (res.data.error) {
         setError(res.data.error);
       } else {
@@ -69,21 +72,32 @@ function InvoiceBatch() {
     return inv.items.filter((_, i) => s.has(i));
   };
 
-  const computeTotals = (items) => {
+  const computeTotals = (items, override) => {
     let usd = 0, krw = 0;
     items.forEach((it) => {
-      usd += it.amount_usd || 0;
-      krw += it.amount_krw || 0;
+      const a = it.amount_usd || 0;
+      usd += a;
+      krw += override != null ? a * override : (it.amount_krw || 0);
     });
     return { total_usd: Math.round(usd * 100) / 100, total_krw: Math.round(krw) };
   };
 
   const handleDownload = async (inv, invIdx, format /* "xlsx" | "pdf" */) => {
-    const items = getSelectedItems(invIdx, inv);
-    if (items.length === 0) {
+    const ov = rateOverride[invIdx];
+    const override = (ov !== undefined && ov !== "" && !isNaN(Number(ov))) ? Number(ov) : null;
+    const baseItems = getSelectedItems(invIdx, inv);
+    if (baseItems.length === 0) {
       setError("최소 1개 품목을 선택해야 합니다.");
       return;
     }
+    const items = override != null
+      ? baseItems.map((it) => ({
+          ...it,
+          rate: override,
+          price_krw: Math.round((it.price || 0) * override * 100) / 100,
+          amount_krw: Math.round((it.amount_usd || 0) * override),
+        }))
+      : baseItems;
     const earliest = items.reduce((min, it) => (it.date && (!min || it.date < min) ? it.date : min), null);
     const endpoint = format === "pdf" ? "/api/invoice/generate-pdf" : "/api/invoice/generate";
     const mime = format === "pdf" ? "application/pdf" : "application/vnd.openxmlformats";
@@ -91,7 +105,7 @@ function InvoiceBatch() {
       const res = await axios.post(`${API_URL}${endpoint}`, {
         customer: inv.customer,
         date: earliest || new Date().toISOString().slice(0, 10),
-        rate: inv.rate,
+        rate: override != null ? override : inv.rate,
         items,
       }, { responseType: "blob" });
       // JSON error 응답 처리
@@ -158,7 +172,9 @@ function InvoiceBatch() {
         {invoices.map((inv, idx) => {
           const selected = selectedMap[idx] || new Set();
           const selectedItems = inv.items.filter((_, i) => selected.has(i));
-          const totals = computeTotals(selectedItems);
+          const ovRaw = rateOverride[idx];
+          const override = (ovRaw !== undefined && ovRaw !== "" && !isNaN(Number(ovRaw))) ? Number(ovRaw) : null;
+          const totals = computeTotals(selectedItems, override);
           const allChecked = selected.size === inv.items.length;
           return (
             <div key={idx} style={{ border: "1px solid #e2e8f0", borderRadius: 8, background: "white", padding: 20 }}>
@@ -169,7 +185,17 @@ function InvoiceBatch() {
                     <b style={{ color: "#3b82f6" }}>{selected.size} / {inv.items.length}</b> 품목 선택됨 · 최초 출고 {inv.earliest_date} · 담당 {inv.담당자 || "-"}
                   </div>
                 </div>
-                <div style={{ display: "flex", gap: 8 }}>
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <label style={{ fontSize: 12, color: "#475569", display: "flex", alignItems: "center", gap: 4 }} title="환율을 직접 입력하면 원화 금액이 이 값으로 재계산됩니다">
+                    환율
+                    <input
+                      type="number"
+                      value={ovRaw ?? ""}
+                      onChange={(e) => setRateOverride((p) => ({ ...p, [idx]: e.target.value }))}
+                      placeholder={inv.rate ? String(inv.rate) : "1400"}
+                      style={{ width: 84, padding: "7px 8px", border: `1px solid ${override != null ? "#3b82f6" : "#cbd5e1"}`, borderRadius: 6, fontSize: 13 }}
+                    />
+                  </label>
                   <button
                     onClick={() => toggleAll(idx, inv)}
                     style={{ padding: "8px 14px", background: "white", color: "#475569", border: "1px solid #cbd5e1", borderRadius: 6, cursor: "pointer", fontSize: 13 }}
@@ -230,9 +256,9 @@ function InvoiceBatch() {
                         <td style={{ padding: 8, textAlign: "right" }}>{fmt(it.qty)}</td>
                         <td style={{ padding: 8, textAlign: "right" }}>{fmtUsdPrice(it.price)}</td>
                         <td style={{ padding: 8, textAlign: "right" }}>{fmtUsd(it.amount_usd)}</td>
-                        <td style={{ padding: 8, textAlign: "right", color: "#64748b" }}>{it.rate ? it.rate.toLocaleString() : "-"}</td>
-                        <td style={{ padding: 8, textAlign: "right" }}>{fmtKrwPrice(it.price_krw)}</td>
-                        <td style={{ padding: 8, textAlign: "right" }}>{fmtKrw(it.amount_krw)}</td>
+                        <td style={{ padding: 8, textAlign: "right", color: override != null ? "#3b82f6" : "#64748b" }}>{(override != null ? override : it.rate) ? (override != null ? override : it.rate).toLocaleString() : "-"}</td>
+                        <td style={{ padding: 8, textAlign: "right" }}>{fmtKrwPrice(override != null ? (it.price || 0) * override : it.price_krw)}</td>
+                        <td style={{ padding: 8, textAlign: "right" }}>{fmtKrw(override != null ? (it.amount_usd || 0) * override : it.amount_krw)}</td>
                       </tr>
                     );
                   })}

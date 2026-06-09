@@ -4,7 +4,7 @@ import axios from "axios";
 const API_URL = process.env.REACT_APP_API_URL || "";
 
 const ALL_COLS = [
-  "PART#", "End Customer Name", "ODM/SubCon Name", "Customer PO#",
+  "Mchp Catalog Part Number", "End Customer Name", "ODM/SubCon Name", "Customer PO#",
   "SO#", "Quote No.", "Qty Due", "Unit Price", "Amount Due",
   "ORD", "CRD", "PRD",
   "일정변동 현황", "변경전 일정", "변경일자",

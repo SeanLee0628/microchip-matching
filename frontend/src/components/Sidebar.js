@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 const GROUPS = [
   { team: "1실", items: [
@@ -46,6 +46,13 @@ function Sidebar({ activeMenu, setActiveMenu }) {
     return null;
   })();
   const [openTeam, setOpenTeam] = useState(initialOpen);
+
+  // 해시 라우팅으로 섹션이 바뀌면(딥링크·뒤로가기) 해당 실을 자동으로 펼침
+  useEffect(() => {
+    for (const g of GROUPS) {
+      if (g.items.some(it => it.key === activeMenu)) { setOpenTeam(g.team); return; }
+    }
+  }, [activeMenu]);
 
   const tryToggle = (team) => {
     const isOpen = openTeam === team;

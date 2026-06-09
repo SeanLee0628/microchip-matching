@@ -9,6 +9,7 @@ import math
 import json
 import re
 import uuid
+import time as _time
 from datetime import datetime
 
 from dynamo import DTable, create_tables
@@ -1117,7 +1118,7 @@ def _fetch_koreaexim_rate(yyyymmdd: str):
         r = http_requests2.get(
             "https://www.koreaexim.go.kr/site/program/financial/exchangeJSON",
             params={"authkey": authkey, "searchdate": yyyymmdd, "data": "AP01"},
-            timeout=10, verify=False,
+            timeout=4, verify=False,
         )
         d = r.json()
         if not isinstance(d, list) or not d:
@@ -1132,23 +1133,36 @@ def _fetch_koreaexim_rate(yyyymmdd: str):
         return None
 
 
+# 환율 외부조회 서킷브레이커: 한 번 실패하면 이 시각까지 외부조회 건너뛰고 즉시 폴백
+_RATE_FALLBACK = 1400
+_rate_ext_down_until = 0.0
+
+
 def _fetch_historical_rate(date_str: str, cache: dict):
-    """출고일자 기준 USD→KRW 매매기준율 조회.
-    1순위: 수출입은행 (영업일 아니면 직전 영업일까지 최대 5일 소급)
-    2순위: frankfurter.app
-    3순위: open.er-api 오늘 환율
+    """출고일자 기준 USD→KRW 매매기준율 조회 (날짜당 최대 ~5초, 실패 시 즉시 폴백).
+    1순위: 수출입은행 → 2순위: frankfurter → 3순위: open.er-api → 폴백 1400
+    외부조회가 한 번 실패하면 10분간 건너뛰어(서킷 오픈) 무한 대기를 막는다.
     """
+    global _rate_ext_down_until
     if not date_str:
         return None
     if date_str in cache:
         return cache[date_str]
 
+    # 서킷 오픈 상태면 기다리지 말고 즉시 폴백
+    if _time.time() < _rate_ext_down_until:
+        cache[date_str] = _RATE_FALLBACK
+        return _RATE_FALLBACK
+
+    deadline = _time.time() + 5  # 날짜당 외부조회 총 예산 5초
     rate = None
 
-    # 1. 수출입은행 매매기준율 (공식)
+    # 1. 수출입은행 매매기준율 (최대 3일 소급)
     try:
         d = pd.Timestamp(date_str)
-        for back in range(6):  # 당일 포함 최대 5일 전까지 소급
+        for back in range(3):
+            if _time.time() > deadline:
+                break
             yyyymmdd = (d - pd.Timedelta(days=back)).strftime("%Y%m%d")
             rate = _fetch_koreaexim_rate(yyyymmdd)
             if rate:
@@ -1157,23 +1171,27 @@ def _fetch_historical_rate(date_str: str, cache: dict):
         rate = None
 
     # 2. frankfurter 폴백
-    if not rate:
+    if not rate and _time.time() < deadline:
         try:
             r = http_requests2.get(
-                f"https://api.frankfurter.app/{date_str}?from=USD&to=KRW", timeout=8
+                f"https://api.frankfurter.app/{date_str}?from=USD&to=KRW", timeout=3
             )
-            j = r.json()
-            rate = round(float(j["rates"]["KRW"]), 2)
+            rate = round(float(r.json()["rates"]["KRW"]), 2)
         except Exception:
             pass
 
-    # 3. 오늘 환율 폴백
-    if not rate:
+    # 3. 실시간 환율 폴백
+    if not rate and _time.time() < deadline:
         try:
-            r = http_requests2.get("https://open.er-api.com/v6/latest/USD", timeout=5)
+            r = http_requests2.get("https://open.er-api.com/v6/latest/USD", timeout=3)
             rate = round(float(r.json()["rates"]["KRW"]), 2)
         except Exception:
-            rate = 1400
+            pass
+
+    if not rate:
+        # 외부조회 전부 실패 → 10분간 서킷 오픈
+        rate = _RATE_FALLBACK
+        _rate_ext_down_until = _time.time() + 600
 
     cache[date_str] = rate
     return rate
@@ -1181,8 +1199,13 @@ def _fetch_historical_rate(date_str: str, cache: dict):
 
 @app.post("/api/invoice-batch/preview")
 async def invoice_batch_preview(file: UploadFile = File(...)):
-    """출고기안 업로드 → 고객별로 그룹핑 + 출고일자별 환율 적용"""
+    """출고기안 업로드 → 고객별 그룹핑 + 환율 적용. 블로킹 작업은 스레드풀에서 실행해 이벤트 루프를 막지 않는다."""
+    from starlette.concurrency import run_in_threadpool
     contents = await file.read()
+    return await run_in_threadpool(_invoice_batch_compute, contents)
+
+
+def _invoice_batch_compute(contents: bytes):
     xls = pd.ExcelFile(io.BytesIO(contents), engine="openpyxl")
 
     target = None
@@ -3740,7 +3763,7 @@ BACKLOG_PRD = "PRD"
 BACKLOG_HEADER_SCAN_LIMIT = 10  # 첫 10행 안에서 헤더 자동 탐지
 
 BACKLOG_OUT_COLS = [
-    "PART#", "End Customer Name", "ODM/SubCon Name", "Customer PO#",
+    "Mchp Catalog Part Number", "End Customer Name", "ODM/SubCon Name", "Customer PO#",
     "SO#", "Quote No.", "Qty Due", "Unit Price", "Amount Due",
     "ORD", "CRD", "PRD",
     "일정변동 현황", "변경전 일정", "변경일자",
@@ -3850,7 +3873,7 @@ def _backlog_build_changed(before: dict, after: dict):
             continue
         status = "PUSH-OUT" if delta > 0 else "PULL-IN"
         rec = {
-            "PART#": _backlog_get(a_row, a_idx, "PART#"),
+            "Mchp Catalog Part Number": _backlog_get(a_row, a_idx, "PART#"),
             "End Customer Name": _backlog_get(a_row, a_idx, "End Customer Name"),
             "ODM/SubCon Name": _backlog_get(a_row, a_idx, "ODM/SubCon Name"),
             "Customer PO#": _backlog_get(a_row, a_idx, "Customer PO#"),
@@ -4277,12 +4300,17 @@ async def inventory_analysis_export(request: Request):
         s = _num(it.get("recommended")) - _num(it.get("stock"))
         return round(s, 2) if is_short(it) else 0
 
-    groups = [
-        ("A등급", [x for x in items if x.get("abc") == "A"]),
-        ("B등급", [x for x in items if x.get("abc") == "B"]),
-        ("C등급", [x for x in items if x.get("abc") == "C"]),
-        ("재고부족", [x for x in items if is_short(x)]),
-    ]
+    if data.get("single"):
+        # 화면에서 필터한 "필요한 것만" 단일 시트로 추출 (프론트가 이미 거른 items 전달)
+        _lbl = (str(data.get("label") or "추출")).strip()[:20] or "추출"
+        groups = [(_lbl, items)]
+    else:
+        groups = [
+            ("A등급", [x for x in items if x.get("abc") == "A"]),
+            ("B등급", [x for x in items if x.get("abc") == "B"]),
+            ("C등급", [x for x in items if x.get("abc") == "C"]),
+            ("재고부족", [x for x in items if is_short(x)]),
+        ]
 
     header_fill = PatternFill(start_color="DDEBF7", end_color="DDEBF7", fill_type="solid")
     short_fill = PatternFill(start_color="FFE1E4", end_color="FFE1E4", fill_type="solid")
@@ -4333,7 +4361,8 @@ async def inventory_analysis_export(request: Request):
     wb.save(output)
     output.seek(0)
     from urllib.parse import quote
-    fname = f"재고분석_분류별_영업4실_{datetime.now().strftime('%y%m%d')}.xlsx"
+    _tag = ((str(data.get("label") or "추출")).strip()[:20] or "추출") if data.get("single") else "분류별"
+    fname = f"재고분석_{_tag}_영업4실_{datetime.now().strftime('%y%m%d')}.xlsx"
     fname_enc = quote(fname)
     return StreamingResponse(
         output,
@@ -4377,24 +4406,57 @@ def _fs_clean(v):
     return v
 
 
+def _fs_decrypt(contents: bytes, passwords=("9671", "VelvetSweatshop", "")):
+    """암호가 걸린 xlsx(OLE2 암호화 컨테이너)면 복호화해 평문 bytes 반환.
+    일반(비암호) xlsx(ZIP, 'PK\\x03\\x04')는 그대로 반환.
+    """
+    # OLE2 compound-file 매직 = 암호화된 OOXML. 비암호 xlsx 는 ZIP 시그니처.
+    if contents[:8] != b"\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1":
+        return contents
+    try:
+        import msoffcrypto
+    except ImportError:
+        raise ValueError("암호가 걸린 엑셀입니다. 서버에 'msoffcrypto-tool' 패키지 설치가 필요합니다.")
+    last_err = None
+    for pw in passwords:
+        try:
+            off = msoffcrypto.OfficeFile(io.BytesIO(contents))
+            off.load_key(password=pw)
+            out = io.BytesIO()
+            off.decrypt(out)
+            return out.getvalue()
+        except Exception as e:
+            last_err = e
+            continue
+    raise ValueError(f"암호 해제 실패(비밀번호 확인 필요): {last_err}")
+
+
 def _fs_load_actuals(contents: bytes):
     """실적 엑셀 파싱.
-    헤더 예: Month | 출고일자 | Vendor | 담당자 | Customer | 거래처코드 | MPN | QTY | 매입가(BC) | 매출가(RS)
-    aggregate by (Customer, MPN), sum(QTY × 매출가(RS)).
+    헤더 예: Month | 계산서발행일자 | Vendor | 담당자 | Customer | 거래처코드 | MPN | QTY | BP($) | SP($)
+    (구 항목명: 출고일자 / 매입가(BC) / 매출가(RS) 도 그대로 인식)
+    aggregate by (Customer, MPN), sum(QTY × SP($)).
     """
     import openpyxl as _xl
+    contents = _fs_decrypt(contents)
     bio = io.BytesIO(contents)
     wb = _xl.load_workbook(bio, data_only=True)
-    ws = wb.active
 
+    # 활성 탭(wb.active)만 보지 않고 모든 시트를 스캔해 데이터 헤더가 있는 시트를 고른다.
+    # SUMMARY / Sheet1 같은 요약·피벗 시트가 있어도(또는 그게 활성 탭이어도) 에러 없이 통과.
+    ws = None
     header_row = None
-    for ri in range(1, min(12, ws.max_row + 1)):
-        vals = [str(c.value).strip() if c.value is not None else "" for c in ws[ri]]
-        if "Customer" in vals and "MPN" in vals and "QTY" in vals:
-            header_row = ri
+    for sheet in wb.worksheets:
+        for ri in range(1, min(12, sheet.max_row + 1)):
+            vals = [str(c.value).strip() if c.value is not None else "" for c in sheet[ri]]
+            if "Customer" in vals and "MPN" in vals and "QTY" in vals:
+                ws = sheet
+                header_row = ri
+                break
+        if ws is not None:
             break
-    if header_row is None:
-        raise ValueError("실적 파일에서 헤더(Customer/MPN/QTY)를 찾지 못했습니다.")
+    if ws is None:
+        raise ValueError("실적 파일에서 헤더(Customer/MPN/QTY)가 있는 시트를 찾지 못했습니다. (SUMMARY 등 요약 시트만 있는지 확인)")
 
     hdr = [str(c.value).strip() if c.value is not None else "" for c in ws[header_row]]
 
@@ -4412,11 +4474,12 @@ def _fs_load_actuals(contents: bytes):
     idx_month = col_of("Month", required=False)
     idx_rs = -1
     for i, h in enumerate(hdr):
-        if "매출가" in h or h == "RS":
+        hn = h.replace(" ", "").upper()
+        if "매출가" in h or h == "RS" or hn in ("SP($)", "SP", "SP$"):
             idx_rs = i
             break
     if idx_rs == -1:
-        raise ValueError("실적 파일에 '매출가(RS)' 컬럼이 없습니다.")
+        raise ValueError("실적 파일에 '매출가(RS)' 또는 'SP($)' 컬럼이 없습니다.")
 
     agg = {}
     for r in ws.iter_rows(min_row=header_row + 1, values_only=True):
@@ -4448,6 +4511,7 @@ def _fs_load_fcst(contents: bytes):
     row3: 담당자|VENDOR|VENDOR2|Customer|MPN|증감사유|BC|RS|Q'ty|BC AMT|RS AMT|GP × N개월
     """
     import openpyxl as _xl
+    contents = _fs_decrypt(contents)
     bio = io.BytesIO(contents)
     wb = _xl.load_workbook(bio, data_only=True)
     if _FCST_SHEET not in wb.sheetnames:

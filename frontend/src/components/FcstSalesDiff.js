@@ -249,7 +249,7 @@ function SalesCompareView({ fcstFile, setFcstFile }) {
           />
           <div style={{ alignSelf: "center", color: T.text3, fontSize: 22, textAlign: "center" }}>↔</div>
           <FileSlot
-            label="실적" accent={T.pos} hint="월 실적 raw 엑셀 · 헤더 Month/Customer/MPN/QTY/매출가(RS)"
+            label="실적" accent={T.pos} hint="월 실적 raw 엑셀 · 헤더 Month/Customer/MPN/QTY/SP($) · 암호 파일 자동 해제"
             file={actualFile} setter={setActualFile} inputRef={actualRef}
             drag={dragA} setDrag={setDragA} onDrop={acceptDrop} clearPreview={() => setData(null)}
           />
@@ -862,7 +862,7 @@ function EmptyState() {
       </div>
       <div style={{ padding: "20px 28px", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
         <Step n="1" title="입력 파일 업로드"
-          body="FCST 파일(Sales Revenue 시트 · 3개월 블록)과 월 실적 파일(Customer/MPN/QTY/매출가)을 위 슬롯에 드래그하세요." />
+          body="FCST 파일(Sales Revenue 시트 · 3개월 블록)과 월 실적 파일(Customer/MPN/QTY/SP($))을 위 슬롯에 드래그하세요. 암호 걸린 파일도 자동으로 열립니다." />
         <Step n="2" title="비교 실행"
           body="(Customer + MPN) 키로 자동 매칭. 업체명 정규화로 '(주)·주식회사' 표기 차이는 자동 흡수됩니다." />
         <Step n="3" title="결과 확인 & 내보내기"
