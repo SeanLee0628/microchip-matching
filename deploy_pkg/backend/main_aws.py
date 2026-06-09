@@ -1116,7 +1116,7 @@ def _fetch_koreaexim_rate(yyyymmdd: str):
         return None
     try:
         r = http_requests2.get(
-            "https://www.koreaexim.go.kr/site/program/financial/exchangeJSON",
+            "https://oapi.koreaexim.go.kr/site/program/financial/exchangeJSON",
             params={"authkey": authkey, "searchdate": yyyymmdd, "data": "AP01"},
             timeout=4, verify=False,
         )
