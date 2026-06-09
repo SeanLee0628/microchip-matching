@@ -4531,7 +4531,7 @@ def _fs_load_fcst(contents: bytes):
     month_blocks = []
     for mi, (label, start) in enumerate(months):
         end = months[mi + 1][1] if mi + 1 < len(months) else len(row3)
-        block = {"label": label, "start": start, "end": end, "q_ty": -1, "rs_amt": -1}
+        block = {"label": label, "start": start, "end": end, "q_ty": -1, "rs_amt": -1, "gp": -1}
         for ci in range(start, end):
             h = row3[ci] if ci < len(row3) else None
             if not h:
@@ -4541,6 +4541,8 @@ def _fs_load_fcst(contents: bytes):
                 block["q_ty"] = ci
             elif hs == "RS AMT":
                 block["rs_amt"] = ci
+            elif hs == "GP":
+                block["gp"] = ci
         month_blocks.append(block)
 
     static = {}
@@ -4575,9 +4577,11 @@ def _fs_load_fcst(contents: bytes):
         for mb in month_blocks:
             qty = _fs_float(r[mb["q_ty"]] if 0 <= mb["q_ty"] < len(r) else 0)
             amt = _fs_float(r[mb["rs_amt"]] if 0 <= mb["rs_amt"] < len(r) else 0)
-            m = rec["months"].setdefault(mb["label"], {"qty": 0.0, "rs_amt": 0.0})
+            gp = _fs_float(r[mb["gp"]] if 0 <= mb["gp"] < len(r) else 0)
+            m = rec["months"].setdefault(mb["label"], {"qty": 0.0, "rs_amt": 0.0, "gp": 0.0})
             m["qty"] += qty
             m["rs_amt"] += amt
+            m["gp"] += gp
 
     return {"by_key": by_key, "months": [mb["label"] for mb in month_blocks]}
 
@@ -4885,6 +4889,7 @@ def _fs_drift_compare(prev_fcst, curr_fcst):
 
     rows = []
     monthly = {m: {"prev": 0.0, "curr": 0.0} for m in months}
+    gp_monthly = {m: {"prev": 0.0, "curr": 0.0} for m in months}
 
     for key in all_keys:
         p = prev_fcst["by_key"].get(key)
@@ -4896,6 +4901,10 @@ def _fs_drift_compare(prev_fcst, curr_fcst):
         prev_total = sum((p["months"].get(m, {"rs_amt": 0})["rs_amt"] for m in months)) if p else 0.0
         curr_total = sum((c["months"].get(m, {"rs_amt": 0})["rs_amt"] for m in months)) if c else 0.0
         delta = curr_total - prev_total
+
+        prev_gp = sum(((p["months"].get(m) or {}).get("gp", 0) for m in months)) if p else 0.0
+        curr_gp = sum(((c["months"].get(m) or {}).get("gp", 0) for m in months)) if c else 0.0
+        gp_delta = curr_gp - prev_gp
 
         if not p and c:
             status = "신규"
@@ -4920,16 +4929,24 @@ def _fs_drift_compare(prev_fcst, curr_fcst):
             "금주합계": round(curr_total, 2),
             "△": round(delta, 2),
             "△%": delta_pct,
+            "GP전주": round(prev_gp, 2),
+            "GP금주": round(curr_gp, 2),
+            "GP△": round(gp_delta, 2),
             "상태": status,
         }
         for m in months:
-            p_m = p["months"].get(m, {"qty": 0, "rs_amt": 0}) if p else {"qty": 0, "rs_amt": 0}
-            c_m = c["months"].get(m, {"qty": 0, "rs_amt": 0}) if c else {"qty": 0, "rs_amt": 0}
-            row[f"{m}_prev"] = round(p_m["rs_amt"], 2)
-            row[f"{m}_curr"] = round(c_m["rs_amt"], 2)
-            row[f"{m}_△"] = round(c_m["rs_amt"] - p_m["rs_amt"], 2)
-            monthly[m]["prev"] += p_m["rs_amt"]
-            monthly[m]["curr"] += c_m["rs_amt"]
+            p_m = (p["months"].get(m) or {}) if p else {}
+            c_m = (c["months"].get(m) or {}) if c else {}
+            p_rs, c_rs = p_m.get("rs_amt", 0), c_m.get("rs_amt", 0)
+            p_gp, c_gp = p_m.get("gp", 0), c_m.get("gp", 0)
+            row[f"{m}_prev"] = round(p_rs, 2)
+            row[f"{m}_curr"] = round(c_rs, 2)
+            row[f"{m}_△"] = round(c_rs - p_rs, 2)
+            row[f"{m}_gp_△"] = round(c_gp - p_gp, 2)
+            monthly[m]["prev"] += p_rs
+            monthly[m]["curr"] += c_rs
+            gp_monthly[m]["prev"] += p_gp
+            gp_monthly[m]["curr"] += c_gp
         rows.append(row)
 
     rows.sort(key=lambda r: abs(r["△"]), reverse=True)
@@ -4940,18 +4957,29 @@ def _fs_drift_compare(prev_fcst, curr_fcst):
         curr_v = monthly[m]["curr"]
         d = curr_v - prev_v
         dp = round(d / prev_v * 100, 1) if prev_v else None
+        gp_prev_v = gp_monthly[m]["prev"]
+        gp_curr_v = gp_monthly[m]["curr"]
+        gp_d = gp_curr_v - gp_prev_v
         monthly_kpi.append({
             "month": m,
             "prev": round(prev_v, 2),
             "curr": round(curr_v, 2),
             "delta": round(d, 2),
             "delta_pct": dp,
+            "gp_prev": round(gp_prev_v, 2),
+            "gp_curr": round(gp_curr_v, 2),
+            "gp_delta": round(gp_d, 2),
         })
 
     total_prev = sum(mk["prev"] for mk in monthly_kpi)
     total_curr = sum(mk["curr"] for mk in monthly_kpi)
     total_delta = total_curr - total_prev
     total_pct = round(total_delta / total_prev * 100, 1) if total_prev else None
+
+    gp_total_prev = sum(mk["gp_prev"] for mk in monthly_kpi)
+    gp_total_curr = sum(mk["gp_curr"] for mk in monthly_kpi)
+    gp_total_delta = gp_total_curr - gp_total_prev
+    gp_total_pct = round(gp_total_delta / gp_total_prev * 100, 1) if gp_total_prev else None
 
     counts = {"증가": 0, "감소": 0, "신규": 0, "제거": 0, "무변동": 0}
     for r in rows:
@@ -4961,11 +4989,13 @@ def _fs_drift_compare(prev_fcst, curr_fcst):
     for r in rows:
         o = r["담당자"] or "(미지정)"
         d = owners.setdefault(o, {
-            "owner": o, "prev": 0.0, "curr": 0.0, "items": 0,
+            "owner": o, "prev": 0.0, "curr": 0.0, "gp_prev": 0.0, "gp_curr": 0.0, "items": 0,
             "increased": 0, "decreased": 0, "new": 0, "removed": 0, "unchanged": 0,
         })
         d["prev"] += r["전주합계"]
         d["curr"] += r["금주합계"]
+        d["gp_prev"] += r["GP전주"]
+        d["gp_curr"] += r["GP금주"]
         d["items"] += 1
         s = r["상태"]
         if s == "증가": d["increased"] += 1
@@ -4978,6 +5008,9 @@ def _fs_drift_compare(prev_fcst, curr_fcst):
         d["curr"] = round(d["curr"], 2)
         d["delta"] = round(d["curr"] - d["prev"], 2)
         d["delta_pct"] = round(d["delta"] / d["prev"] * 100, 1) if d["prev"] else None
+        d["gp_prev"] = round(d["gp_prev"], 2)
+        d["gp_curr"] = round(d["gp_curr"], 2)
+        d["gp_delta"] = round(d["gp_curr"] - d["gp_prev"], 2)
     owners_list = sorted(owners.values(), key=lambda x: abs(x["delta"]), reverse=True)
 
     return {
@@ -4988,6 +5021,10 @@ def _fs_drift_compare(prev_fcst, curr_fcst):
             "total_curr": round(total_curr, 2),
             "total_delta": round(total_delta, 2),
             "total_delta_pct": total_pct,
+            "gp_total_prev": round(gp_total_prev, 2),
+            "gp_total_curr": round(gp_total_curr, 2),
+            "gp_total_delta": round(gp_total_delta, 2),
+            "gp_total_delta_pct": gp_total_pct,
             "counts": counts,
         },
         "owners": owners_list,
@@ -5048,7 +5085,7 @@ async def fcst_drift_export(prev: UploadFile = File(...), curr: UploadFile = Fil
     kpi = result["kpi"]
     # 월별
     ws_s["A3"] = "월별 변동"; ws_s["A3"].font = Font(bold=True, size=12)
-    mhdr = ["월", "전주 RS AMT", "금주 RS AMT", "△", "△ %"]
+    mhdr = ["월", "전주 RS AMT", "금주 RS AMT", "△", "△ %", "전주 GP", "금주 GP", "GP △"]
     for j, h in enumerate(mhdr, 1):
         c = ws_s.cell(row=4, column=j, value=h); c.font = BOLD_W; c.fill = HDR_FILL; c.alignment = CENTER
     for i, mk in enumerate(kpi["monthly"], 5):
@@ -5057,12 +5094,18 @@ async def fcst_drift_export(prev: UploadFile = File(...), curr: UploadFile = Fil
         ws_s.cell(row=i, column=3, value=mk["curr"])
         ws_s.cell(row=i, column=4, value=mk["delta"])
         ws_s.cell(row=i, column=5, value=mk["delta_pct"])
+        ws_s.cell(row=i, column=6, value=mk["gp_prev"])
+        ws_s.cell(row=i, column=7, value=mk["gp_curr"])
+        ws_s.cell(row=i, column=8, value=mk["gp_delta"])
     row_total = 5 + len(kpi["monthly"])
     ws_s.cell(row=row_total, column=1, value="합계").font = Font(bold=True)
     ws_s.cell(row=row_total, column=2, value=kpi["total_prev"]).font = Font(bold=True)
     ws_s.cell(row=row_total, column=3, value=kpi["total_curr"]).font = Font(bold=True)
     ws_s.cell(row=row_total, column=4, value=kpi["total_delta"]).font = Font(bold=True)
     ws_s.cell(row=row_total, column=5, value=kpi["total_delta_pct"]).font = Font(bold=True)
+    ws_s.cell(row=row_total, column=6, value=kpi["gp_total_prev"]).font = Font(bold=True)
+    ws_s.cell(row=row_total, column=7, value=kpi["gp_total_curr"]).font = Font(bold=True)
+    ws_s.cell(row=row_total, column=8, value=kpi["gp_total_delta"]).font = Font(bold=True)
 
     # 상태 분포
     row_status = row_total + 3
@@ -5074,7 +5117,7 @@ async def fcst_drift_export(prev: UploadFile = File(...), curr: UploadFile = Fil
     # 담당자별
     row_owner = row_status + 2 + len(kpi["counts"]) + 2
     ws_s.cell(row=row_owner, column=1, value="담당자별 변동").font = Font(bold=True, size=12)
-    ohdr = ["담당자", "전주", "금주", "△", "△ %", "건수", "증가", "감소", "신규", "제거"]
+    ohdr = ["담당자", "전주", "금주", "△", "△ %", "건수", "증가", "감소", "신규", "제거", "전주 GP", "금주 GP", "GP △"]
     for j, h in enumerate(ohdr, 1):
         c = ws_s.cell(row=row_owner + 1, column=j, value=h); c.font = BOLD_W; c.fill = HDR_FILL; c.alignment = CENTER
     for i, o in enumerate(result["owners"], row_owner + 2):
@@ -5088,13 +5131,16 @@ async def fcst_drift_export(prev: UploadFile = File(...), curr: UploadFile = Fil
         ws_s.cell(row=i, column=8, value=o["decreased"])
         ws_s.cell(row=i, column=9, value=o["new"])
         ws_s.cell(row=i, column=10, value=o["removed"])
+        ws_s.cell(row=i, column=11, value=o["gp_prev"])
+        ws_s.cell(row=i, column=12, value=o["gp_curr"])
+        ws_s.cell(row=i, column=13, value=o["gp_delta"])
 
     # Detail
     ws_d = wb.create_sheet("Detail")
-    fixed = ["담당자", "Customer", "MPN", "전주합계", "금주합계", "△", "△%", "상태"]
+    fixed = ["담당자", "Customer", "MPN", "전주합계", "금주합계", "△", "△%", "GP전주", "GP금주", "GP△", "상태"]
     monthly_cols = []
     for m in result["months"]:
-        monthly_cols += [f"{m}_prev", f"{m}_curr", f"{m}_△"]
+        monthly_cols += [f"{m}_prev", f"{m}_curr", f"{m}_△", f"{m}_gp_△"]
     cols = fixed + monthly_cols
     for j, h in enumerate(cols, 1):
         c = ws_d.cell(row=1, column=j, value=h); c.font = BOLD_W; c.fill = HDR_FILL; c.alignment = CENTER

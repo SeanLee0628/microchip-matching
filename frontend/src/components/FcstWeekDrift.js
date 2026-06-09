@@ -173,12 +173,20 @@ function FcstWeekDrift({ currFile, setCurrFile }) {
 
       {data && (
         <>
-          {/* 월별 △ KPI + Total */}
+          {/* 월별 △ KPI + Total (RS AMT) */}
+          <div style={{ display: "grid", gridTemplateColumns: `repeat(${data.kpi.monthly.length + 1}, 1fr)`, gap: 12, marginBottom: 12 }}>
+            {data.kpi.monthly.map((mk) => (
+              <DeltaKpi key={mk.month} title={`${mk.month} RS AMT 변동`} prev={mk.prev} curr={mk.curr} delta={mk.delta} deltaPct={mk.delta_pct} />
+            ))}
+            <DeltaKpi title="3개월 RS AMT 합계" prev={data.kpi.total_prev} curr={data.kpi.total_curr} delta={data.kpi.total_delta} deltaPct={data.kpi.total_delta_pct} emphasize />
+          </div>
+          {/* 월별 △ KPI + Total (GP) */}
           <div style={{ display: "grid", gridTemplateColumns: `repeat(${data.kpi.monthly.length + 1}, 1fr)`, gap: 12, marginBottom: 16 }}>
             {data.kpi.monthly.map((mk) => (
-              <DeltaKpi key={mk.month} title={`${mk.month} FCST 변동`} prev={mk.prev} curr={mk.curr} delta={mk.delta} deltaPct={mk.delta_pct} />
+              <DeltaKpi key={mk.month} title={`${mk.month} GP 변동`} prev={mk.gp_prev} curr={mk.gp_curr} delta={mk.gp_delta}
+                deltaPct={mk.gp_prev ? (mk.gp_delta / mk.gp_prev * 100) : null} />
             ))}
-            <DeltaKpi title="3개월 합계 변동" prev={data.kpi.total_prev} curr={data.kpi.total_curr} delta={data.kpi.total_delta} deltaPct={data.kpi.total_delta_pct} emphasize />
+            <DeltaKpi title="3개월 GP 합계" prev={data.kpi.gp_total_prev} curr={data.kpi.gp_total_curr} delta={data.kpi.gp_total_delta} deltaPct={data.kpi.gp_total_delta_pct} emphasize />
           </div>
 
           {/* 상태 분포 */}
@@ -225,6 +233,7 @@ function FcstWeekDrift({ currFile, setCurrFile }) {
                     <Th right>금주</Th>
                     <Th right>△</Th>
                     <Th right>△ %</Th>
+                    <Th right>GP △</Th>
                     <Th>분포</Th>
                   </tr>
                 </thead>
@@ -241,6 +250,7 @@ function FcstWeekDrift({ currFile, setCurrFile }) {
                       <Td right num>{fmtUSD0(o.curr)}</Td>
                       <Td right num color={o.delta >= 0 ? T.pos : T.neg}>{fmtSign(o.delta)}</Td>
                       <Td right num color={o.delta >= 0 ? T.pos : T.neg}>{fmtSignPct(o.delta_pct)}</Td>
+                      <Td right num color={o.gp_delta >= 0 ? T.pos : T.neg}>{fmtSign(o.gp_delta)}</Td>
                       <Td><DivergingBar value={o.delta} max={maxOwnerDelta} /></Td>
                     </tr>
                   ))}
@@ -337,12 +347,16 @@ function FcstWeekDrift({ currFile, setCurrFile }) {
                     <ThH right>금주합계</ThH>
                     <ThH right>△</ThH>
                     <ThH right>△%</ThH>
+                    <ThH right>GP 전주</ThH>
+                    <ThH right>GP 금주</ThH>
+                    <ThH right>GP △</ThH>
                     <ThH center>상태</ThH>
                     {data.months.map((m) => (
                       <React.Fragment key={m}>
                         <ThH right>{m} 전주</ThH>
                         <ThH right>{m} 금주</ThH>
                         <ThH right>{m} △</ThH>
+                        <ThH right>{m} GP△</ThH>
                       </React.Fragment>
                     ))}
                   </tr>
@@ -350,7 +364,7 @@ function FcstWeekDrift({ currFile, setCurrFile }) {
                 <tbody>
                   {filtered.length === 0 ? (
                     <tr>
-                      <td colSpan={8 + 3 * data.months.length}
+                      <td colSpan={11 + 4 * data.months.length}
                         style={{ padding: 40, textAlign: "center", color: T.text3, fontSize: 13 }}>
                         조건에 맞는 라인이 없습니다.
                       </td>
@@ -369,6 +383,9 @@ function FcstWeekDrift({ currFile, setCurrFile }) {
                         <Td right num color={
                           r["△%"] == null ? T.text3 : r["△%"] >= 0 ? T.pos : T.neg
                         }>{fmtSignPct(r["△%"])}</Td>
+                        <Td right num>{fmtUSD2(r["GP전주"])}</Td>
+                        <Td right num>{fmtUSD2(r["GP금주"])}</Td>
+                        <Td right num color={r["GP△"] >= 0 ? T.pos : T.neg}>{fmtSign(r["GP△"])}</Td>
                         <Td center>
                           <span style={{
                             display: "inline-flex", alignItems: "center", gap: 5,
@@ -386,6 +403,9 @@ function FcstWeekDrift({ currFile, setCurrFile }) {
                             <Td right num color={T.text2}>{fmtUSD2(r[`${m}_curr`])}</Td>
                             <Td right num color={r[`${m}_△`] === 0 ? T.text3 : r[`${m}_△`] > 0 ? T.pos : T.neg}>
                               {r[`${m}_△`] === 0 ? "—" : fmtSign(r[`${m}_△`])}
+                            </Td>
+                            <Td right num color={r[`${m}_gp_△`] === 0 ? T.text3 : r[`${m}_gp_△`] > 0 ? T.pos : T.neg}>
+                              {r[`${m}_gp_△`] === 0 ? "—" : fmtSign(r[`${m}_gp_△`])}
                             </Td>
                           </React.Fragment>
                         ))}
@@ -632,7 +652,7 @@ function EmptyState() {
       <div style={{ padding: "20px 28px", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
         <Step n="1" title="전주 FCST 업로드" body="지난주에 SharePoint에 올렸던 동일 양식의 FCST 엑셀 (Sales Revenue 시트)." />
         <Step n="2" title="금주 FCST 업로드" body="이번주 갱신된 FCST 엑셀. 둘 다 동일 구조여야 합니다." />
-        <Step n="3" title="변동 분석" body="(Customer + MPN) 기준 매칭 · 월별 RS AMT 변동 + 신규/제거 자동 분류." />
+        <Step n="3" title="변동 분석" body="(Customer + MPN) 기준 매칭 · 월별 RS AMT + GP 변동 + 신규/제거 자동 분류." />
       </div>
       <div style={{ padding: "14px 28px", background: T.bg, borderTop: `1px solid ${T.border}`, fontSize: 11.5, color: T.text2, lineHeight: 1.7 }}>
         <b>상태 분류</b>: 증가(전·금주 모두 존재 + 금주 ↑) · 감소(금주 ↓) · 신규(금주만 존재) · 제거(전주만 존재) · 무변동
