@@ -912,8 +912,10 @@ def _auo_natural_key(rec):
 
 
 def _open_excel_any(contents: bytes):
-    """업로드 엑셀을 형식 무관하게 연다. .xlsx(openpyxl) → 구버전 .xls(xlrd) 순서로 시도.
-    둘 다 실패하면 사용자용 ValueError 발생."""
+    """업로드 엑셀을 형식 무관하게 연다.
+    암호 파일이면 먼저 복호화 → .xlsx(openpyxl) → 구버전 .xls(xlrd) 순서로 시도.
+    복호화/열기 실패하면 사용자용 ValueError 발생."""
+    contents = _fs_decrypt(contents)  # 암호 걸린 파일이면 복호화(실패 시 ValueError)
     for eng in ("openpyxl", "xlrd"):
         try:
             return pd.ExcelFile(io.BytesIO(contents), engine=eng)
@@ -4424,7 +4426,7 @@ def _fs_clean(v):
     return v
 
 
-def _fs_decrypt(contents: bytes, passwords=("9671", "VelvetSweatshop", "")):
+def _fs_decrypt(contents: bytes, passwords=("9671", "9176", "VelvetSweatshop", "")):
     """암호가 걸린 xlsx(OLE2 암호화 컨테이너)면 복호화해 평문 bytes 반환.
     일반(비암호) xlsx(ZIP, 'PK\\x03\\x04')는 그대로 반환.
     """
