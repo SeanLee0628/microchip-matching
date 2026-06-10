@@ -911,10 +911,28 @@ def _auo_natural_key(rec):
     return f"po:{po}#{pn}#{pod}#{qty}"
 
 
+def _open_excel_any(contents: bytes):
+    """업로드 엑셀을 형식 무관하게 연다. .xlsx(openpyxl) → 구버전 .xls(xlrd) 순서로 시도.
+    둘 다 실패하면 사용자용 ValueError 발생."""
+    for eng in ("openpyxl", "xlrd"):
+        try:
+            return pd.ExcelFile(io.BytesIO(contents), engine=eng)
+        except Exception:
+            continue
+    raise ValueError(
+        "엑셀 파일을 열 수 없습니다. 유효한 .xlsx 파일이 아닐 수 있습니다 "
+        "(구버전 .xls·손상·다른 형식). 엑셀에서 '다른 이름으로 저장 → Excel 통합 문서(*.xlsx)'로 "
+        "저장한 뒤 다시 올려주세요."
+    )
+
+
 @app.post("/api/auo/upload")
 async def upload_auo(file: UploadFile = File(...)):
     contents = await file.read()
-    xls = pd.ExcelFile(io.BytesIO(contents), engine="openpyxl")
+    try:
+        xls = _open_excel_any(contents)
+    except ValueError as e:
+        return {"error": str(e)}
 
     target = None
     for name in xls.sheet_names:
