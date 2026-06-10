@@ -1,7 +1,11 @@
 import React, { useState } from "react";
 import axios from "axios";
 
-const API_URL = process.env.REACT_APP_API_URL || "";
+// 출고 자동등록(xlwings)은 "지금 PC에서 열려 있는 Excel"을 제어하는 로컬 전용 기능이라
+// 항상 사용자 PC에서 도는 로컬 백엔드(main.py, 포트 8001)로 요청해야 한다.
+// 클라우드(main_aws.py)엔 /api/jaejae 라우트가 없어서 SPA 폴백(GET) 때문에 POST가 405로 깨진다.
+// REACT_APP_JAEJAE_API 로 포트/호스트 덮어쓰기 가능.
+const API_URL = process.env.REACT_APP_JAEJAE_API || "http://localhost:8001";
 
 function Materials() {
   const [loading, setLoading] = useState(false);
@@ -24,7 +28,10 @@ function Materials() {
         alert(`✅ 되돌리기 완료: ${res.data.summary || "OK"}`);
       }
     } catch (e) {
-      alert("되돌리기 오류: " + e.message);
+      const hint = !e.response
+        ? "로컬 백엔드(main.py, 포트 8001)에 연결할 수 없습니다. 이 PC에서 서버를 실행했는지 확인하세요."
+        : e.message;
+      alert("되돌리기 오류: " + hint);
     } finally { setUndoBusy(false); }
   };
 
@@ -41,7 +48,11 @@ function Materials() {
         setResult({ ...res.data, mode: "direct" });
       }
     } catch (e) {
-      setError("실패: " + (e.response?.data?.detail || e.message));
+      const isConn = !e.response; // 응답 자체가 없음 = 로컬 백엔드 미실행/연결 거부
+      const hint = isConn
+        ? "로컬 백엔드(main.py, 포트 8001)에 연결할 수 없습니다. 이 PC에서 '자재_AI자동등록' 서버(main.py)를 먼저 실행하고, 처리할 Excel을 열어둔 상태인지 확인하세요."
+        : (e.response?.data?.detail || e.message);
+      setError("실패: " + hint);
     } finally { setLoading(false); }
   };
 
