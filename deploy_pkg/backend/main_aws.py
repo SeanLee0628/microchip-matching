@@ -1971,10 +1971,19 @@ def _to_clean(v):
 async def sales_report_preview(file: UploadFile = File(...)):
     """영업실적 데이터 양식 → 보고 양식으로 변환 (미리보기)."""
     contents = await file.read()
+    # 엑셀 파일 먼저 연다 (엔진 명시 — EB에서 openpyxl 누락 시 진짜 에러를 드러냄)
     try:
-        df = pd.read_excel(io.BytesIO(contents), sheet_name="DATA", header=0)
-    except Exception:
-        return {"error": "DATA 시트를 찾을 수 없습니다."}
+        xls = pd.ExcelFile(io.BytesIO(contents), engine="openpyxl")
+    except Exception as e:
+        return {"error": f"엑셀 읽기 실패: {e}"}
+    # 'DATA' 시트를 쓰되, 없으면 첫 시트로 폴백 (로컬 main.py 와 동일 동작)
+    sheet = "DATA" if "DATA" in xls.sheet_names else (xls.sheet_names[0] if xls.sheet_names else None)
+    if sheet is None:
+        return {"error": "시트가 없습니다."}
+    try:
+        df = pd.read_excel(xls, sheet_name=sheet, header=0)
+    except Exception as e:
+        return {"error": f"데이터 시트 읽기 실패: {e}"}
 
     rows = []
     for _, row in df.iterrows():
@@ -4118,6 +4127,7 @@ async def inventory_analysis(file: UploadFile = File(...)):
         except Exception as e:
             return {"error": f"파일 열기 실패: {e}"}
 
+        # 시트 자동 탐지
         inv_sheet = None
         ship_sheet = None
         for s in xl.sheet_names:
@@ -4131,6 +4141,7 @@ async def inventory_analysis(file: UploadFile = File(...)):
         if not ship_sheet:
             return {"error": f"'shipping' 시트를 찾을 수 없습니다. 시트 목록: {xl.sheet_names}"}
 
+        # 재고: 헤더 자동 탐색 (Part# 셀이 있는 행)
         df_inv_raw = pd.read_excel(bio, sheet_name=inv_sheet, header=None)
         inv_header_row = None
         for i in range(min(10, len(df_inv_raw))):
@@ -4143,6 +4154,7 @@ async def inventory_analysis(file: UploadFile = File(...)):
         bio.seek(0)
         df_inv = pd.read_excel(bio, sheet_name=inv_sheet, header=inv_header_row)
 
+        # 컬럼 표준화
         def find_col(df, patterns):
             for c in df.columns:
                 cl = str(c).strip().lower()
@@ -4152,9 +4164,11 @@ async def inventory_analysis(file: UploadFile = File(...)):
             return None
         inv_part_col = find_col(df_inv, ["part#", "part #", "p/n", "part"])
         inv_qty_col = find_col(df_inv, ["q'ty", "qty", "quantity"])
+        inv_price_col = find_col(df_inv, ["매입가", "매입단가", "단가", "unit price", "u/p", "price"])
         if not inv_part_col or not inv_qty_col:
             return {"error": f"재고 시트의 Part#/Q'ty 컬럼 식별 실패. 컬럼: {list(df_inv.columns)}"}
 
+        # 출고: 첫 행이 헤더
         bio.seek(0)
         df_ship = pd.read_excel(bio, sheet_name=ship_sheet)
         ship_date_col = find_col(df_ship, ["date"])
@@ -4163,27 +4177,35 @@ async def inventory_analysis(file: UploadFile = File(...)):
         if not (ship_date_col and ship_part_col and ship_qty_col):
             return {"error": f"출고 시트 컬럼 식별 실패. 컬럼: {list(df_ship.columns)}"}
 
+        # PART# 정규화
         def norm_pn(v):
             if v is None: return ""
             s = str(v).strip()
             if s in (".", "-", ""): return ""
             return s.upper().replace(" ", "")
 
-        inv_map = {}
+        # 재고 집계
+        inv_map = {}  # norm_pn -> {pn(원형), stock}
         for _, r in df_inv.iterrows():
             pn = norm_pn(r.get(inv_part_col))
             if not pn: continue
             qv = r.get(inv_qty_col)
             try:
                 q = float(qv) if qv is not None and str(qv).strip() not in (".", "", "-") else 0
-                if not (q == q):
+                if not (q == q):  # NaN check
                     q = 0
             except Exception:
                 q = 0
             if pn not in inv_map:
-                inv_map[pn] = {"pn": str(r.get(inv_part_col)).strip(), "stock": 0}
+                inv_map[pn] = {"pn": str(r.get(inv_part_col)).strip(), "stock": 0, "value": 0.0}
             inv_map[pn]["stock"] += q
+            # 매입가는 행마다 다를 수 있어 행별(재고×매입가)로 누적
+            if inv_price_col is not None:
+                pv = to_float(r.get(inv_price_col))
+                if pv is not None:
+                    inv_map[pn]["value"] += q * pv
 
+        # 출고 집계: pn -> {monthly: {ym: qty}, last: date, total: qty}
         ship_map = {}
         for _, r in df_ship.iterrows():
             pn = norm_pn(r.get(ship_part_col))
@@ -4199,7 +4221,7 @@ async def inventory_analysis(file: UploadFile = File(...)):
             qv = r.get(ship_qty_col)
             try:
                 q = float(qv) if qv is not None and str(qv).strip() not in (".", "", "-") else 0
-                if not (q == q):
+                if not (q == q):  # NaN check
                     q = 0
             except Exception:
                 q = 0
@@ -4212,19 +4234,25 @@ async def inventory_analysis(file: UploadFile = File(...)):
                 ship_map[pn]["last"] = d
             ship_map[pn]["total"] += q
 
+        # 전체 월 리스트 (최소~최대)
         all_months = set()
         for v in ship_map.values():
             all_months.update(v["monthly"].keys())
         months_sorted = sorted(all_months)
+
+        # 최근 6개월 식별
         recent6 = months_sorted[-6:] if len(months_sorted) >= 6 else months_sorted
 
+        # PART# 통합 (재고 또는 출고에 등장)
         all_pns = set(inv_map.keys()) | set(ship_map.keys())
 
+        # 6개월 누적 판매량 (ABC 기준)
         recent_total = {}
         for pn in all_pns:
             sm = ship_map.get(pn, {}).get("monthly", {})
             recent_total[pn] = sum(sm.get(m, 0) for m in recent6)
 
+        # ABC 분류 (파레토 70/20/10)
         sorted_by_total = sorted(all_pns, key=lambda p: recent_total[p], reverse=True)
         grand = sum(recent_total.values())
         abc_map = {}
@@ -4242,27 +4270,69 @@ async def inventory_analysis(file: UploadFile = File(...)):
             else:
                 abc_map[pn] = "C"
 
+        # 활동등급 산정 (재고계수 기반). 반환: (grade, coef|None)
+        def _activity_grade(stock, mavg, total6):
+            if total6 <= 0:                      # 6개월 무판매 → 비유동
+                return "E", None
+            coef = (stock / mavg) if mavg > 0 else None
+            if coef is None or coef > 100:       # 재고 과다 → 비유동
+                return "E", coef
+            if coef <= 6:
+                return "A", coef
+            if coef <= 10:
+                return "B", coef
+            if coef <= 15:
+                return "C", coef
+            return "D", coef                     # 15 < coef <= 100
+
+        # items 빌드
         items = []
         for pn in all_pns:
             inv = inv_map.get(pn, {})
             ship = ship_map.get(pn, {})
             stock = inv.get("stock", 0)
+            stock_value = inv.get("value", 0.0)
+            avg_price = (stock_value / stock) if stock else 0.0
             display_pn = inv.get("pn") or ship.get("pn") or pn
             monthly = ship.get("monthly", {})
             recent6_qty = [monthly.get(m, 0) for m in recent6]
             avg = (sum(recent6_qty) / len(recent6)) if recent6 else 0
+            total6 = recent_total[pn]
+            months_with_sales = sum(1 for q in recent6_qty if q > 0)
+            grade, coef = _activity_grade(stock, avg, total6)
+            liquidity = "비유동" if grade == "E" else "유동"
+            ai_candidate = total6 > 0 and months_with_sales <= 1  # 들쭉날쭉 저판매
             last = ship.get("last")
             items.append({
                 "pn": display_pn,
                 "stock": round(stock, 2),
+                "avg_price": round(avg_price, 4),
+                "stock_value": round(stock_value, 2),
                 "monthly_avg": round(avg, 2),
+                "stock_coef": round(coef, 2) if coef is not None else None,
+                "activity_grade": grade,
+                "liquidity": liquidity,
+                "months_with_sales": months_with_sales,
+                "ai_candidate": ai_candidate,
+                "ai_reason": None,
                 "last_sale": last.strftime("%Y-%m-%d") if last is not None else None,
                 "recommended": round(avg * 3, 2),
                 "abc": abc_map.get(pn, "C"),
-                "recent_total": round(recent_total[pn], 2),
+                "recent_total": round(total6, 2),
                 "monthly": [{"ym": m, "qty": float(monthly.get(m, 0))} for m in months_sorted],
             })
         items.sort(key=lambda x: x["recent_total"], reverse=True)
+
+        # 활동등급별 롤업 (부품수 · 재고금액 합계)
+        grade_rollup = {g: {"count": 0, "value": 0.0} for g in "ABCDE"}
+        for x in items:
+            g = x["activity_grade"]
+            grade_rollup[g]["count"] += 1
+            grade_rollup[g]["value"] += x["stock_value"]
+        for g in grade_rollup:
+            grade_rollup[g]["value"] = round(grade_rollup[g]["value"], 2)
+        liquid_value = round(sum(grade_rollup[g]["value"] for g in "ABCD"), 2)
+        nonliquid_value = grade_rollup["E"]["value"]
 
         return {
             "items": items,
@@ -4274,9 +4344,15 @@ async def inventory_analysis(file: UploadFile = File(...)):
                 "total_pns": len(items),
                 "with_stock": sum(1 for x in items if x["stock"] > 0),
                 "with_history": sum(1 for x in items if x["recent_total"] > 0),
+                "total_stock_value": round(sum(x["stock_value"] for x in items), 2),
+                "has_price": inv_price_col is not None,
                 "a_count": sum(1 for x in items if x["abc"] == "A"),
                 "b_count": sum(1 for x in items if x["abc"] == "B"),
                 "c_count": sum(1 for x in items if x["abc"] == "C"),
+                "grade_rollup": grade_rollup,
+                "liquid_value": liquid_value,
+                "nonliquid_value": nonliquid_value,
+                "ai_candidates": sum(1 for x in items if x["ai_candidate"]),
             },
         }
     except Exception as e:
@@ -4299,6 +4375,8 @@ async def inventory_analysis_export(request: Request):
     COLS = [
         ("pn", "P/N"),
         ("stock", "현재고"),
+        ("avg_price", "매입가"),
+        ("stock_value", "재고금액"),
         ("monthly_avg", "월평균 판매"),
         ("last_sale", "최근 판매일"),
         ("recommended", "적정재고"),
@@ -4320,24 +4398,19 @@ async def inventory_analysis_export(request: Request):
         s = _num(it.get("recommended")) - _num(it.get("stock"))
         return round(s, 2) if is_short(it) else 0
 
-    if data.get("single"):
-        # 화면에서 필터한 "필요한 것만" 단일 시트로 추출 (프론트가 이미 거른 items 전달)
-        _lbl = (str(data.get("label") or "추출")).strip()[:20] or "추출"
-        groups = [(_lbl, items)]
-    else:
-        groups = [
-            ("A등급", [x for x in items if x.get("abc") == "A"]),
-            ("B등급", [x for x in items if x.get("abc") == "B"]),
-            ("C등급", [x for x in items if x.get("abc") == "C"]),
-            ("재고부족", [x for x in items if is_short(x)]),
-        ]
+    groups = [
+        ("A등급", [x for x in items if x.get("abc") == "A"]),
+        ("B등급", [x for x in items if x.get("abc") == "B"]),
+        ("C등급", [x for x in items if x.get("abc") == "C"]),
+        ("재고부족", [x for x in items if is_short(x)]),
+    ]
 
     header_fill = PatternFill(start_color="DDEBF7", end_color="DDEBF7", fill_type="solid")
     short_fill = PatternFill(start_color="FFE1E4", end_color="FFE1E4", fill_type="solid")
     header_font = Font(name="맑은 고딕", size=9, bold=True)
     body_font = Font(name="맑은 고딕", size=9)
     center = Alignment(horizontal="center", vertical="center")
-    widths = [34, 12, 13, 13, 12, 12, 7]
+    widths = [34, 12, 11, 15, 13, 13, 12, 12, 7]
 
     wb = Workbook()
     wb.remove(wb.active)  # 기본 시트 제거
@@ -4353,6 +4426,8 @@ async def inventory_analysis_export(request: Request):
             vals = {
                 "pn": it.get("pn"),
                 "stock": _num(it.get("stock")),
+                "avg_price": _num(it.get("avg_price")),
+                "stock_value": _num(it.get("stock_value")),
                 "monthly_avg": _num(it.get("monthly_avg")),
                 "last_sale": it.get("last_sale") or "—",
                 "recommended": _num(it.get("recommended")),
@@ -4364,6 +4439,10 @@ async def inventory_analysis_export(request: Request):
                 cell.font = body_font
                 if k in ("stock", "monthly_avg", "recommended", "shortage"):
                     cell.number_format = "#,##0.##"
+                if k == "avg_price":
+                    cell.number_format = "#,##0.####"
+                if k == "stock_value":
+                    cell.number_format = "#,##0"
                 if k == "abc":
                     cell.alignment = center
                 if short and k == "shortage":
@@ -4381,8 +4460,7 @@ async def inventory_analysis_export(request: Request):
     wb.save(output)
     output.seek(0)
     from urllib.parse import quote
-    _tag = ((str(data.get("label") or "추출")).strip()[:20] or "추출") if data.get("single") else "분류별"
-    fname = f"재고분석_{_tag}_영업4실_{datetime.now().strftime('%y%m%d')}.xlsx"
+    fname = f"재고분석_분류별_영업4실_{datetime.now().strftime('%y%m%d')}.xlsx"
     fname_enc = quote(fname)
     return StreamingResponse(
         output,
@@ -4391,11 +4469,99 @@ async def inventory_analysis_export(request: Request):
     )
 
 
-# ==================== 영업FCST / 실제매출 비교 (5실) ====================
+@app.post("/api/inventory-analysis/ai-classify")
+async def inventory_analysis_ai_classify(request: Request):
+    """저판매 애매 부품(ai_candidate)을 Claude로 '유동 vs 비유동' 판정.
+    body: { items: [{pn, stock, monthly_avg, stock_coef, months_with_sales, monthly:[{ym,qty}]}] }
+    응답: { results: [{pn, liquidity('유동'|'비유동'), reason}], source }
+    키 없거나 실패 시 규칙 fallback(전부 비유동/E)로 안전 반환.
+    """
+    body = await request.json()
+    cands = body.get("items", []) or []
+    if not cands:
+        return {"results": [], "source": "none"}
 
-_FCST_SHEET = "Sales Revenue"
-_KR_MONTH_MAP = {1: "Jan", 2: "Feb", 3: "Mar", 4: "Apr", 5: "May", 6: "June",
-                 7: "July", 8: "Aug", 9: "Sep", 10: "Oct", 11: "Nov", 12: "Dec"}
+    MAX_CAND = 80
+    dropped = max(0, len(cands) - MAX_CAND)
+    cands = cands[:MAX_CAND]
+
+    def _fallback(reason="규칙판정(저판매 — AI 미사용)"):
+        return {
+            "results": [{"pn": c.get("pn"), "liquidity": "비유동", "reason": reason} for c in cands],
+            "source": "rule_fallback",
+            "dropped": dropped,
+        }
+
+    if not os.environ.get("ANTHROPIC_API_KEY"):
+        return {**_fallback("규칙판정(ANTHROPIC_API_KEY 없음)"), "error": "ANTHROPIC_API_KEY 미설정 — 규칙으로 비유동 처리"}
+
+    # 후보 요약 (최근 6개월 판매 패턴 포함)
+    lines = []
+    for c in cands:
+        recent = c.get("monthly", [])[-6:]
+        pat = ",".join(str(int(m.get("qty", 0))) for m in recent)
+        lines.append(
+            f"- PN={c.get('pn')} | 현재고={c.get('stock')} | 월평균판매={c.get('monthly_avg')} "
+            f"| 재고계수={c.get('stock_coef')} | 최근6개월판매월수={c.get('months_with_sales')} | 최근6개월판매={pat}"
+        )
+    listing = "\n".join(lines)
+
+    schema = {
+        "type": "object",
+        "properties": {
+            "results": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "pn": {"type": "string"},
+                        "liquidity": {"type": "string", "enum": ["유동", "비유동"]},
+                        "reason": {"type": "string"},
+                    },
+                    "required": ["pn", "liquidity", "reason"],
+                    "additionalProperties": False,
+                },
+            }
+        },
+        "required": ["results"],
+        "additionalProperties": False,
+    }
+
+    prompt = (
+        "너는 반도체 유통사 재고 분석가다. 아래는 '판매가 매우 저조해(6개월 중 1달만 판매 등) 자동 분류가 애매한' 부품 목록이다.\n"
+        "각 부품을 다음 둘 중 하나로 판정하라:\n"
+        "- '비유동': 사실상 죽은 재고(악성). 판매가 거의 없고 앞으로도 소진 가망이 낮음.\n"
+        "- '유동': 비록 6개월 중 가끔만 나갔지만, 한 번에 큰 수량이 나가는 등 실제로는 정상 회전하는 재고.\n"
+        "판단 기준: 최근 판매 패턴(가끔 큰 수량 = 유동 가능성 ↑ / 찔끔 한두 개 = 비유동), 재고계수(높을수록 비유동), 월평균.\n"
+        "각 부품마다 한국어로 한 줄 사유를 붙여라.\n\n"
+        f"부품 목록:\n{listing}\n\n"
+        "반드시 입력의 모든 PN에 대해 결과를 반환하라."
+    )
+
+    try:
+        import anthropic
+        client = anthropic.Anthropic()
+        resp = client.messages.create(
+            model="claude-opus-4-8",
+            max_tokens=8000,
+            output_config={"format": {"type": "json_schema", "schema": schema}},
+            messages=[{"role": "user", "content": prompt}],
+        )
+        text = next((b.text for b in resp.content if b.type == "text"), "")
+        import json as _json
+        parsed = _json.loads(text)
+        results = parsed.get("results", [])
+        # 입력에 있는데 응답에서 빠진 PN은 비유동으로 보강
+        seen = {r.get("pn") for r in results}
+        for c in cands:
+            if c.get("pn") not in seen:
+                results.append({"pn": c.get("pn"), "liquidity": "비유동", "reason": "AI 무응답 — 규칙 보강"})
+        return {"results": results, "source": "ai", "dropped": dropped}
+    except anthropic.AuthenticationError:
+        return {**_fallback("규칙판정(API 키 인증 실패)"), "error": "API 키 인증 실패"}
+    except Exception as e:
+        return {**_fallback(f"규칙판정(AI 호출 실패)"), "error": f"AI 호출 실패: {e}"}
+
 
 
 def _fs_norm(s):

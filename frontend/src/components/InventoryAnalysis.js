@@ -27,6 +27,15 @@ const ABC_STYLE = {
   C: { bg: "#f1f5f9", color: "#475569", dot: "#64748b" },
 };
 
+// 활동등급(재고계수) A~E: A=유동(green) … E=비유동(red)
+const GRADE_STYLE = {
+  A: { bg: "#ecfdf5", color: "#047857", dot: "#10b981" },
+  B: { bg: "#f0fdf4", color: "#15803d", dot: "#22c55e" },
+  C: { bg: "#fefce8", color: "#a16207", dot: "#eab308" },
+  D: { bg: "#fff7ed", color: "#c2410c", dot: "#f97316" },
+  E: { bg: "#fef2f2", color: "#b91c1c", dot: "#ef4444" },
+};
+
 function fmtNum(n) {
   if (n === null || n === undefined) return "—";
   const v = Number(n);
@@ -169,9 +178,42 @@ function InventoryAnalysis() {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState(null);
   const [dragOver, setDragOver] = useState(false);
+  const [aiRunning, setAiRunning] = useState(false);
+  const [aiMsg, setAiMsg] = useState(null);
   const fileRef = useRef(null);
 
   const onPickFile = (f) => { if (f) { setFile(f); setError(null); } };
+
+  // 저판매 애매건(ai_candidate)만 AI로 유동/비유동 판정 → 결과를 행에 머지
+  const runAiClassify = async () => {
+    if (!data) return;
+    const cands = data.items.filter((x) => x.ai_candidate);
+    if (!cands.length) { setAiMsg("AI 판정 대상(저판매 애매건)이 없습니다."); return; }
+    setAiRunning(true); setAiMsg(null);
+    try {
+      const res = await axios.post(`${API_URL}/api/inventory-analysis/ai-classify`,
+        { items: cands.map((c) => ({ pn: c.pn, stock: c.stock, monthly_avg: c.monthly_avg, stock_coef: c.stock_coef, months_with_sales: c.months_with_sales, monthly: c.monthly })) },
+        { timeout: 300000 });
+      const byPn = {};
+      (res.data.results || []).forEach((r) => { byPn[r.pn] = r; });
+      const items = data.items.map((x) => {
+        const r = byPn[x.pn];
+        if (!r) return x;
+        const liq = r.liquidity === "유동" ? "유동" : "비유동";
+        return { ...x, liquidity: liq, activity_grade: liq === "비유동" ? "E" : x.activity_grade, ai_reason: r.reason || null };
+      });
+      // 롤업 재계산
+      const roll = { A: { count: 0, value: 0 }, B: { count: 0, value: 0 }, C: { count: 0, value: 0 }, D: { count: 0, value: 0 }, E: { count: 0, value: 0 } };
+      items.forEach((x) => { const g = roll[x.activity_grade]; if (g) { g.count += 1; g.value += x.stock_value || 0; } });
+      const liquid_value = roll.A.value + roll.B.value + roll.C.value + roll.D.value;
+      setData({ ...data, items, summary: { ...data.summary, grade_rollup: roll, liquid_value, nonliquid_value: roll.E.value } });
+      setAiMsg(res.data.error ? `⚠ ${res.data.error}` : `AI 판정 완료 — ${res.data.results?.length || 0}건 (${res.data.source === "ai" ? "AI" : "규칙"})`);
+    } catch (e) {
+      setAiMsg("AI 판정 실패: " + (e.response?.data?.detail || e.message));
+    } finally {
+      setAiRunning(false);
+    }
+  };
 
   const upload = async () => {
     if (!file) { setError("파일을 선택하세요"); return; }
@@ -216,7 +258,7 @@ function InventoryAnalysis() {
   };
 
   // 화면에서 필터한 "필요한 것만" 단일 시트로 추출
-  const FILTER_LABELS = { all: "전체", stock: "재고보유", history: "판매이력", shortage: "재고부족", abc_a: "A등급", abc_b: "B등급", abc_c: "C등급" };
+  const FILTER_LABELS = { all: "전체", stock: "재고보유", history: "판매이력", shortage: "재고부족", abc_a: "ABC-A", abc_b: "ABC-B", abc_c: "ABC-C", liquid: "유동(A~D)", nonliquid: "비유동(E)", g_A: "활동A", g_B: "활동B", g_C: "활동C", g_D: "활동D", g_E: "활동E" };
   const exportFiltered = async () => {
     if (!filteredSorted.length) return;
     setExporting(true);
@@ -252,6 +294,9 @@ function InventoryAnalysis() {
       const t = filter.split("_")[1].toUpperCase();
       arr = arr.filter((x) => x.abc === t);
     }
+    else if (filter === "liquid") arr = arr.filter((x) => x.liquidity === "유동");
+    else if (filter === "nonliquid") arr = arr.filter((x) => x.liquidity === "비유동");
+    else if (filter.startsWith("g_")) arr = arr.filter((x) => x.activity_grade === filter.split("_")[1]);
     if (search.trim()) {
       const q = search.trim().toUpperCase();
       arr = arr.filter((x) => (x.pn || "").toUpperCase().includes(q));
@@ -279,6 +324,11 @@ function InventoryAnalysis() {
   const cols = [
     { k: "pn", label: "P/N", align: "left", w: "auto" },
     { k: "stock", label: "현재고", align: "right", w: 110 },
+    { k: "avg_price", label: "매입가", align: "right", w: 96 },
+    { k: "stock_value", label: "재고금액", align: "right", w: 120 },
+    { k: "stock_coef", label: "재고계수", align: "right", w: 96 },
+    { k: "activity_grade", label: "활동등급", align: "center", w: 84 },
+    { k: "liquidity", label: "유동/비유동", align: "center", w: 110 },
     { k: "monthly_avg", label: "월평균 판매", align: "right", w: 110 },
     { k: "last_sale", label: "최근 판매일", align: "left", w: 110 },
     { k: "recommended", label: "적정재고", align: "right", w: 110 },
@@ -361,12 +411,51 @@ function InventoryAnalysis() {
           {/* KPI Grid */}
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
             <Stat label="총 자재" value={fmtNum(data.summary.total_pns)} accent={COLORS.accent} />
+            {data.summary.has_price && (
+              <Stat label="총 재고금액" value={fmtNum(Math.round(data.summary.total_stock_value))} accent={COLORS.accent} hint="재고×매입가" />
+            )}
             <Stat label="재고 보유" value={fmtNum(data.summary.with_stock)} hint={`${(data.summary.with_stock / data.summary.total_pns * 100).toFixed(0)}%`} />
             <Stat label="6개월 판매" value={fmtNum(data.summary.with_history)} hint={`${(data.summary.with_history / data.summary.total_pns * 100).toFixed(0)}%`} />
             <Stat label="A 등급" value={fmtNum(data.summary.a_count)} accent={ABC_STYLE.A.dot} hint="상위 70%" />
             <Stat label="B 등급" value={fmtNum(data.summary.b_count)} accent={ABC_STYLE.B.dot} hint="다음 20%" />
             <Stat label="C 등급" value={fmtNum(data.summary.c_count)} accent={ABC_STYLE.C.dot} hint="하위 10%" />
           </div>
+
+          {/* 활동등급별 재고금액 롤업 */}
+          {data.summary.grade_rollup && (() => {
+            const roll = data.summary.grade_rollup;
+            const tot = data.summary.total_stock_value || 0;
+            const labels = { A: "A · 계수≤6", B: "B · 7~10", C: "C · 11~15", D: "D · 16~100", E: "E · 비유동" };
+            const pct = (v) => tot > 0 ? `${(v / tot * 100).toFixed(1)}%` : "—";
+            return (
+              <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 12, padding: "14px 16px", marginBottom: 16 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.text }}>활동등급별 재고금액 <span style={{ color: COLORS.textFaint, fontWeight: 500 }}>· 재고계수(현재고÷월평균) 기준</span></div>
+                  <div style={{ fontSize: 12, color: COLORS.textMute }}>
+                    유동(A~D) <b style={{ color: "#047857" }}>{fmtNum(Math.round(data.summary.liquid_value || 0))}</b>
+                    <span style={{ margin: "0 6px", color: COLORS.textFaint }}>vs</span>
+                    비유동(E) <b style={{ color: "#b91c1c" }}>{fmtNum(Math.round(data.summary.nonliquid_value || 0))}</b>
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  {["A", "B", "C", "D", "E"].map((g) => {
+                    const r = roll[g] || { count: 0, value: 0 };
+                    const st = GRADE_STYLE[g];
+                    return (
+                      <div key={g} onClick={() => setFilter(`g_${g}`)} title="클릭해 이 등급만 필터" style={{ flex: "1 1 0", minWidth: 150, cursor: "pointer", background: st.bg, border: `1px solid ${st.dot}33`, borderRadius: 10, padding: "12px 14px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <span style={{ width: 8, height: 8, borderRadius: 8, background: st.dot }} />
+                          <span style={{ fontSize: 11.5, fontWeight: 700, color: st.color }}>{labels[g]}</span>
+                        </div>
+                        <div style={{ fontSize: 20, fontWeight: 700, color: COLORS.text, marginTop: 6, letterSpacing: "-0.02em" }}>{fmtNum(Math.round(r.value))}</div>
+                        <div style={{ fontSize: 11.5, color: COLORS.textFaint, marginTop: 2 }}>{fmtNum(r.count)}개 · {pct(r.value)}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Filter bar */}
           <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 12, padding: "12px 14px", marginBottom: 14, display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
@@ -375,9 +464,11 @@ function InventoryAnalysis() {
               <FilterChip active={filter === "stock"} onClick={() => setFilter("stock")}>재고 보유</FilterChip>
               <FilterChip active={filter === "history"} onClick={() => setFilter("history")}>판매 이력</FilterChip>
               <FilterChip active={filter === "shortage"} onClick={() => setFilter("shortage")}>재고 부족</FilterChip>
-              <FilterChip active={filter === "abc_a"} onClick={() => setFilter("abc_a")}>A</FilterChip>
-              <FilterChip active={filter === "abc_b"} onClick={() => setFilter("abc_b")}>B</FilterChip>
-              <FilterChip active={filter === "abc_c"} onClick={() => setFilter("abc_c")}>C</FilterChip>
+              <FilterChip active={filter === "liquid"} onClick={() => setFilter("liquid")}>유동</FilterChip>
+              <FilterChip active={filter === "nonliquid"} onClick={() => setFilter("nonliquid")}>비유동</FilterChip>
+              {["A", "B", "C", "D", "E"].map((g) => (
+                <FilterChip key={g} active={filter === `g_${g}`} onClick={() => setFilter(`g_${g}`)}>{g}</FilterChip>
+              ))}
             </div>
             <div style={{ flex: 1, minWidth: 180, position: "relative" }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.textFaint} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)" }}>
@@ -409,10 +500,18 @@ function InventoryAnalysis() {
               fontSize: 12, fontWeight: 600, cursor: (exporting || !filteredSorted.length) ? "default" : "pointer",
               opacity: (exporting || !filteredSorted.length) ? 0.5 : 1,
             }}>📥 현재 분류만 ({FILTER_LABELS[filter]})</button>
-            <button onClick={() => { setData(null); setFile(null); setSelected(null); setSearch(""); setFilter("all"); }} style={{
+            <button onClick={runAiClassify} disabled={aiRunning || !(data?.summary?.ai_candidates > 0)}
+              title="저판매 애매건(✦)을 Claude로 유동/비유동 판정" style={{
+              padding: "7px 12px", borderRadius: 8, border: `1px solid #7c3aed`,
+              background: aiRunning ? COLORS.borderSoft : "#faf5ff", color: aiRunning ? COLORS.textFaint : "#7c3aed",
+              fontSize: 12, fontWeight: 600, cursor: (aiRunning || !(data?.summary?.ai_candidates > 0)) ? "default" : "pointer",
+              opacity: !(data?.summary?.ai_candidates > 0) ? 0.5 : 1,
+            }}>{aiRunning ? "AI 판정 중…" : `✦ AI 판정 (${data?.summary?.ai_candidates || 0})`}</button>
+            <button onClick={() => { setData(null); setFile(null); setSelected(null); setSearch(""); setFilter("all"); setAiMsg(null); }} style={{
               padding: "7px 12px", borderRadius: 8, border: `1px solid ${COLORS.border}`,
               background: COLORS.card, color: COLORS.textMute, fontSize: 12, fontWeight: 500, cursor: "pointer",
             }}>새 파일</button>
+            {aiMsg && <span style={{ fontSize: 11.5, color: COLORS.textMute, width: "100%" }}>{aiMsg}</span>}
           </div>
 
           {/* Main split */}
@@ -460,6 +559,25 @@ function InventoryAnalysis() {
                           </td>
                           <td style={{ padding: "10px 14px", borderBottom: `1px solid ${COLORS.borderSoft}`, textAlign: "right", color: it.stock > 0 ? COLORS.text : COLORS.textFaint, fontVariantNumeric: "tabular-nums" }}>
                             {fmtNum(it.stock)}
+                          </td>
+                          <td style={{ padding: "10px 14px", borderBottom: `1px solid ${COLORS.borderSoft}`, textAlign: "right", color: COLORS.slate, fontVariantNumeric: "tabular-nums" }}>
+                            {it.avg_price ? fmtNum(it.avg_price) : "—"}
+                          </td>
+                          <td style={{ padding: "10px 14px", borderBottom: `1px solid ${COLORS.borderSoft}`, textAlign: "right", color: it.stock_value > 0 ? COLORS.text : COLORS.textFaint, fontVariantNumeric: "tabular-nums" }}>
+                            {it.stock_value ? fmtNum(it.stock_value) : "—"}
+                          </td>
+                          <td style={{ padding: "10px 14px", borderBottom: `1px solid ${COLORS.borderSoft}`, textAlign: "right", color: COLORS.slate, fontVariantNumeric: "tabular-nums" }}>
+                            {it.stock_coef === null || it.stock_coef === undefined ? "∞" : fmtNum(it.stock_coef)}
+                          </td>
+                          <td style={{ padding: "10px 14px", borderBottom: `1px solid ${COLORS.borderSoft}`, textAlign: "center" }}>
+                            {(() => { const g = GRADE_STYLE[it.activity_grade] || GRADE_STYLE.E; return (
+                              <span style={{ display: "inline-flex", alignItems: "center", padding: "2px 8px", borderRadius: 6, background: g.bg, color: g.color, fontSize: 11, fontWeight: 700, letterSpacing: 0.4 }}>{it.activity_grade}</span>
+                            ); })()}
+                          </td>
+                          <td title={it.ai_reason || ""} style={{ padding: "10px 14px", borderBottom: `1px solid ${COLORS.borderSoft}`, textAlign: "center", color: it.liquidity === "비유동" ? "#b91c1c" : "#047857", fontSize: 12, fontWeight: 600 }}>
+                            {it.liquidity || "—"}
+                            {it.ai_candidate && !it.ai_reason && <span style={{ marginLeft: 4, fontSize: 9, color: COLORS.accent }} title="저판매 애매 — AI 판정 대상">✦</span>}
+                            {it.ai_reason && <span style={{ marginLeft: 4, fontSize: 9, color: COLORS.textFaint }} title={it.ai_reason}>ⓘ</span>}
                           </td>
                           <td style={{ padding: "10px 14px", borderBottom: `1px solid ${COLORS.borderSoft}`, textAlign: "right", color: COLORS.slate, fontVariantNumeric: "tabular-nums" }}>
                             {fmtNum(it.monthly_avg)}
