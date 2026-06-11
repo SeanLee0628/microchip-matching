@@ -501,7 +501,12 @@ function InventoryAnalysis() {
               opacity: (exporting || !filteredSorted.length) ? 0.5 : 1,
             }}>📥 현재 분류만 ({FILTER_LABELS[filter]})</button>
             <button onClick={runAiClassify} disabled={aiRunning || !(data?.summary?.ai_candidates > 0)}
-              title="저판매 애매건(✦)을 Claude로 유동/비유동 판정" style={{
+              title={"AI 판정 — 규칙으로 판단 애매한 '저판매 부품'만 Claude가 유동/비유동으로 판정합니다.\n\n"
+                + "(숫자) = 판정 대상 부품 수\n"
+                + "대상: 최근 6개월 중 판매된 달이 1달 이하 + 그래도 판매는 있던 부품 (활동등급 A~E 무관)\n"
+                + "제외: 6개월 완전 무판매(이미 확실한 비유동) / 2달 이상 꾸준히 판매(패턴 명확)\n\n"
+                + "판정 기준: 가끔이라도 큰 수량 출고 = 유동, 찔끔 한두 개 = 비유동\n"
+                + "→ 비유동이면 활동등급 E로 변경하고 사유(ⓘ)를 붙입니다."} style={{
               padding: "7px 12px", borderRadius: 8, border: `1px solid #7c3aed`,
               background: aiRunning ? COLORS.borderSoft : "#faf5ff", color: aiRunning ? COLORS.textFaint : "#7c3aed",
               fontSize: 12, fontWeight: 600, cursor: (aiRunning || !(data?.summary?.ai_candidates > 0)) ? "default" : "pointer",
