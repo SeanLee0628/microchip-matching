@@ -4382,6 +4382,7 @@ async def inventory_analysis_export(request: Request):
         ("recommended", "적정재고"),
         ("shortage", "부족수량"),
         ("abc", "ABC"),
+        ("activity_grade", "활동등급"),
     ]
 
     def _num(v):
@@ -4398,10 +4399,13 @@ async def inventory_analysis_export(request: Request):
         s = _num(it.get("recommended")) - _num(it.get("stock"))
         return round(s, 2) if is_short(it) else 0
 
+    # 활동등급(A~E) 기준 시트 분할 — 화면의 활동등급과 동일. (구: ABC A/B/C 라 D,E 누락됐음)
     groups = [
-        ("A등급", [x for x in items if x.get("abc") == "A"]),
-        ("B등급", [x for x in items if x.get("abc") == "B"]),
-        ("C등급", [x for x in items if x.get("abc") == "C"]),
+        ("활동A", [x for x in items if x.get("activity_grade") == "A"]),
+        ("활동B", [x for x in items if x.get("activity_grade") == "B"]),
+        ("활동C", [x for x in items if x.get("activity_grade") == "C"]),
+        ("활동D", [x for x in items if x.get("activity_grade") == "D"]),
+        ("활동E(비유동)", [x for x in items if x.get("activity_grade") == "E"]),
         ("재고부족", [x for x in items if is_short(x)]),
     ]
 
@@ -4410,7 +4414,7 @@ async def inventory_analysis_export(request: Request):
     header_font = Font(name="맑은 고딕", size=9, bold=True)
     body_font = Font(name="맑은 고딕", size=9)
     center = Alignment(horizontal="center", vertical="center")
-    widths = [34, 12, 11, 15, 13, 13, 12, 12, 7]
+    widths = [34, 12, 11, 15, 13, 13, 12, 12, 7, 9]
 
     wb = Workbook()
     wb.remove(wb.active)  # 기본 시트 제거
@@ -4433,6 +4437,7 @@ async def inventory_analysis_export(request: Request):
                 "recommended": _num(it.get("recommended")),
                 "shortage": shortage(it),
                 "abc": it.get("abc"),
+                "activity_grade": it.get("activity_grade"),
             }
             for j, (k, _label) in enumerate(COLS):
                 cell = ws.cell(row=i, column=j + 1, value=vals[k])
@@ -4443,7 +4448,7 @@ async def inventory_analysis_export(request: Request):
                     cell.number_format = "#,##0.####"
                 if k == "stock_value":
                     cell.number_format = "#,##0"
-                if k == "abc":
+                if k in ("abc", "activity_grade"):
                     cell.alignment = center
                 if short and k == "shortage":
                     cell.fill = short_fill
