@@ -3434,6 +3434,7 @@ async def inventory_analysis(file: UploadFile = File(...)):
         inv_part_col = find_col(df_inv, ["part#", "part #", "p/n", "part"])
         inv_qty_col = find_col(df_inv, ["q'ty", "qty", "quantity"])
         inv_price_col = find_col(df_inv, ["매입가", "매입단가", "단가", "unit price", "u/p", "price"])
+        inv_sr_col = find_col(df_inv, ["sr#", "sr #", "sr no.", "sr no"])
         if not inv_part_col or not inv_qty_col:
             return {"error": f"재고 시트의 Part#/Q'ty 컬럼 식별 실패. 컬럼: {list(df_inv.columns)}"}
 
@@ -3453,11 +3454,19 @@ async def inventory_analysis(file: UploadFile = File(...)):
             if s in (".", "-", ""): return ""
             return s.upper().replace(" ", "")
 
-        # 재고 집계
-        inv_map = {}  # norm_pn -> {pn(원형), stock}
+        def norm_sr(v):
+            if v is None: return ""
+            s = str(v).strip()
+            if s in (".", "-", "", "nan", "NaN", "None"): return ""
+            return s
+
+        # 재고 집계 — (SR#, Part#) 단위로 구분 (같은 Part# 라도 SR# 다르면 별도 행)
+        inv_map = {}  # (sr, norm_pn) -> {sr, pn(원형), stock, value}
         for _, r in df_inv.iterrows():
             pn = norm_pn(r.get(inv_part_col))
             if not pn: continue
+            sr = norm_sr(r.get(inv_sr_col)) if inv_sr_col is not None else ""
+            key = (sr, pn)
             qv = r.get(inv_qty_col)
             try:
                 q = float(qv) if qv is not None and str(qv).strip() not in (".", "", "-") else 0
@@ -3465,14 +3474,15 @@ async def inventory_analysis(file: UploadFile = File(...)):
                     q = 0
             except Exception:
                 q = 0
-            if pn not in inv_map:
-                inv_map[pn] = {"pn": str(r.get(inv_part_col)).strip(), "stock": 0, "value": 0.0}
-            inv_map[pn]["stock"] += q
+            if key not in inv_map:
+                inv_map[key] = {"sr": sr, "pn": str(r.get(inv_part_col)).strip(),
+                                "stock": 0, "value": 0.0}
+            inv_map[key]["stock"] += q
             # 매입가는 행마다 다를 수 있어 행별(재고×매입가)로 누적
             if inv_price_col is not None:
                 pv = to_float(r.get(inv_price_col))
                 if pv is not None:
-                    inv_map[pn]["value"] += q * pv
+                    inv_map[key]["value"] += q * pv
 
         # 출고 집계: pn -> {monthly: {ym: qty}, last: date, total: qty}
         ship_map = {}
@@ -3512,8 +3522,9 @@ async def inventory_analysis(file: UploadFile = File(...)):
         # 최근 6개월 식별
         recent6 = months_sorted[-6:] if len(months_sorted) >= 6 else months_sorted
 
-        # PART# 통합 (재고 또는 출고에 등장)
-        all_pns = set(inv_map.keys()) | set(ship_map.keys())
+        # PART# 통합 (재고 또는 출고에 등장) — ABC/판매지표는 Part# 단위
+        inv_pns = {pn for (_sr, pn) in inv_map.keys()}
+        all_pns = inv_pns | set(ship_map.keys())
 
         # 6개월 누적 판매량 (ABC 기준)
         recent_total = {}
@@ -3554,10 +3565,16 @@ async def inventory_analysis(file: UploadFile = File(...)):
                 return "C", coef
             return "D", coef                     # 15 < coef <= 100
 
-        # items 빌드
+        # 표시 키: 재고의 모든 (SR#, Part#) + 출고에만 있는 Part#(SR# 공란)
+        keys = list(inv_map.keys())
+        for pn in ship_map.keys():
+            if pn not in inv_pns:
+                keys.append(("", pn))
+
+        # items 빌드 — 행 = (SR#, Part#). 재고·매입가·재고금액은 그 행, 판매지표는 Part# 공유.
         items = []
-        for pn in all_pns:
-            inv = inv_map.get(pn, {})
+        for (sr, pn) in keys:
+            inv = inv_map.get((sr, pn), {})
             ship = ship_map.get(pn, {})
             stock = inv.get("stock", 0)
             stock_value = inv.get("value", 0.0)
@@ -3566,13 +3583,14 @@ async def inventory_analysis(file: UploadFile = File(...)):
             monthly = ship.get("monthly", {})
             recent6_qty = [monthly.get(m, 0) for m in recent6]
             avg = (sum(recent6_qty) / len(recent6)) if recent6 else 0
-            total6 = recent_total[pn]
+            total6 = recent_total.get(pn, 0)
             months_with_sales = sum(1 for q in recent6_qty if q > 0)
-            grade, coef = _activity_grade(stock, avg, total6)
+            grade, coef = _activity_grade(stock, avg, total6)  # 재고계수는 이 행(로트)의 재고 기준
             liquidity = "비유동" if grade == "E" else "유동"
             ai_candidate = total6 > 0 and months_with_sales <= 1  # 들쭉날쭉 저판매
             last = ship.get("last")
             items.append({
+                "sr": sr,
                 "pn": display_pn,
                 "stock": round(stock, 2),
                 "avg_price": round(avg_price, 4),
@@ -3642,6 +3660,7 @@ async def inventory_analysis_export(request: Request):
     items = data.get("items", []) or []
 
     COLS = [
+        ("sr", "SR#"),
         ("pn", "P/N"),
         ("stock", "현재고"),
         ("avg_price", "매입가"),
@@ -3683,7 +3702,7 @@ async def inventory_analysis_export(request: Request):
     header_font = Font(name="맑은 고딕", size=9, bold=True)
     body_font = Font(name="맑은 고딕", size=9)
     center = Alignment(horizontal="center", vertical="center")
-    widths = [34, 12, 11, 15, 13, 13, 12, 12, 7, 9]
+    widths = [13, 34, 12, 11, 15, 13, 13, 12, 12, 7, 9]
 
     wb = Workbook()
     wb.remove(wb.active)  # 기본 시트 제거
@@ -3697,6 +3716,7 @@ async def inventory_analysis_export(request: Request):
         for i, it in enumerate(rows, start=2):
             short = is_short(it)
             vals = {
+                "sr": it.get("sr") or "",
                 "pn": it.get("pn"),
                 "stock": _num(it.get("stock")),
                 "avg_price": _num(it.get("avg_price")),

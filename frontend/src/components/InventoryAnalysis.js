@@ -322,6 +322,7 @@ function InventoryAnalysis() {
   };
 
   const cols = [
+    { k: "sr", label: "SR#", align: "left", w: 110 },
     { k: "pn", label: "P/N", align: "left", w: "auto" },
     { k: "stock", label: "현재고", align: "right", w: 110 },
     { k: "avg_price", label: "매입가", align: "right", w: 96 },
