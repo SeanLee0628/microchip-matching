@@ -4838,6 +4838,9 @@ def _fs_load_actuals(contents: bytes):
     return {"by_key": agg, "months": months, "sheet": ws.title, "rows": len(agg)}
 
 
+_FCST_SHEET = "Sales Revenue"
+
+
 def _fs_load_fcst(contents: bytes):
     """FCST 엑셀의 'Sales Revenue' 시트 파싱.
     row1: 월 라벨(May/June/July...)이 각 블록 시작 열에.
@@ -4847,9 +4850,16 @@ def _fs_load_fcst(contents: bytes):
     contents = _fs_decrypt(contents)
     bio = io.BytesIO(contents)
     wb = _xl.load_workbook(bio, data_only=True)
-    if _FCST_SHEET not in wb.sheetnames:
+    # 'Sales Revenue' 시트 — 대소문자·공백 무시, 부분일치 허용
+    target = None
+    for s in wb.sheetnames:
+        sn = str(s).strip().lower()
+        if sn == _FCST_SHEET.lower() or "sales revenue" in sn or sn == "revenue":
+            target = s
+            break
+    if target is None:
         raise ValueError(f"'{_FCST_SHEET}' 시트가 없습니다. 시트 목록: {wb.sheetnames}")
-    ws = wb[_FCST_SHEET]
+    ws = wb[target]
 
     row1 = [c.value for c in ws[1]]
     row3 = [c.value for c in ws[3]]
