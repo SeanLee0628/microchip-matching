@@ -4110,6 +4110,113 @@ async def backlog_prd_diff(before: UploadFile = File(...), after: UploadFile = F
     )
 
 
+# ===== 단가(매입가) 마스터 — S3에 1회 저장해두고 재고분석에서 자동 적용 =====
+PRICE_MASTER_BUCKET = os.environ.get("PRICE_MASTER_BUCKET", "elasticbeanstalk-ap-northeast-2-376798132745")
+PRICE_MASTER_KEY = os.environ.get("PRICE_MASTER_KEY", "microchip-matching/price_master.json")
+
+
+def _price_s3():
+    import boto3
+    return boto3.client("s3", region_name=os.environ.get("AWS_REGION", "ap-northeast-2"))
+
+
+def _load_price_master() -> dict:
+    """S3에서 단가 마스터 로드. 형식: {"prices": {"SR#||PART#": 단가}, "updated_at", "count"}."""
+    try:
+        obj = _price_s3().get_object(Bucket=PRICE_MASTER_BUCKET, Key=PRICE_MASTER_KEY)
+        return json.loads(obj["Body"].read())
+    except Exception:
+        return {"prices": {}, "updated_at": None, "count": 0}
+
+
+def _save_price_master(prices: dict) -> dict:
+    payload = {"prices": prices, "updated_at": datetime.now().isoformat(timespec="seconds"),
+               "count": len(prices)}
+    _price_s3().put_object(
+        Bucket=PRICE_MASTER_BUCKET, Key=PRICE_MASTER_KEY,
+        Body=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+        ContentType="application/json",
+    )
+    return payload
+
+
+def _pm_norm_pn(v):
+    s = str(v).strip()
+    if s in (".", "-", "", "nan", "NaN", "None"):
+        return ""
+    return s.upper().replace(" ", "")
+
+
+@app.post("/api/price-master/upload")
+async def price_master_upload(file: UploadFile = File(...)):
+    """단가 파일 업로드 → (SR#, Part#)→단가 추출해 S3에 저장. 이후 재고분석이 자동 사용."""
+    contents = await file.read()
+    try:
+        xls = pd.ExcelFile(io.BytesIO(contents))
+    except Exception as e:
+        return {"error": f"엑셀 읽기 실패: {e}"}
+
+    def fc(df, pats):
+        for c in df.columns:
+            cl = str(c).strip().lower()
+            for p in pats:
+                if p in cl:
+                    return c
+        return None
+
+    # 시트별로 (구분=SR#, Part#, 단가) 컬럼 탐지 — 'Unit Price' 시트 우선(실측상 재고 매입가와 일치)
+    best = None
+    for name in xls.sheet_names:
+        df = pd.read_excel(xls, sheet_name=name)
+        sr_c = fc(df, ["구분", "acc", "sr#", "sr "])
+        pn_c = fc(df, ["product", "pn", "part"])
+        price_c = None
+        for c in df.columns:
+            if "unit price" in str(c).strip().lower():
+                price_c = c
+                break
+        score = 2
+        if price_c is None:
+            for c in df.columns:
+                cl = str(c).strip().lower()
+                if ("매입가" in cl or "단가" in cl or
+                        ("price" in cl and "amt" not in cl and "amount" not in cl)):
+                    price_c = c
+                    score = 1
+                    break
+        if sr_c is not None and pn_c is not None and price_c is not None:
+            if best is None or score > best[0]:
+                best = (score, name, df, sr_c, pn_c, price_c)
+
+    if not best:
+        return {"error": "단가 시트에서 구분(SR#)/Part#/단가 컬럼을 찾지 못했습니다. "
+                          f"시트: {xls.sheet_names}"}
+    _, sheet, df, sr_c, pn_c, price_c = best
+    prices = {}
+    for _, r in df.iterrows():
+        pn = _pm_norm_pn(r.get(pn_c))
+        if not pn:
+            continue
+        sr = str(r.get(sr_c)).strip()
+        if sr in (".", "-", "nan", "NaN", "None"):
+            sr = ""
+        pv = to_float(r.get(price_c))
+        if pv is None or pv <= 0:
+            continue
+        prices[f"{sr}||{pn}"] = pv
+    if not prices:
+        return {"error": "단가 데이터를 추출하지 못했습니다."}
+    saved = _save_price_master(prices)
+    return {"saved": True, "count": saved["count"], "sheet": sheet,
+            "sr_col": str(sr_c), "price_col": str(price_c), "updated_at": saved["updated_at"]}
+
+
+@app.get("/api/price-master")
+def price_master_status():
+    m = _load_price_master()
+    return {"count": m.get("count", 0), "updated_at": m.get("updated_at")}
+
+
 @app.post("/api/inventory-analysis")
 async def inventory_analysis(file: UploadFile = File(...)):
     """4실 자재 재고 분석.
@@ -4191,6 +4298,14 @@ async def inventory_analysis(file: UploadFile = File(...)):
             if s in (".", "-", "", "nan", "NaN", "None"): return ""
             return s
 
+        # 단가 마스터(S3) 로드 — 업로드 재고에 매입가가 없으면 (SR#,Part#)로 자동 채움
+        pm = _load_price_master().get("prices", {})
+        pm_by_pn = {}
+        for k, v in pm.items():
+            _pn = k.split("||", 1)[-1]
+            pm_by_pn.setdefault(_pn, v)
+        used_master = False
+
         # 재고 집계 — (SR#, Part#) 단위로 구분 (같은 Part# 라도 SR# 다르면 별도 행)
         inv_map = {}  # (sr, norm_pn) -> {sr, pn(원형), stock, value}
         for _, r in df_inv.iterrows():
@@ -4209,11 +4324,16 @@ async def inventory_analysis(file: UploadFile = File(...)):
                 inv_map[key] = {"sr": sr, "pn": str(r.get(inv_part_col)).strip(),
                                 "stock": 0, "value": 0.0}
             inv_map[key]["stock"] += q
-            # 매입가는 행마다 다를 수 있어 행별(재고×매입가)로 누적
-            if inv_price_col is not None:
-                pv = to_float(r.get(inv_price_col))
+            # 단가: 업로드 파일의 매입가 우선, 없으면 단가 마스터(SR#+Part# → Part#) 사용
+            pv = to_float(r.get(inv_price_col)) if inv_price_col is not None else None
+            if pv is None or pv <= 0:
+                pv = pm.get(f"{sr}||{pn}")
+                if pv is None:
+                    pv = pm_by_pn.get(pn)
                 if pv is not None:
-                    inv_map[key]["value"] += q * pv
+                    used_master = True
+            if pv is not None:
+                inv_map[key]["value"] += q * pv
 
         # 출고 집계: pn -> {monthly: {ym: qty}, last: date, total: qty}
         ship_map = {}
@@ -4363,7 +4483,9 @@ async def inventory_analysis(file: UploadFile = File(...)):
                 "with_stock": sum(1 for x in items if x["stock"] > 0),
                 "with_history": sum(1 for x in items if x["recent_total"] > 0),
                 "total_stock_value": round(sum(x["stock_value"] for x in items), 2),
-                "has_price": inv_price_col is not None,
+                "has_price": (inv_price_col is not None) or used_master or bool(pm),
+                "price_source": ("파일" if inv_price_col is not None else
+                                 ("단가마스터" if used_master else "없음")),
                 "a_count": sum(1 for x in items if x["abc"] == "A"),
                 "b_count": sum(1 for x in items if x["abc"] == "B"),
                 "c_count": sum(1 for x in items if x["abc"] == "C"),

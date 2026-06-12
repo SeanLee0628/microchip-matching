@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import axios from "axios";
 
 const API_URL = process.env.REACT_APP_API_URL || "";
@@ -183,6 +183,30 @@ function InventoryAnalysis() {
   const fileRef = useRef(null);
 
   const onPickFile = (f) => { if (f) { setFile(f); setError(null); } };
+
+  // 단가 마스터 (S3에 1회 저장 → 재고분석이 자동 사용)
+  const pmRef = useRef(null);
+  const [pm, setPm] = useState(null);
+  const [pmBusy, setPmBusy] = useState(false);
+  useEffect(() => {
+    axios.get(`${API_URL}/api/price-master`).then((r) => setPm(r.data)).catch(() => {});
+  }, []);
+  const uploadPriceMaster = async (f) => {
+    if (!f) return;
+    setPmBusy(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", f);
+      const res = await axios.post(`${API_URL}/api/price-master/upload`, fd, { timeout: 120000 });
+      if (res.data.error) { alert("단가 저장 실패: " + res.data.error); }
+      else {
+        setPm({ count: res.data.count, updated_at: res.data.updated_at });
+        alert(`단가 마스터 저장 완료: ${res.data.count}개 품목 (${res.data.sheet} / ${res.data.price_col})`);
+      }
+    } catch (e) {
+      alert("단가 업로드 오류: " + (e.response?.data?.detail || e.message));
+    } finally { setPmBusy(false); }
+  };
 
   // 저판매 애매건(ai_candidate)만 AI로 유동/비유동 판정 → 결과를 행에 머지
   const runAiClassify = async () => {
@@ -396,6 +420,24 @@ function InventoryAnalysis() {
             }}>{loading ? "분석 중..." : "분석 시작"}</button>
           </div>
         </div>
+
+          {/* 단가 마스터 */}
+          <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 12, padding: "14px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 600 }}>💰 단가 마스터 (한 번만 올려두면 매입가 자동 적용)</div>
+              <div style={{ fontSize: 12, color: COLORS.textMute, marginTop: 3 }}>
+                {pm && pm.count > 0
+                  ? `저장됨: ${pm.count.toLocaleString()}개 품목${pm.updated_at ? ` · ${pm.updated_at.slice(0, 10)} 업데이트` : ""} — 매입가 없는 재고 파일 올려도 자동 적용`
+                  : "아직 없음 — 단가 파일을 올리면 이후 재고 파일에 매입가가 없어도 자동으로 채워집니다 (SR#+Part# 기준)"}
+              </div>
+            </div>
+            <input ref={pmRef} type="file" accept=".xlsx,.xls" style={{ display: "none" }} onChange={(e) => uploadPriceMaster(e.target.files[0])} />
+            <button onClick={() => pmRef.current?.click()} disabled={pmBusy} style={{
+              padding: "8px 14px", borderRadius: 8, border: `1px solid ${COLORS.border}`,
+              background: COLORS.card, color: COLORS.text, fontSize: 12.5, fontWeight: 600,
+              cursor: pmBusy ? "default" : "pointer", whiteSpace: "nowrap",
+            }}>{pmBusy ? "저장 중..." : (pm && pm.count > 0 ? "단가 파일 교체" : "단가 파일 올리기")}</button>
+          </div>
         </div>
       )}
 
