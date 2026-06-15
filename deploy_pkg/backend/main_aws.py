@@ -3788,8 +3788,23 @@ async def reset_tables():
 
 BACKLOG_SHEET_CANDIDATES = ["인풋", "마이크로칩백록(벤더발주)"]
 BACKLOG_KEY_NAMES = ("SO#", "Mchp Sales Order #")  # 둘 중 어느 쪽이든 인정
-BACKLOG_PRD = "PRD"
 BACKLOG_HEADER_SCAN_LIMIT = 10  # 첫 10행 안에서 헤더 자동 탐지
+
+# 같은 항목을 여러 컬럼명으로 인식 — 첫 항목이 대표 키. 대소문자/공백 차이는 무시한다.
+# 어떤 별칭이 쓰여도 동일 데이터로 매핑된다.
+BACKLOG_FIELD_ALIASES = {
+    "PART#": ["PART#", "Mchp Catalog Part Number"],
+    "ORD":   ["ORD", "Order date"],
+    "CRD":   ["CRD", "Customer Requested Delivery Date"],
+    "PRD":   ["PRD", "Mchp Scheduled Delivery Date"],
+}
+
+
+def _backlog_norm(s):
+    """헤더 비교용 정규화: 좌우공백 제거 + 소문자 + 내부 연속공백 1칸으로."""
+    if s is None:
+        return ""
+    return " ".join(str(s).strip().lower().split())
 
 BACKLOG_OUT_COLS = [
     "Mchp Catalog Part Number", "End Customer Name", "ODM/SubCon Name", "Customer PO#",
@@ -3821,12 +3836,14 @@ def _backlog_load(contents: bytes, fname: str):
     rows = list(ws.iter_rows(values_only=True))
     wb.close()
 
-    # 헤더 행 자동 탐지: 키 컬럼명 + PRD 가 한 행에 모두 등장하는 첫 행
+    # 헤더 행 자동 탐지: 키 컬럼명 + PRD(별칭 포함) 가 한 행에 모두 등장하는 첫 행
+    key_norms = {_backlog_norm(k) for k in BACKLOG_KEY_NAMES}
+    prd_norms = {_backlog_norm(a) for a in BACKLOG_FIELD_ALIASES["PRD"]}
     header_idx = -1
     for i, row in enumerate(rows[:BACKLOG_HEADER_SCAN_LIMIT]):
-        values = [str(c).strip() if c is not None else "" for c in row]
-        has_key = any(k in values for k in BACKLOG_KEY_NAMES)
-        has_prd = BACKLOG_PRD in values
+        row_norms = {_backlog_norm(c) for c in row if c is not None}
+        has_key = bool(key_norms & row_norms)
+        has_prd = bool(prd_norms & row_norms)
         if has_key and has_prd:
             header_idx = i
             break
@@ -3837,22 +3854,41 @@ def _backlog_load(contents: bytes, fname: str):
         ]
         raise ValueError(
             f"{fname}: 헤더 행을 찾지 못했습니다 (시트='{sheet}'). "
-            f"한 행 안에 'SO#' 또는 'Mchp Sales Order #' 와 'PRD' 가 함께 있어야 합니다. "
-            f"확인한 첫 5행={sample}"
+            f"한 행 안에 'SO#' 또는 'Mchp Sales Order #' 와 'PRD'(또는 'Mchp Scheduled Delivery Date') "
+            f"가 함께 있어야 합니다. 확인한 첫 5행={sample}"
         )
 
     header = [str(c).strip() if c is not None else "" for c in rows[header_idx]]
     col_idx = {n: i for i, n in enumerate(header)}
-    key_name = next((k for k in BACKLOG_KEY_NAMES if k in col_idx), None)
+    # 정규화 인덱스(별칭 해석용) — 먼저 나온 컬럼 우선
+    norm_idx = {}
+    for i, n in enumerate(header):
+        nn = _backlog_norm(n)
+        if nn and nn not in norm_idx:
+            norm_idx[nn] = i
+    # 키 컬럼: 별칭 중 실제 존재하는 첫 이름
+    key_name = next((k for k in BACKLOG_KEY_NAMES if _backlog_norm(k) in norm_idx), None)
+    key_i = norm_idx.get(_backlog_norm(key_name)) if key_name else None
+    # 논리 항목 → 실제 컬럼 인덱스 (별칭 매핑)
+    field_idx = {}
+    for logical, aliases in BACKLOG_FIELD_ALIASES.items():
+        for a in aliases:
+            j = norm_idx.get(_backlog_norm(a))
+            if j is not None:
+                field_idx[logical] = j
+                break
 
     by_key = {}
-    for r in rows[header_idx + 1:]:
-        k = r[col_idx[key_name]]
-        if k is None or (isinstance(k, str) and not k.strip()):
-            continue
-        k = str(k).strip()
-        if k not in by_key:
-            by_key[k] = r
+    if key_i is not None:
+        for r in rows[header_idx + 1:]:
+            if key_i >= len(r):
+                continue
+            k = r[key_i]
+            if k is None or (isinstance(k, str) and not k.strip()):
+                continue
+            k = str(k).strip()
+            if k not in by_key:
+                by_key[k] = r
 
     return {
         "sheet": sheet,
@@ -3861,6 +3897,8 @@ def _backlog_load(contents: bytes, fname: str):
         "header_row": rows[header_idx],
         "data_rows": rows[header_idx + 1:],
         "col_idx": col_idx,
+        "norm_idx": norm_idx,
+        "field_idx": field_idx,          # 별칭 해석된 PART#/ORD/CRD/PRD 인덱스
         "by_key": by_key,
         "key_name": key_name,
     }
@@ -3884,15 +3922,23 @@ def _backlog_get(row, col_idx, name, default=None):
     return row[i]
 
 
+def _backlog_at(row, i, default=None):
+    """별칭 해석된 인덱스로 셀 값 읽기."""
+    if i is None or i >= len(row):
+        return default
+    return row[i]
+
+
 def _backlog_build_changed(before: dict, after: dict):
     out = []
     b_idx, a_idx = before["col_idx"], after["col_idx"]
+    b_fi, a_fi = before["field_idx"], after["field_idx"]
     for so, a_row in after["by_key"].items():
         b_row = before["by_key"].get(so)
         if b_row is None:
             continue
-        bp = _backlog_get(b_row, b_idx, BACKLOG_PRD)
-        ap = _backlog_get(a_row, a_idx, BACKLOG_PRD)
+        bp = _backlog_at(b_row, b_fi.get("PRD"))
+        ap = _backlog_at(a_row, a_fi.get("PRD"))
         bd = _backlog_to_date(bp)
         ad = _backlog_to_date(ap)
         if bd is None or ad is None:
@@ -3902,7 +3948,7 @@ def _backlog_build_changed(before: dict, after: dict):
             continue
         status = "PUSH-OUT" if delta > 0 else "PULL-IN"
         rec = {
-            "Mchp Catalog Part Number": _backlog_get(a_row, a_idx, "PART#"),
+            "Mchp Catalog Part Number": _backlog_at(a_row, a_fi.get("PART#")),
             "End Customer Name": _backlog_get(a_row, a_idx, "End Customer Name"),
             "ODM/SubCon Name": _backlog_get(a_row, a_idx, "ODM/SubCon Name"),
             "Customer PO#": _backlog_get(a_row, a_idx, "Customer PO#"),
@@ -3911,8 +3957,8 @@ def _backlog_build_changed(before: dict, after: dict):
             "Qty Due": _backlog_get(a_row, a_idx, "Qty Due"),
             "Unit Price": _backlog_get(a_row, a_idx, "Unit Price"),
             "Amount Due": _backlog_get(a_row, a_idx, "Amount Due"),
-            "ORD": _backlog_get(a_row, a_idx, "ORD"),
-            "CRD": _backlog_get(a_row, a_idx, "CRD"),
+            "ORD": _backlog_at(a_row, a_fi.get("ORD")),
+            "CRD": _backlog_at(a_row, a_fi.get("CRD")),
             "PRD": ap,
             "일정변동 현황": status,
             "변경전 일정": bp,
