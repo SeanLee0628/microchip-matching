@@ -325,6 +325,59 @@ async def export_excel(data: dict):
     )
 
 
+# ==================== 영업5실 매칭 (Uniquant) ====================
+from fastapi import Form
+
+
+@app.post("/api/match5/upload")
+async def match5_upload(
+    inventory: UploadFile = File(...),
+    fcst: UploadFile = File(...),
+    blog: UploadFile = File(...),
+    shipment: UploadFile = File(...),
+    password: str = Form("9178"),
+):
+    import match5
+    warnings = []
+    try:
+        inv = match5.parse_inventory(await inventory.read(), password=password or "9178")
+    except ValueError as e:
+        return {"error": str(e)}
+    if not inv:
+        warnings.append("재고 파일에서 PART#/available Q'ty 헤더를 찾지 못했습니다.")
+    fc = match5.parse_fcst(await fcst.read())
+    if not fc:
+        warnings.append("FCST에서 Demand Total 데이터를 찾지 못했습니다.")
+    bl = match5.parse_blog(await blog.read())
+    if not bl:
+        warnings.append("백록 파일에서 데이터를 찾지 못했습니다.")
+    sh = match5.parse_shipment(await shipment.read())
+    if not sh:
+        warnings.append("출고내역에서 데이터를 찾지 못했습니다.")
+
+    columns, dashboard_columns, records = match5.build_records(inv, fc, bl, sh)
+    return {
+        "columns": columns,
+        "dashboard_columns": dashboard_columns,
+        "data": records,
+        "total_rows": len(records),
+        "warnings": warnings,
+    }
+
+
+@app.post("/api/match5/export")
+async def match5_export(payload: dict):
+    import match5
+    columns = payload.get("columns") or match5.COLUMNS
+    rows = payload.get("data", [])
+    buf = match5.export_workbook(columns, rows)
+    return StreamingResponse(
+        buf,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": "attachment; filename*=UTF-8''%EC%98%81%EC%97%855%EC%8B%A4_%EB%A7%A4%EC%B9%AD.xlsx"},
+    )
+
+
 # ==================== u-blox 백로그 ====================
 
 def parse_ublox_excel(contents: bytes):
