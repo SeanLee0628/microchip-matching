@@ -260,3 +260,51 @@ def parse_inventory(contents, password=DEFAULT_INVENTORY_PASSWORD,
         raise ValueError("재고 파일 비밀번호가 올바르지 않습니다")
     ws = wb[sheet_name] if sheet_name in wb.sheetnames else wb[wb.sheetnames[0]]
     return _sum_available_qty(ws)
+
+
+def build_records(inventory, fcst, blog, shipment, cutoff_date=None):
+    """5개 파서 결과 → (COLUMNS, DASHBOARD_COLUMNS, records[dict]).
+    행 집합 = 백록 ∪ 출고내역 ∪ FCST 의 MIX. Q'ty는 PART# 기준 조인.
+    cutoff_date 는 parse_shipment 에서 이미 반영되므로 여기선 미사용(서명 호환용)."""
+    records = []
+    all_mixes = set(blog) | set(shipment) | set(fcst)
+    for mix in all_mixes:
+        bl = blog.get(mix, {})
+        sh = shipment.get(mix, {})
+        demand = fcst.get(mix)
+
+        part = sh.get("part") or bl.get("part")
+        qty = inventory.get(part) if part else None
+        blog_ttl = bl.get("blog_ttl") or 0
+        y2026 = sh.get("y2026")
+
+        # Balance = Q'ty + BLOG TTL - Demand. 셋 다 없으면 None.
+        if qty is None and blog_ttl == 0 and demand is None:
+            balance = None
+        else:
+            balance = (qty or 0) + blog_ttl - (demand or 0)
+
+        cancel = bl.get("cancel_window")
+        rec = {
+            "고객코드": sh.get("고객코드") or bl.get("더존코드"),
+            "믹스#": mix,
+            "담당자": sh.get("담당자"),
+            "고객": sh.get("고객") or bl.get("더존업체명"),
+            "품번": part,
+            "Q'ty": qty,
+            "Lead Time": bl.get("lead_time"),
+            "Cancel Window": cancel.strftime("%Y-%m-%d") if cancel else None,
+            "Demand Total": demand,
+            "Balance": balance,
+            "2023년": None, "2024년": None, "2025년": None,
+            "2026년": y2026,
+            "23~25추이": None, "25-26(w/BL)": None,
+            "BLOG TTL": blog_ttl,
+        }
+        monthly = bl.get("monthly", {})
+        for label, mnum in MONTH_COLUMNS:
+            rec[label] = monthly.get(mnum, 0)
+        records.append(rec)
+
+    records.sort(key=lambda r: ((r.get("품번") or ""), (r.get("고객") or "")))
+    return COLUMNS, DASHBOARD_COLUMNS, records

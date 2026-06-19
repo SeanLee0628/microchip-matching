@@ -251,5 +251,75 @@ class TestParseInventoryRealFile(unittest.TestCase):
             m5.parse_inventory(data, password="0000")
 
 
+class TestBuildRecords(unittest.TestCase):
+    def test_joins_all_sources_and_computes_balance(self):
+        mix = m5.make_mix(131112, "23K256T-I/SN")
+        part = m5._norm_part("23K256T-I/SN")
+        inv = {part: 5000}
+        fcst = {mix: 2000}
+        blog = {mix: {"lead_time": 17, "cancel_window": date(2026, 5, 12),
+                      "blog_ttl": 6600, "monthly": {6: 0, 8: 6600},
+                      "더존코드": "131112", "더존업체명": "(주)에이텍", "part": part}}
+        ship = {mix: {"담당자": "신성일", "고객": "(주)에이텍", "고객코드": "131112",
+                      "part": part, "y2026": 1200}}
+        cols, dash, recs = m5.build_records(inv, fcst, blog, ship)
+        self.assertEqual(cols, m5.COLUMNS)
+        self.assertEqual(dash, m5.DASHBOARD_COLUMNS)
+        self.assertEqual(len(recs), 1)
+        row = recs[0]
+        self.assertEqual(row["고객코드"], "131112")
+        self.assertEqual(row["믹스#"], mix)
+        self.assertEqual(row["담당자"], "신성일")
+        self.assertEqual(row["품번"], part)
+        self.assertEqual(row["Q'ty"], 5000)
+        self.assertEqual(row["Lead Time"], 17)
+        self.assertEqual(row["Cancel Window"], "2026-05-12")
+        self.assertEqual(row["Demand Total"], 2000)
+        # Balance = 5000 + 6600 - 2000
+        self.assertEqual(row["Balance"], 9600)
+        self.assertEqual(row["2026년"], 1200)
+        self.assertIsNone(row["2023년"])
+        self.assertEqual(row["BLOG TTL"], 6600)
+        self.assertEqual(row["8월"], 6600)
+        self.assertEqual(row["6월"], 0)
+
+    def test_row_universe_is_union(self):
+        m_blog = m5.make_mix(1, "A")
+        m_ship = m5.make_mix(2, "B")
+        m_fcst = m5.make_mix(3, "C")
+        cols, dash, recs = m5.build_records(
+            {}, {m_fcst: 9},
+            {m_blog: {"lead_time": None, "cancel_window": None, "blog_ttl": 1,
+                      "monthly": {}, "더존코드": "1", "더존업체명": None, "part": "A"}},
+            {m_ship: {"담당자": None, "고객": None, "고객코드": "2", "part": "B", "y2026": 0}},
+        )
+        mixes = {r["믹스#"] for r in recs}
+        self.assertEqual(mixes, {m_blog, m_ship, m_fcst})
+
+    def test_qty_shared_across_mix_with_same_part(self):
+        part = m5._norm_part("P1")
+        inv = {part: 800}
+        blog = {
+            m5.make_mix(10, "P1"): {"lead_time": None, "cancel_window": None, "blog_ttl": 0,
+                                    "monthly": {}, "더존코드": "10", "더존업체명": None, "part": part},
+            m5.make_mix(20, "P1"): {"lead_time": None, "cancel_window": None, "blog_ttl": 0,
+                                    "monthly": {}, "더존코드": "20", "더존업체명": None, "part": part},
+        }
+        _, _, recs = m5.build_records(inv, {}, blog, {})
+        for r in recs:
+            self.assertEqual(r["Q'ty"], 800)
+
+    def test_sorted_by_part_then_customer(self):
+        blog = {
+            m5.make_mix(1, "ZEBRA"): {"lead_time": None, "cancel_window": None, "blog_ttl": 0,
+                                      "monthly": {}, "더존코드": "1", "더존업체명": "z", "part": "ZEBRA"},
+            m5.make_mix(2, "ALPHA"): {"lead_time": None, "cancel_window": None, "blog_ttl": 0,
+                                      "monthly": {}, "더존코드": "2", "더존업체명": "a", "part": "ALPHA"},
+        }
+        _, _, recs = m5.build_records({}, {}, blog, {})
+        self.assertEqual(recs[0]["품번"], "ALPHA")
+        self.assertEqual(recs[1]["품번"], "ZEBRA")
+
+
 if __name__ == "__main__":
     unittest.main()
