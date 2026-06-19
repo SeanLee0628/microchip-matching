@@ -124,5 +124,40 @@ class TestParseBlog(unittest.TestCase):
         self.assertEqual(rec["더존코드"], "100")
 
 
+class TestParseShipment(unittest.TestCase):
+    HEADER = ["출고일자", "출고번호", "No", "고객코드", "고객", "담당자",
+              "품번", "출고수량", "단가"]
+
+    def _rows(self, rows):
+        return _wb_bytes([self.HEADER], rows)
+
+    def test_sums_2026_qty_by_mix(self):
+        data = [
+            [datetime(2026, 1, 2), "IS1", 1, 131149, "(주)에스엔아이", "신성일", "TC4452VAT", 1600, 1],
+            [datetime(2026, 3, 5), "IS2", 1, 131149, "(주)에스엔아이", "신성일", "TC4452VAT", 400, 1],
+        ]
+        out = m5.parse_shipment(self._rows(data))
+        mix = m5.make_mix(131149, "TC4452VAT")
+        self.assertEqual(out[mix]["y2026"], 2000)
+        self.assertEqual(out[mix]["담당자"], "신성일")
+        self.assertEqual(out[mix]["고객"], "(주)에스엔아이")
+        self.assertEqual(out[mix]["고객코드"], "131149")
+        self.assertEqual(out[mix]["part"], "TC4452VAT")
+
+    def test_non_2026_excluded(self):
+        data = [[datetime(2025, 12, 31), "X", 1, 100, "C", "S", "P1", 999, 1]]
+        out = m5.parse_shipment(self._rows(data))
+        self.assertEqual(out[m5.make_mix(100, "P1")]["y2026"], 0)
+
+    def test_cutoff_excludes_on_or_after(self):
+        # cutoff_date 지정 시 그 날짜 이상은 제외 (전월 말까지 누적 옵션)
+        data = [
+            [datetime(2026, 5, 10), "A", 1, 100, "C", "S", "P1", 10, 1],
+            [datetime(2026, 6, 20), "B", 1, 100, "C", "S", "P1", 20, 1],
+        ]
+        out = m5.parse_shipment(self._rows(data), cutoff_date=date(2026, 6, 1))
+        self.assertEqual(out[m5.make_mix(100, "P1")]["y2026"], 10)
+
+
 if __name__ == "__main__":
     unittest.main()

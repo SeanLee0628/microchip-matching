@@ -164,3 +164,36 @@ def parse_blog(contents):
             if rec["cancel_window"] is None or cancel < rec["cancel_window"]:
                 rec["cancel_window"] = cancel
     return out
+
+
+def parse_shipment(contents, cutoff_date=None):
+    """출고내역 → {mix: {담당자, 고객, 고객코드, part, y2026}}.
+    cutoff_date 지정 시 출고일자 >= cutoff_date 인 행은 2026 합산에서 제외(없으면 2026 전체)."""
+    ws = _open_first_ws(contents)
+    required = {"고객코드", "고객", "담당자", "품번", "출고일자", "출고수량"}
+    hdr, col = _find_header_row(ws, required, max_scan=4)
+    if hdr is None:
+        return {}
+
+    out = {}
+    for r in range(hdr + 1, ws.max_row + 1):
+        def cv(name):
+            c = col.get(name)
+            return ws.cell(row=r, column=c).value if c else None
+
+        mix = make_mix(cv("고객코드"), cv("품번"))
+        if not mix:
+            continue
+        rec = out.get(mix)
+        if rec is None:
+            rec = {"담당자": _s(cv("담당자")), "고객": _s(cv("고객")),
+                   "고객코드": _code_str(cv("고객코드")), "part": _norm_part(cv("품번")),
+                   "y2026": 0}
+            out[mix] = rec
+
+        d = _to_date(cv("출고일자"))
+        qty = _to_float(cv("출고수량")) or 0
+        if d is not None and d.year == 2026:
+            if cutoff_date is None or d < cutoff_date:
+                rec["y2026"] += qty
+    return out
