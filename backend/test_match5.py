@@ -321,5 +321,27 @@ class TestBuildRecords(unittest.TestCase):
         self.assertEqual(recs[1]["품번"], "ZEBRA")
 
 
+class TestExportWorkbook(unittest.TestCase):
+    def test_produces_openable_xlsx_with_all_columns(self):
+        rows = [{c: None for c in m5.COLUMNS}]
+        rows[0]["믹스#"] = "100P1"
+        rows[0]["6월"] = 1234
+        rows[0]["2026년"] = 50
+        buf = m5.export_workbook(m5.COLUMNS, rows)
+        self.assertTrue(buf.getvalue()[:2] == b"PK")  # xlsx(zip) 시그니처
+        wb = openpyxl.load_workbook(io.BytesIO(buf.getvalue()))
+        ws = wb.active
+        # 1행 그룹헤더, 2행 컬럼헤더, 3행부터 데이터
+        header_row = [ws.cell(row=2, column=i + 1).value for i in range(len(m5.COLUMNS))]
+        self.assertEqual(header_row, m5.COLUMNS)
+        # 그룹헤더: 출하이력(2023년 위치), BLOG 2026(PDD기준)(6월 위치)
+        y2023_col = m5.COLUMNS.index("2023년") + 1
+        jun_col = m5.COLUMNS.index("6월") + 1
+        self.assertEqual(ws.cell(row=1, column=y2023_col).value, "출하이력")
+        self.assertEqual(ws.cell(row=1, column=jun_col).value, "BLOG 2026(PDD기준)")
+        # 데이터 값
+        self.assertEqual(ws.cell(row=3, column=m5.COLUMNS.index("6월") + 1).value, 1234)
+
+
 if __name__ == "__main__":
     unittest.main()

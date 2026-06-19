@@ -308,3 +308,61 @@ def build_records(inventory, fcst, blog, shipment, cutoff_date=None):
 
     records.sort(key=lambda r: ((r.get("품번") or ""), (r.get("고객") or "")))
     return COLUMNS, DASHBOARD_COLUMNS, records
+
+
+def export_workbook(columns, rows):
+    """columns/rows → 스타일 적용 xlsx(BytesIO).  1행 그룹헤더 + 2행 컬럼헤더 + 데이터."""
+    from openpyxl import Workbook
+    from openpyxl.styles import PatternFill, Font, Alignment
+    from openpyxl.utils import get_column_letter
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "마이크로칩(매칭)"
+
+    # 1행: 그룹 헤더
+    def col_idx(name):
+        return columns.index(name) + 1 if name in columns else None
+
+    y2023 = col_idx("2023년")
+    y2026 = col_idx("2026년")
+    jun = col_idx("6월")
+    mar = col_idx("3월")
+    if y2023:
+        ws.cell(row=1, column=y2023, value="출하이력")
+        if y2026 and y2026 > y2023:
+            ws.merge_cells(start_row=1, start_column=y2023, end_row=1, end_column=y2026)
+    if jun:
+        ws.cell(row=1, column=jun, value="BLOG 2026(PDD기준)")
+        if mar and mar > jun:
+            ws.merge_cells(start_row=1, start_column=jun, end_row=1, end_column=mar)
+
+    # 2행: 컬럼 헤더
+    for i, name in enumerate(columns, start=1):
+        ws.cell(row=2, column=i, value=name)
+
+    # 3행~: 데이터
+    for ridx, row in enumerate(rows, start=3):
+        for i, name in enumerate(columns, start=1):
+            ws.cell(row=ridx, column=i, value=row.get(name))
+
+    # 스타일: 헤더(1·2행) 하늘색+볼드+가운데
+    sky = PatternFill(start_color="87CEEB", end_color="87CEEB", fill_type="solid")
+    bold = Font(bold=True)
+    center = Alignment(horizontal="center", vertical="center")
+    for r in (1, 2):
+        for c in range(1, len(columns) + 1):
+            cell = ws.cell(row=r, column=c)
+            cell.fill = sky
+            cell.font = bold
+            cell.alignment = center
+
+    # 필터(컬럼 헤더 행부터)
+    last_col = get_column_letter(len(columns))
+    ws.auto_filter.ref = f"A2:{last_col}2"
+    ws.freeze_panes = "A3"
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    return buf
