@@ -188,12 +188,13 @@ class TestParseShipment(unittest.TestCase):
 class TestParseFcst(unittest.TestCase):
     def _bytes(self, data_rows):
         # 헤더 3행: 1·2행 더미, 3행 실제 헤더. 시트명 'Sales Revenue'.
+        # 컬럼 순서: 담당자, Customer, MPN, Demand Total, Customer Code.
         wb = openpyxl.Workbook()
         ws = wb.active
         ws.title = "Sales Revenue"
         ws.append(["month band"])
         ws.append(["sub totals"])
-        ws.append(["Customer", "MPN", "Demand Total", "Customer Code"])
+        ws.append(["담당자", "Customer", "MPN", "Demand Total", "Customer Code"])
         for row in data_rows:
             ws.append(row)
         buf = io.BytesIO(); wb.save(buf)
@@ -201,25 +202,34 @@ class TestParseFcst(unittest.TestCase):
 
     def test_demand_total_keyed_by_mix(self):
         data = [
-            ["(주)다나와", "ATMEGA169P-16AU", 6120, 131150],
-            ["(주)다나와", "PIC16F1947-I/PT", 3200, 131150],
+            ["김담당", "(주)다나와", "ATMEGA169P-16AU", 6120, 131150],
+            ["김담당", "(주)다나와", "PIC16F1947-I/PT", 3200, 131150],
         ]
         out = m5.parse_fcst(self._bytes(data))
-        self.assertEqual(out[m5.make_mix(131150, "ATMEGA169P-16AU")], 6120)
-        self.assertEqual(out[m5.make_mix(131150, "PIC16F1947-I/PT")], 3200)
+        self.assertEqual(out[m5.make_mix(131150, "ATMEGA169P-16AU")]["demand"], 6120)
+        self.assertEqual(out[m5.make_mix(131150, "PIC16F1947-I/PT")]["demand"], 3200)
+
+    def test_identifiers_populated(self):
+        data = [["김담당", "(주)다나와", "ATMEGA169P-16AU", 6120, 131150]]
+        out = m5.parse_fcst(self._bytes(data))
+        rec = out[m5.make_mix(131150, "ATMEGA169P-16AU")]
+        self.assertEqual(rec["code"], "131150")
+        self.assertEqual(rec["part"], m5._norm_part("ATMEGA169P-16AU"))
+        self.assertEqual(rec["담당자"], "김담당")
+        self.assertEqual(rec["고객"], "(주)다나와")
 
     def test_mpn_with_newline_normalized(self):
-        data = [["(주)x", "\nMCP1322T-27LE/OTVAO", 50, 133742]]
+        data = [["김담당", "(주)x", "\nMCP1322T-27LE/OTVAO", 50, 133742]]
         out = m5.parse_fcst(self._bytes(data))
-        self.assertEqual(out[m5.make_mix(133742, "MCP1322T-27LE/OTVAO")], 50)
+        self.assertEqual(out[m5.make_mix(133742, "MCP1322T-27LE/OTVAO")]["demand"], 50)
 
     def test_sums_duplicates(self):
         data = [
-            ["c", "P1", 10, 100],
-            ["c", "P1", 5, 100],
+            ["김담당", "c", "P1", 10, 100],
+            ["김담당", "c", "P1", 5, 100],
         ]
         out = m5.parse_fcst(self._bytes(data))
-        self.assertEqual(out[m5.make_mix(100, "P1")], 15)
+        self.assertEqual(out[m5.make_mix(100, "P1")]["demand"], 15)
 
 
 class TestSumAvailableQty(unittest.TestCase):
@@ -282,7 +292,8 @@ class TestBuildRecords(unittest.TestCase):
         mix = m5.make_mix(131112, "23K256T-I/SN")
         part = m5._norm_part("23K256T-I/SN")
         inv = {part: 5000}
-        fcst = {mix: 2000}
+        fcst = {mix: {"demand": 2000, "code": "131112", "part": part,
+                      "담당자": None, "고객": None}}
         blog = {mix: {"lead_time": 17, "cancel_window": date(2026, 5, 12),
                       "blog_ttl": 6600, "monthly": {6: 0, 8: 6600},
                       "더존코드": "131112", "더존업체명": "(주)에이텍", "part": part}}
@@ -314,13 +325,35 @@ class TestBuildRecords(unittest.TestCase):
         m_ship = m5.make_mix(2, "B")
         m_fcst = m5.make_mix(3, "C")
         cols, dash, recs = m5.build_records(
-            {}, {m_fcst: 9},
+            {}, {m_fcst: {"demand": 9, "code": "3", "part": "C",
+                          "담당자": None, "고객": None}},
             {m_blog: {"lead_time": None, "cancel_window": None, "blog_ttl": 1,
                       "monthly": {}, "더존코드": "1", "더존업체명": None, "part": "A"}},
             {m_ship: {"담당자": None, "고객": None, "고객코드": "2", "part": "B", "y2026": 0}},
         )
         mixes = {r["믹스#"] for r in recs}
         self.assertEqual(mixes, {m_blog, m_ship, m_fcst})
+
+    def test_fcst_only_zero_demand_dropped(self):
+        # FCST 단독 + demand 0 → 행 생성 안 함. demand>0 → 행 생성 + 식별자 보강.
+        m_zero = m5.make_mix(1, "ZERO")
+        m_real = m5.make_mix(2, "REAL")
+        part_real = m5._norm_part("REAL")
+        fcst = {
+            m_zero: {"demand": 0, "code": "1", "part": m5._norm_part("ZERO"),
+                     "담당자": "담당0", "고객": "고객0"},
+            m_real: {"demand": 500, "code": "2", "part": part_real,
+                     "담당자": "담당R", "고객": "고객R"},
+        }
+        _, _, recs = m5.build_records({}, fcst, {}, {})
+        mixes = {r["믹스#"] for r in recs}
+        self.assertNotIn(m_zero, mixes)
+        self.assertIn(m_real, mixes)
+        row = next(r for r in recs if r["믹스#"] == m_real)
+        self.assertEqual(row["고객코드"], "2")
+        self.assertEqual(row["품번"], part_real)
+        self.assertEqual(row["고객"], "고객R")
+        self.assertEqual(row["담당자"], "담당R")
 
     def test_qty_shared_across_mix_with_same_part(self):
         part = m5._norm_part("P1")

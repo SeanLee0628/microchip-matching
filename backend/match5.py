@@ -209,10 +209,12 @@ def parse_shipment(contents, cutoff_date=None):
 
 
 def parse_fcst(contents, sheet_name="Sales Revenue"):
-    """FCST Sales Revenue → {mix: demand_total 합계}.  MIX = make_mix(Customer Code, MPN)."""
+    """FCST Sales Revenue → {mix: {demand, code, part, 담당자, 고객}}.
+    MIX = make_mix(Customer Code, MPN). demand=Demand Total 합계(중복행 합산),
+    나머지 식별자는 해당 mix 첫 행 기준."""
     wb = load_workbook(io.BytesIO(contents), data_only=True)
     ws = wb[sheet_name] if sheet_name in wb.sheetnames else wb[wb.sheetnames[0]]
-    required = {"Customer Code", "MPN", "Demand Total"}
+    required = {"Customer Code", "MPN", "Demand Total", "담당자", "Customer"}
     hdr, col = _find_header_row(ws, required, max_scan=5)
     if hdr is None:
         return {}
@@ -229,7 +231,13 @@ def parse_fcst(contents, sheet_name="Sales Revenue"):
         demand = _to_float(cv("Demand Total"))
         if demand is None:
             continue
-        out[mix] = out.get(mix, 0) + demand
+        rec = out.get(mix)
+        if rec is None:
+            rec = {"demand": 0, "code": _code_str(cv("Customer Code")),
+                   "part": _norm_part(cv("MPN")), "담당자": _s(cv("담당자")),
+                   "고객": _s(cv("Customer"))}
+            out[mix] = rec
+        rec["demand"] += demand
     return out
 
 
@@ -280,9 +288,14 @@ def build_records(inventory, fcst, blog, shipment, cutoff_date=None):
     for mix in all_mixes:
         bl = blog.get(mix, {})
         sh = shipment.get(mix, {})
-        demand = fcst.get(mix)
+        fc = fcst.get(mix, {})
+        demand = fc.get("demand")
 
-        part = sh.get("part") or bl.get("part")
+        # FCST 단독 + 무수요(None/0) 행은 잡음 → 건너뜀.
+        if mix not in shipment and mix not in blog and not demand:
+            continue
+
+        part = sh.get("part") or bl.get("part") or fc.get("part")
         qty = inventory.get(part) if part else None
         blog_ttl = bl.get("blog_ttl") or 0
         y2026 = sh.get("y2026")
@@ -295,10 +308,10 @@ def build_records(inventory, fcst, blog, shipment, cutoff_date=None):
 
         cancel = bl.get("cancel_window")
         rec = {
-            "고객코드": sh.get("고객코드") or bl.get("더존코드"),
+            "고객코드": sh.get("고객코드") or bl.get("더존코드") or fc.get("code"),
             "믹스#": mix,
-            "담당자": sh.get("담당자"),
-            "고객": sh.get("고객") or bl.get("더존업체명"),
+            "담당자": sh.get("담당자") or fc.get("담당자"),
+            "고객": sh.get("고객") or bl.get("더존업체명") or fc.get("고객"),
             "품번": part,
             "Q'ty": qty,
             "Lead Time": bl.get("lead_time"),
