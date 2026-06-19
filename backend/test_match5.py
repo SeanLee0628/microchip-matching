@@ -196,5 +196,60 @@ class TestParseFcst(unittest.TestCase):
         self.assertEqual(out[m5.make_mix(100, "P1")], 15)
 
 
+class TestSumAvailableQty(unittest.TestCase):
+    def _ws(self, data_rows):
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Jun inventory"
+        ws.append(["title row"])  # 1행 더미
+        ws.append(["Central", "Sales team", "VENDER", "SR#", "FAMILY", "DID#",
+                   "품명", "Part#", "MOBIS ID", "unit", "site", "MOQ", "Package",
+                   "FAB", "Q'ty", "SALES", "CUSTOMER", "CRD", "booking",
+                   "available Q'ty"])  # 2행 헤더 (Part#=8열, available Q'ty=20열)
+        for row in data_rows:
+            ws.append(row)
+        return ws
+
+    def _row(self, part, oqty, avail):
+        return ["A", "5실", "MICROCHIP", ".", ".", ".", "UT", part, ".", "EA",
+                ".", ".", ".", ".", oqty, ".", ".", ".", ".", avail]
+
+    def test_sums_available_qty_per_part(self):
+        ws = self._ws([
+            self._row("PIC16F1947-I/PT", 6400, 6400),
+            self._row("PIC16F1947-I/PT", 0, 0),
+            self._row("23K256T-I/SN", 3300, 1000),
+        ])
+        out = m5._sum_available_qty(ws)
+        self.assertEqual(out[m5._norm_part("PIC16F1947-I/PT")], 6400)
+        self.assertEqual(out[m5._norm_part("23K256T-I/SN")], 1000)
+
+    def test_missing_header_returns_empty(self):
+        wb = openpyxl.Workbook(); ws = wb.active
+        ws.append(["nope", "data"])
+        self.assertEqual(m5._sum_available_qty(ws), {})
+
+
+import os
+_INV_PATH = r"C:\Users\user\Downloads\cowork\Uniquant_마이크로칩 매칭\Jun_2026_daily warehouse inventory list(영업5실).xlsx"
+
+
+class TestParseInventoryRealFile(unittest.TestCase):
+    @unittest.skipUnless(os.path.exists(_INV_PATH), "real inventory file not present")
+    def test_decrypts_and_aggregates(self):
+        with open(_INV_PATH, "rb") as f:
+            out = m5.parse_inventory(f.read(), password="9178")
+        self.assertGreater(len(out), 0)
+        # PIC16F1947-I/PT 가 존재하고 합계가 0 이상
+        self.assertIn(m5._norm_part("PIC16F1947-I/PT"), out)
+
+    @unittest.skipUnless(os.path.exists(_INV_PATH), "real inventory file not present")
+    def test_wrong_password_raises(self):
+        with open(_INV_PATH, "rb") as f:
+            data = f.read()
+        with self.assertRaises(ValueError):
+            m5.parse_inventory(data, password="0000")
+
+
 if __name__ == "__main__":
     unittest.main()

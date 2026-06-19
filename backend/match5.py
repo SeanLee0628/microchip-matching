@@ -222,3 +222,41 @@ def parse_fcst(contents, sheet_name="Sales Revenue"):
             continue
         out[mix] = out.get(mix, 0) + demand
     return out
+
+
+def _sum_available_qty(ws):
+    """재고 워크시트 → {part_norm: available Q'ty 합계}.  헤더 못 찾으면 {}."""
+    hdr, col = _find_header_row(ws, {"Part#", "available Q'ty"}, max_scan=4)
+    if hdr is None:
+        return {}
+    out = {}
+    pc, qc = col["Part#"], col["available Q'ty"]
+    for r in range(hdr + 1, ws.max_row + 1):
+        part = _norm_part(ws.cell(row=r, column=pc).value)
+        if not part:
+            continue
+        qty = _to_float(ws.cell(row=r, column=qc).value) or 0
+        out[part] = out.get(part, 0) + qty
+    return out
+
+
+def parse_inventory(contents, password=DEFAULT_INVENTORY_PASSWORD,
+                    sheet_name="Jun inventory"):
+    """암호화된 재고 .xlsx 를 복호화 후 PART#별 available Q'ty 합계.
+    복호화 실패 시 ValueError('재고 파일 비밀번호가 올바르지 않습니다')."""
+    import msoffcrypto
+    dec = io.BytesIO()
+    try:
+        of = msoffcrypto.OfficeFile(io.BytesIO(contents))
+        of.load_key(password=password)
+        of.decrypt(dec)
+    except Exception:
+        # 암호화가 아닐 수도 있음 → 원본 그대로 시도
+        dec = io.BytesIO(contents)
+    dec.seek(0)
+    try:
+        wb = load_workbook(dec, data_only=True)
+    except Exception:
+        raise ValueError("재고 파일 비밀번호가 올바르지 않습니다")
+    ws = wb[sheet_name] if sheet_name in wb.sheetnames else wb[wb.sheetnames[0]]
+    return _sum_available_qty(ws)
