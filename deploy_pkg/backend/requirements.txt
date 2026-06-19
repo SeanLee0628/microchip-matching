@@ -12,3 +12,4 @@ requests==2.32.3
 pillow==10.4.0
 reportlab==4.2.5
 lxml==6.1.1
+anthropic==0.96.0
