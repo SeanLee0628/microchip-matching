@@ -42,6 +42,32 @@ class TestMix(unittest.TestCase):
         self.assertIn("BLOG TTL", m5.DASHBOARD_COLUMNS)
 
 
+class TestToDate(unittest.TestCase):
+    def test_datetime_unchanged(self):
+        self.assertEqual(m5._to_date(datetime(2026, 1, 2)), date(2026, 1, 2))
+
+    def test_date_unchanged(self):
+        self.assertEqual(m5._to_date(date(2026, 1, 2)), date(2026, 1, 2))
+
+    def test_yyyymmdd_int(self):
+        self.assertEqual(m5._to_date(20250825), date(2025, 8, 25))
+
+    def test_yyyymmdd_str(self):
+        self.assertEqual(m5._to_date("20250825"), date(2025, 8, 25))
+
+    def test_invalid_month_returns_none(self):
+        self.assertIsNone(m5._to_date("20251301"))
+
+    def test_not_eight_digits_returns_none(self):
+        self.assertIsNone(m5._to_date(12345))
+
+    def test_none_returns_none(self):
+        self.assertIsNone(m5._to_date(None))
+
+    def test_non_numeric_str_returns_none(self):
+        self.assertIsNone(m5._to_date("hello"))
+
+
 class TestFindHeaderRow(unittest.TestCase):
     def _ws(self, rows):
         wb = openpyxl.Workbook()
@@ -308,6 +334,15 @@ class TestBuildRecords(unittest.TestCase):
         _, _, recs = m5.build_records(inv, {}, blog, {})
         for r in recs:
             self.assertEqual(r["Q'ty"], 800)
+
+    def test_balance_none_when_shipment_only(self):
+        # MIX가 출고내역에만 존재(재고/백록/FCST 없음) → Balance is None
+        mix = m5.make_mix(100, "P1")
+        ship = {mix: {"담당자": "S", "고객": "C", "고객코드": "100",
+                      "part": m5._norm_part("P1"), "y2026": 0}}
+        _, _, recs = m5.build_records({}, {}, {}, ship)
+        self.assertEqual(len(recs), 1)
+        self.assertIsNone(recs[0]["Balance"])
 
     def test_sorted_by_part_then_customer(self):
         blog = {

@@ -7,7 +7,9 @@
 import io
 import math
 import re
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
+
+from openpyxl import load_workbook
 
 COLUMNS = [
     "고객코드", "믹스#", "담당자", "고객", "품번", "Q'ty", "Lead Time",
@@ -72,11 +74,22 @@ def _to_float(v):
 
 
 def _to_date(v):
-    """datetime/date/Timestamp → date. 그 외 None."""
+    """datetime/date/Timestamp → date. 8자리 YYYYMMDD(int/str)도 인식. 그 외 None.
+
+    openpyxl이 날짜 시리얼 범위를 벗어났다고 판단해 20250825 같은 8자리 정수/문자열로
+    넘기는 셀이 실제로 존재 → 출하 2026 합산·PDD 월버킷에서 조용히 누락되는 것을 방지.
+    """
     if isinstance(v, datetime):
         return v.date()
     if isinstance(v, date):
         return v
+    if isinstance(v, (int, str)) and not isinstance(v, bool):
+        s = str(v).strip()
+        if len(s) == 8 and s.isdigit():
+            try:
+                return date(int(s[:4]), int(s[4:6]), int(s[6:8]))
+            except ValueError:
+                return None
     return None
 
 
@@ -108,10 +121,6 @@ def _find_header_row(ws, required, max_scan=6):
                 out[orig] = colmap.get(norm(orig))
             return r, out
     return None, {}
-
-
-import datetime as _dt
-from openpyxl import load_workbook
 
 
 def _open_first_ws(contents):
@@ -160,7 +169,7 @@ def parse_blog(contents):
             rec["lead_time"] = lt if rec["lead_time"] is None else max(rec["lead_time"], lt)
 
         if pdd is not None and cw_days is not None:
-            cancel = pdd - _dt.timedelta(days=int(cw_days))
+            cancel = pdd - timedelta(days=int(cw_days))
             if rec["cancel_window"] is None or cancel < rec["cancel_window"]:
                 rec["cancel_window"] = cancel
     return out
