@@ -42,5 +42,32 @@ class TestMix(unittest.TestCase):
         self.assertIn("BLOG TTL", m5.DASHBOARD_COLUMNS)
 
 
+class TestFindHeaderRow(unittest.TestCase):
+    def _ws(self, rows):
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        for r in rows:
+            ws.append(r)
+        return ws
+
+    def test_header_on_first_row(self):
+        ws = self._ws([["PART#", "Qty Due"], ["A", 1]])
+        idx, colmap = m5._find_header_row(ws, {"PART#"}, max_scan=5)
+        self.assertEqual(idx, 1)
+        self.assertEqual(colmap["PART#"], 1)
+
+    def test_header_on_third_row(self):
+        ws = self._ws([["title"], [None], ["담당자", "MPN", "Demand Total"], ["a", "b", 3]])
+        idx, colmap = m5._find_header_row(ws, {"Demand Total", "MPN"}, max_scan=6)
+        self.assertEqual(idx, 3)
+        self.assertEqual(colmap["MPN"], 2)
+        self.assertEqual(colmap["Demand Total"], 3)
+
+    def test_returns_none_when_not_found(self):
+        ws = self._ws([["x", "y"], ["a", "b"]])
+        idx, colmap = m5._find_header_row(ws, {"PART#"}, max_scan=5)
+        self.assertIsNone(idx)
+
+
 if __name__ == "__main__":
     unittest.main()

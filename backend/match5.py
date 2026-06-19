@@ -78,3 +78,33 @@ def _to_date(v):
     if isinstance(v, date):
         return v
     return None
+
+
+def _find_header_row(ws, required, max_scan=6):
+    """required(집합) 의 헤더 텍스트를 모두 포함하는 첫 행을 찾는다.
+    반환: (행번호(1-base), {헤더텍스트: 열번호(1-base)}). 못 찾으면 (None, {}).
+    헤더 비교는 공백·줄바꿈 제거 후 정확 일치.
+    """
+    def norm(v):
+        if v is None:
+            return None
+        return re.sub(r"\s+", "", str(v))
+
+    req_norm = {norm(x) for x in required}
+    for r in range(1, min(ws.max_row, max_scan) + 1):
+        colmap = {}
+        present = set()
+        for c in range(1, ws.max_column + 1):
+            key = norm(ws.cell(row=r, column=c).value)
+            if key is None:
+                continue
+            colmap.setdefault(key, c)
+            if key in req_norm:
+                present.add(key)
+        if req_norm.issubset(present):
+            # 원본 헤더 텍스트(required) 기준으로 열번호 매핑 반환
+            out = {}
+            for orig in required:
+                out[orig] = colmap.get(norm(orig))
+            return r, out
+    return None, {}
