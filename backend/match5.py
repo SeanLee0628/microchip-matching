@@ -197,3 +197,28 @@ def parse_shipment(contents, cutoff_date=None):
             if cutoff_date is None or d < cutoff_date:
                 rec["y2026"] += qty
     return out
+
+
+def parse_fcst(contents, sheet_name="Sales Revenue"):
+    """FCST Sales Revenue → {mix: demand_total 합계}.  MIX = make_mix(Customer Code, MPN)."""
+    wb = load_workbook(io.BytesIO(contents), data_only=True)
+    ws = wb[sheet_name] if sheet_name in wb.sheetnames else wb[wb.sheetnames[0]]
+    required = {"Customer Code", "MPN", "Demand Total"}
+    hdr, col = _find_header_row(ws, required, max_scan=5)
+    if hdr is None:
+        return {}
+
+    out = {}
+    for r in range(hdr + 1, ws.max_row + 1):
+        def cv(name):
+            c = col.get(name)
+            return ws.cell(row=r, column=c).value if c else None
+
+        mix = make_mix(cv("Customer Code"), cv("MPN"))
+        if not mix:
+            continue
+        demand = _to_float(cv("Demand Total"))
+        if demand is None:
+            continue
+        out[mix] = out.get(mix, 0) + demand
+    return out

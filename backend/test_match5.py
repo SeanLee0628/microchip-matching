@@ -159,5 +159,42 @@ class TestParseShipment(unittest.TestCase):
         self.assertEqual(out[m5.make_mix(100, "P1")]["y2026"], 10)
 
 
+class TestParseFcst(unittest.TestCase):
+    def _bytes(self, data_rows):
+        # 헤더 3행: 1·2행 더미, 3행 실제 헤더. 시트명 'Sales Revenue'.
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Sales Revenue"
+        ws.append(["month band"])
+        ws.append(["sub totals"])
+        ws.append(["Customer", "MPN", "Demand Total", "Customer Code"])
+        for row in data_rows:
+            ws.append(row)
+        buf = io.BytesIO(); wb.save(buf)
+        return buf.getvalue()
+
+    def test_demand_total_keyed_by_mix(self):
+        data = [
+            ["(주)다나와", "ATMEGA169P-16AU", 6120, 131150],
+            ["(주)다나와", "PIC16F1947-I/PT", 3200, 131150],
+        ]
+        out = m5.parse_fcst(self._bytes(data))
+        self.assertEqual(out[m5.make_mix(131150, "ATMEGA169P-16AU")], 6120)
+        self.assertEqual(out[m5.make_mix(131150, "PIC16F1947-I/PT")], 3200)
+
+    def test_mpn_with_newline_normalized(self):
+        data = [["(주)x", "\nMCP1322T-27LE/OTVAO", 50, 133742]]
+        out = m5.parse_fcst(self._bytes(data))
+        self.assertEqual(out[m5.make_mix(133742, "MCP1322T-27LE/OTVAO")], 50)
+
+    def test_sums_duplicates(self):
+        data = [
+            ["c", "P1", 10, 100],
+            ["c", "P1", 5, 100],
+        ]
+        out = m5.parse_fcst(self._bytes(data))
+        self.assertEqual(out[m5.make_mix(100, "P1")], 15)
+
+
 if __name__ == "__main__":
     unittest.main()
