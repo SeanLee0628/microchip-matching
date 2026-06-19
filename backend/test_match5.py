@@ -69,5 +69,60 @@ class TestFindHeaderRow(unittest.TestCase):
         self.assertIsNone(idx)
 
 
+def _wb_bytes(header_rows, data_rows, sheet_title="Sheet1"):
+    """헤더 여러 줄 + 데이터 줄을 가진 xlsx 를 bytes 로."""
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = sheet_title
+    for row in header_rows:
+        ws.append(row)
+    for row in data_rows:
+        ws.append(row)
+    buf = io.BytesIO()
+    wb.save(buf)
+    return buf.getvalue()
+
+
+class TestParseBlog(unittest.TestCase):
+    HEADER = ["PART#", "더존코드", "Qty Due", "PDD", "Change Window",
+              "Lead Time Weeks", "Full Manufacturing Cycle Time Weeks", "더존업체명"]
+
+    def _rows(self, rows):
+        return _wb_bytes([self.HEADER], rows, sheet_title="260609")
+
+    def test_blog_ttl_and_monthly_bucket_by_pdd(self):
+        data = [
+            ["23K256T-I/SN", 131112, 3300, datetime(2026, 6, 7), 45, 9, 17, "(주)에이텍"],
+            ["23K256T-I/SN", 131112, 6600, datetime(2026, 8, 7), 45, 9, 17, "(주)에이텍"],
+        ]
+        out = m5.parse_blog(self._rows(data))
+        mix = m5.make_mix(131112, "23K256T-I/SN")
+        self.assertEqual(out[mix]["blog_ttl"], 9900)
+        self.assertEqual(out[mix]["monthly"][6], 3300)
+        self.assertEqual(out[mix]["monthly"][8], 6600)
+
+    def test_lead_time_is_max_of_two_columns(self):
+        data = [["P1", 100, 10, datetime(2026, 6, 1), 45, 9, 17, "C"]]
+        out = m5.parse_blog(self._rows(data))
+        self.assertEqual(out[m5.make_mix(100, "P1")]["lead_time"], 17)
+
+    def test_cancel_window_is_earliest_pdd_minus_change_window(self):
+        # PDD - Change Window(일). 두 행 중 더 이른 날짜.
+        data = [
+            ["P1", 100, 10, datetime(2026, 8, 7), 45, 9, 17, "C"],   # 8/7 - 45 = 6/23
+            ["P1", 100, 10, datetime(2026, 6, 26), 45, 9, 17, "C"],  # 6/26 - 45 = 5/12 (더 이름)
+        ]
+        out = m5.parse_blog(self._rows(data))
+        self.assertEqual(out[m5.make_mix(100, "P1")]["cancel_window"], date(2026, 5, 12))
+
+    def test_company_and_part_carried(self):
+        data = [["P1", 100, 10, datetime(2026, 6, 1), 45, 9, 17, "(주)테스트"]]
+        out = m5.parse_blog(self._rows(data))
+        rec = out[m5.make_mix(100, "P1")]
+        self.assertEqual(rec["더존업체명"], "(주)테스트")
+        self.assertEqual(rec["part"], "P1")
+        self.assertEqual(rec["더존코드"], "100")
+
+
 if __name__ == "__main__":
     unittest.main()

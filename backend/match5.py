@@ -108,3 +108,59 @@ def _find_header_row(ws, required, max_scan=6):
                 out[orig] = colmap.get(norm(orig))
             return r, out
     return None, {}
+
+
+import datetime as _dt
+from openpyxl import load_workbook
+
+
+def _open_first_ws(contents):
+    wb = load_workbook(io.BytesIO(contents), data_only=True)
+    return wb[wb.sheetnames[0]]
+
+
+def parse_blog(contents):
+    """백록(Blog) → {mix: {lead_time, cancel_window(date), blog_ttl, monthly{month:qty},
+    더존코드, 더존업체명, part}}.  PDD 월 기준 버킷, Cancel Window=가장 이른 (PDD-ChangeWindow)."""
+    ws = _open_first_ws(contents)
+    required = {"PART#", "더존코드", "Qty Due", "PDD", "Change Window",
+                "Lead Time Weeks", "Full Manufacturing Cycle Time Weeks", "더존업체명"}
+    hdr, col = _find_header_row(ws, required, max_scan=4)
+    if hdr is None:
+        return {}
+
+    out = {}
+    for r in range(hdr + 1, ws.max_row + 1):
+        def cv(name):
+            c = col.get(name)
+            return ws.cell(row=r, column=c).value if c else None
+
+        mix = make_mix(cv("더존코드"), cv("PART#"))
+        if not mix:
+            continue
+        qty = _to_float(cv("Qty Due")) or 0
+        pdd = _to_date(cv("PDD"))
+        cw_days = _to_float(cv("Change Window"))
+        lt1 = _to_float(cv("Lead Time Weeks"))
+        lt2 = _to_float(cv("Full Manufacturing Cycle Time Weeks"))
+
+        rec = out.get(mix)
+        if rec is None:
+            rec = {"lead_time": None, "cancel_window": None, "blog_ttl": 0,
+                   "monthly": {}, "더존코드": _code_str(cv("더존코드")),
+                   "더존업체명": _s(cv("더존업체명")), "part": _norm_part(cv("PART#"))}
+            out[mix] = rec
+
+        rec["blog_ttl"] += qty
+        if pdd is not None:
+            rec["monthly"][pdd.month] = rec["monthly"].get(pdd.month, 0) + qty
+
+        lt = max([x for x in (lt1, lt2) if x is not None], default=None)
+        if lt is not None:
+            rec["lead_time"] = lt if rec["lead_time"] is None else max(rec["lead_time"], lt)
+
+        if pdd is not None and cw_days is not None:
+            cancel = pdd - _dt.timedelta(days=int(cw_days))
+            if rec["cancel_window"] is None or cancel < rec["cancel_window"]:
+                rec["cancel_window"] = cancel
+    return out
