@@ -29,6 +29,7 @@ const GROUPS = [
     { key: "pos_report_fill", label: "출고내역 자동완성" },
     { key: "backlog_prd_diff", label: "백록 PRD 변동 비교" },
     { key: "fcst_sales_diff", label: "영업FCST/매출 비교" },
+    { key: "match5", label: "영업5실 매칭" },
   ]},
   { team: "자재", items: [
     { key: "materials", label: "출고 자동등록 (AI Agent)" },

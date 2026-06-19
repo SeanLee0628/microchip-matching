@@ -23,6 +23,7 @@ import SubulFilter from "./components/SubulFilter";
 import BacklogPrdDiff from "./components/BacklogPrdDiff";
 import FcstSalesDiff from "./components/FcstSalesDiff";
 import CrdBoard from "./components/CrdBoard";
+import Match5 from "./components/Match5";
 import "./App.css";
 
 // 섹션 키 ↔ URL 경로 라우팅. 각 섹션은 /<key> 로 직접 링크 가능.
@@ -31,7 +32,7 @@ const VALID_MENUS = new Set([
   "po_request", "invoice_batch", "micron_invoice", "sales_report", "po_report",
   "sales_summary", "shipping_invoice", "pos_report_fill", "materials",
   "matching_ai", "matching_build", "inventory_analysis", "subul_filter",
-  "backlog_prd_diff", "fcst_sales_diff",
+  "backlog_prd_diff", "fcst_sales_diff", "match5",
 ]);
 
 function menuFromPath() {
@@ -132,6 +133,7 @@ function App() {
         {activeMenu === "subul_filter" && <SubulFilter />}
         {activeMenu === "backlog_prd_diff" && <BacklogPrdDiff />}
         {activeMenu === "fcst_sales_diff" && <FcstSalesDiff />}
+        {activeMenu === "match5" && <Match5 />}
       </main>
     </div>
   );
