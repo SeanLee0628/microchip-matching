@@ -1,6 +1,6 @@
 from fastapi import FastAPI, UploadFile, File, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse, FileResponse
+from fastapi.responses import StreamingResponse, FileResponse, JSONResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 import pandas as pd
@@ -3908,6 +3908,111 @@ async def inventory_analysis_ai_classify(request: Request):
         return {**_fallback("규칙판정(API 키 인증 실패)"), "error": "API 키 인증 실패"}
     except Exception as e:
         return {**_fallback(f"규칙판정(AI 호출 실패)"), "error": f"AI 호출 실패: {e}"}
+
+
+# ==================== 부품 라벨 검수 (label-inspector 통합) ====================
+# label_app.py = label-inspector/app.py 를 모듈로 재사용(서버부는 __main__ 가드라 미실행).
+# /materials(React)는 이 /label 페이지를 iframe 으로 띄운다. fetch 경로(/inspect·/master)는
+# 원본 페이지 그대로라 루트에 동일 경로로 등록한다.
+
+@app.get("/label", response_class=HTMLResponse)
+async def label_page():
+    import label_app
+    return HTMLResponse(label_app.PAGE)
+
+
+@app.get("/master")
+async def label_master_status():
+    import label_app
+    return {"parts": len(label_app.BY_PART), "mobis": len(label_app.BY_MOBIS)}
+
+
+@app.post("/inspect")
+async def label_inspect(request: Request):
+    import label_app, dataurl
+    payload = await request.json()
+    try:
+        raw_b64 = dataurl.to_b64(payload["image"])   # data URL 접두 제거
+        return label_app.inspect_one(raw_b64)
+    except Exception as e:  # noqa: BLE001
+        return JSONResponse(status_code=500, content={"error": f"{type(e).__name__}: {e}"})
+
+
+@app.post("/master")
+async def label_master_upload(request: Request):
+    import label_app, dataurl
+    payload = await request.json()
+    try:
+        os.makedirs(label_app.DATA_DIR, exist_ok=True)
+        with open(label_app.MASTER_PATH, "wb") as f:
+            f.write(dataurl.to_bytes(payload["file"]))
+        label_app.reload_master()
+        if not label_app.BY_PART:
+            raise ValueError("마스터를 읽었지만 부품이 0건입니다. 'Apr inventory' 시트가 있는 파일인지 확인하세요.")
+        return {"ok": True, "parts": len(label_app.BY_PART), "mobis": len(label_app.BY_MOBIS)}
+    except Exception as e:  # noqa: BLE001
+        return JSONResponse(status_code=500, content={"error": f"{type(e).__name__}: {e}"})
+
+
+# ==================== 자재 라벨 생성 (label-maker 통합) ====================
+# labelmaker_app.py = label-maker/label_maker_web.py 를 모듈로 재사용.
+# /materials(React) 의 '라벨 생성' 탭이 이 /labelmaker 페이지를 iframe 으로 띄운다.
+# 페이지 안의 fetch 경로는 /labelmaker/* 로 맞춰 두었다 (루트 경로 충돌 방지).
+
+@app.get("/labelmaker", response_class=HTMLResponse)
+async def labelmaker_page():
+    import labelmaker_app
+    return HTMLResponse(labelmaker_app.PAGE)
+
+
+@app.post("/labelmaker/upload")
+async def labelmaker_upload(request: Request):
+    """Mobis 출고내역 엑셀 업로드 → LOT 파싱 (암호화 파일 자동 복호화)."""
+    import labelmaker_app, dataurl
+    payload = await request.json()
+    try:
+        n_lots, _ = labelmaker_app.ingest(
+            dataurl.to_bytes(payload["file"]),
+            payload.get("password") or labelmaker_app.DEFAULT_PW)
+        return {"ok": True, "lots": n_lots, "materials": labelmaker_app.MATERIALS}
+    except Exception as e:  # noqa: BLE001
+        return JSONResponse(status_code=500,
+                            content={"error": f"{type(e).__name__}: {e}"})
+
+
+@app.post("/labelmaker/lots")
+async def labelmaker_lots(request: Request):
+    import labelmaker_app
+    payload = await request.json()
+    try:
+        ls, total = labelmaker_app.lots_for(payload["mobis_id"])
+        return {"lots": ls, "total": total, "shown": len(ls)}
+    except Exception as e:  # noqa: BLE001
+        return JSONResponse(status_code=500,
+                            content={"error": f"{type(e).__name__}: {e}"})
+
+
+
+
+@app.post("/labelmaker/generate", response_class=HTMLResponse)
+async def labelmaker_generate(request: Request):
+    """선택한 LOT + 수량 → 라벨 HTML (새 창에서 인쇄)."""
+    import labelmaker_app, labelmaker_core as LM
+    import datetime as _dt
+    payload = await request.json()
+    today = _dt.datetime.now().strftime("%Y%m%d")
+    fields = []
+    for it in payload["items"]:
+        if not str(it.get("qty") or "").strip():        # 수량은 파일(엑셀 수량 열)에서만 온다
+            return JSONResponse(status_code=400,
+                                content={"error": f"수량이 없는 LOT 입니다: {it.get('lot')}"})
+        fields.append(dict(
+            material=it.get("material_code") or LM.material_code(it.get("mobis_id", "")),
+            serial=LM.serial_from(it["datecode"], it["lot"]),
+            qty=it["qty"], maker="SJYV",
+            vpn=it["vpn"], msl=str(it.get("msl") or labelmaker_app.DEFAULT_MSL), lot=it["lot"],
+            stock_day=today))
+    return HTMLResponse(LM.render_page(fields))
 
 
 # 프론트엔드 정적 파일 서빙 (배포용)
