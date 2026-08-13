@@ -195,13 +195,17 @@ EXTRACT_SCHEMA = {
                     "fab": {"type": "string", "description": "FAB 번호. 예: 10, 11. 없으면 빈칸"},
                     "stock_day": {"type": "string", "description": "STOCK DAY. 예: 20260611"},
                     "lot": {"type": "string", "description": "LOT 번호"},
-                    "serial": {"type": "string", "description": "SERIAL 번호"},
+                    "serial": {"type": "string", "description": "Unitrontech 흰색 라벨의 'SERIAL :' 값. 보이는 그대로."},
+                    "serial_maker": {"type": "string", "description": "제조사 라벨에 인쇄된 릴/박스 일련번호. 보통 맨 아래 바코드 옆에 '2622-V25 1500' 처럼 숫자4자리+대시 형태로 찍혀 있다. Unitrontech SERIAL 의 앞 4자리와 짝이 된다. 없으면 빈칸"},
                     "ordering_code": {"type": "string", "description": "Ordering Code (있으면)"},
                     "msl_level": {"type": "string", "description": "MSL LEVEL. 예: 3"},
                     "lot_maker": {"type": "string", "description": "제조사 라벨에서 Unitrontech LOT와 '동일한' LOT 코드(예: MN262220355 처럼). 보통 바코드 옆/아래 작은 글씨로 똑같이 다시 인쇄돼 있음 — 작더라도 끝까지 찾을 것. Batch(B026210010 같은 B-시작 코드)·Ordering Code(부품번호)·Quantity·Date·Reel번호는 LOT가 아니니 절대 넣지 말 것. 정말 없을 때만 빈칸"},
+                    "part_maker": {"type": "string", "description": "제조사(Micron/Samsung 등) 라벨에 인쇄된 '그 제조사 자신의' 부품번호(MPN). 보통 제조사 라벨의 큰 글씨 또는 바코드 아래에 있음 (예: MTFC64GBCAVAL-AAT). 이건 Unitrontech 흰색 라벨의 V/PN 과 짝이 되며 정상이라면 서로 같아야 한다. Unitrontech V/PN(vpn)이 아니라 '제조사 라벨 쪽에 실제로 찍힌 부품번호'를 그대로 읽어라. 제조사 라벨이 안 보이거나 부품번호가 없으면 빈칸"},
+                    "label_count": {"type": "integer", "description": "이 라벨(같은 품목·같은 내용)이 사진에 실제로 몇 장 보이는가. 세는 단위는 Unitrontech 흰색 라벨 1장 = 1 (릴/박스 1개). 흰색+제조사 라벨이 한 릴에 같이 붙어 있어도 1. 사진에 라벨이 1장뿐이면 1"},
                 },
                 "required": ["vpn", "material_code", "vender", "quantity", "maker_code",
-                             "fab", "stock_day", "lot", "serial", "ordering_code", "msl_level", "lot_maker"],
+                             "fab", "stock_day", "lot", "serial", "serial_maker", "ordering_code", "msl_level",
+                             "lot_maker", "part_maker", "label_count"],
                 "additionalProperties": False,
             },
         }
@@ -219,11 +223,23 @@ PROMPT = """이 사진에 보이는 부품 라벨(릴/박스 라벨)을 모두 �
 - **연속된 같은 숫자의 개수를 정확히 세라 (가장 흔한 오독!).** 00·11·000 처럼 같은 숫자가 붙어있을 때 그 개수를 하나 더 많게/적게 읽는 실수가 매우 잦다. 예: 실제 `…010…` 인데 `…0110…` 으로 1을 하나 더 읽는 식. 헷갈리는 구간은 머릿속으로 확대해서 자릿수를 하나하나 짚어가며 세라.
 - **MATERIAL CODE 는 읽은 뒤 전체 자릿수를 세어 검산하라.** 'M' 다음에 숫자가 몇 개인지 정확히 센다(예: M + 10자리). 한 번 읽은 값과 다시 센 자릿수가 맞는지 확인하고, 다르면 그 구간을 다시 봐라.
 - MATERIAL CODE 는 보통 'M' + 숫자(대시 포함 가능, 예: M3234-500039 또는 M3234500039). 흰색 Unitrontech 라벨의 'MATERIAL CODE :' 칸에 있다.
-- 같은 사진에 서로 다른 라벨이 여러 개면 각각 별도 객체로. 동일 품목 라벨이 단순 반복되면 대표 1개만.
+- 같은 사진에 서로 다른 라벨이 여러 개면 각각 별도 객체로.
+- **라벨 장수를 반드시 세라 (`label_count`) — 사진 장수가 아니라 라벨 실물 장수다.** 같은 품목 라벨이 여러 장 반복되면 객체는 대표 1개만 만들되, `label_count` 에 그 사진에서 보이는 **그 품목 라벨의 실제 장수**를 넣어라. 서로 다른 라벨은 각각 객체를 만들고 각자의 장수를 센다.
+  - 세는 단위: **Unitrontech 흰색 라벨 1장 = 1** (= 릴/박스 1개). 한 릴에 흰색 라벨과 제조사 라벨이 같이 붙어 있어도 그건 1로 센다.
+  - 릴/박스가 여러 개 쌓여 있으면 **라벨이 일부만 보여도 식별되면 1로 센다.** 줄·단으로 규칙적으로 놓였으면 (가로 개수 × 세로 개수)로 한 번 검산해라.
+  - 라벨이 아예 안 보이는(완전히 가려진) 릴은 세지 마라 — 추측 금지.
+  - 사진에 라벨이 1장뿐이면 `label_count` 는 1.
 - **두 스티커 LOT 비교 (정밀하게)**: 한 박스/릴엔 보통 라벨이 두 장 — Unitrontech 흰색 라벨과 제조사 라벨. Unitrontech 라벨의 'LOT :' 값을 `lot` 에 넣어라.
   그리고 **그 LOT와 똑같은 코드가 제조사 라벨에도 거의 항상 다시 인쇄돼 있다** (특히 바코드 바로 옆이나 아래의 작은 글씨로). `lot_maker` 에는 **Unitrontech LOT와 짝이 되는 바로 그 동일 코드**(예: `MN262220355`)를 작더라도 끝까지 찾아 넣어라.
   ⚠️ 혼동 절대 금지: Batch(예 `B026210010` 같은 B-시작 코드)·Ordering Code(부품번호)·Quantity(수량)·Date·Reel번호 는 LOT가 아니다 — 이런 걸 `lot_maker`에 넣지 마라.
   먼저 Unitrontech LOT를 읽은 뒤, 같은 문자열이 제조사 라벨 어딘가(작은 글씨·바코드 주변 포함)에 있는지 끝까지 살펴서 그 값을 넣어라. 정말로 어디에도 없을 때만 빈칸.
+- **두 스티커 부품번호 비교 (매우 중요)**: Unitrontech 흰색 라벨의 'V/PN :' 값을 `vpn` 에 넣고, **제조사(Micron/Samsung 등) 라벨에 그 제조사가 직접 인쇄한 부품번호**(보통 제조사 라벨의 큰 글씨/바코드 아래, 예: `MTFC64GBCAVAL-AAT`)를 `part_maker` 에 따로 넣어라. 정상이라면 이 둘은 같아야 하지만, **다를 수도 있으니 각 스티커에 실제로 찍힌 값을 그대로 읽어라 — 절대 같다고 가정해서 한쪽 값을 양쪽에 복사하지 마라.** 제조사 라벨이 안 보이면 `part_maker` 는 빈칸.
+- **두 스티커 SERIAL 비교 (혼입 검사 — 매우 중요)**: Unitrontech 흰색 라벨의 'SERIAL :' 값을 `serial` 에 넣어라.
+  그리고 **제조사 라벨(맨 아래 바코드 쪽)에 찍힌 릴 일련번호**를 `serial_maker` 에 넣어라 — 보통 `2622-V25 1500` 처럼
+  **숫자 4자리 + 대시 + 코드** 형태다. 그 숫자 4자리가 Unitrontech SERIAL 의 앞 4자리와 짝이 된다.
+  ⚠️ 이 둘이 다르면 **서로 다른 릴의 라벨이 한 박스에 섞인 것**이다. 실제로 2622 와 2623 이 섞여 들어온 적이 있다.
+  **각 스티커에 실제로 찍힌 값을 그대로 읽어라 — 같다고 가정해서 한쪽을 양쪽에 복사하지 마라.**
+  앞 4자리는 특히 또박또박 봐라(2↔3 혼동 주의). 제조사 라벨이 안 보이면 `serial_maker` 는 빈칸.
 - QUANTITY 는 숫자만(예: 2,000 → 2000).
 - 안 보이거나 없는 항목은 빈 문자열. 절대 추측해서 지어내지 말고, 보이는 그대로만."""
 
@@ -275,14 +291,33 @@ def extract_labels(client, path):
 #   ref="master" → 엑셀 마스터와 비교, ref="cross" → 같은 사진의 다른 스티커와 비교
 COMPARE_FIELDS = [
     ("vpn", "부품번호(V/PN ↔ Part#)", "master", "part"),
+    ("vpn", "부품번호 (V/PN ↔ 제조사라벨)", "cross", "part_maker"),
     ("material_code", "MATERIAL CODE ↔ MOBIS ID", "master", "mobis"),
     ("lot", "LOT (제조사 ↔ Unitrontech)", "cross", "lot_maker"),
+    ("serial", "SERIAL (제조사 ↔ Unitrontech)", "cross", "serial_maker"),
 ]
 INFO_FIELDS = [
     ("fab", "FAB"), ("quantity", "QUANTITY(수량)"), ("maker_code", "MAKER CODE"),
     ("stock_day", "STOCK DAY"), ("serial", "SERIAL"),
     ("ordering_code", "Ordering Code"), ("msl_level", "MSL"),
 ]
+
+
+def serial_head(v):
+    """SERIAL 에서 릴을 가르는 앞 4자리 숫자만 뽑는다.
+
+    두 스티커의 표기 형식이 다르다.
+      Unitrontech : `262300 1167040006`  (앞 4자리 + 뒤에 로트가 이어짐)
+      제조사       : `2622-V25 1500`      (앞 4자리 + 대시 + 코드)
+    문자열을 통째로 비교하면 늘 불일치가 나고, 그러면 경고가 무의미해진다.
+    실제로 섞였는지를 가르는 것은 **앞 4자리**다 — 2622 냐 2623 이냐.
+
+    4자리를 못 뽑으면 빈 문자열을 돌려준다. 억지로 비교하지 않는다.
+    """
+    if not v:
+        return ""
+    m = re.match(r"\s*(\d{4})", str(v))
+    return m.group(1) if m else ""
 
 
 def mobis_is_real(lv, rec, by_mobis):
@@ -299,6 +334,20 @@ def mobis_is_real(lv, rec, by_mobis):
     if n in by_mobis:
         return True
     return any(norm(m) == n for m in ((rec or {}).get("mobis_alts") or []))
+
+
+def label_count_of(lab):
+    """이 라벨 객체가 대표하는 '실물 라벨 장수'.
+
+    사진 1장에 같은 라벨이 10장 찍혀 있으면 비전은 객체 1개 + label_count=10 으로 돌려준다.
+    수량 집계는 객체 수(=사진 수에 가까움)가 아니라 이 값을 더해야 맞다.
+    값이 없거나(구버전 응답) 이상하면 1로 본다 — 못 세었다고 0으로 지우면 수량이 사라진다.
+    """
+    try:
+        n = int(str(lab.get("label_count", 1)).strip() or 1)
+    except (TypeError, ValueError):
+        return 1
+    return max(1, min(n, 999))
 
 
 def match_label(lab, by_part, by_mobis, uncertain=None):
@@ -337,9 +386,29 @@ def match_label(lab, by_part, by_mobis, uncertain=None):
         elif not lv and not mv:
             status = "na"
         elif not mv:
-            status = "label_only"      # ➖ 마스터에 없음
+            if ref == "cross" and mkey in ("part_maker", "serial_maker") and lv:
+                # 제조사 라벨(봉투 안)을 반사·포장 때문에 못 읽음. 조용히 통과(➖)시키면
+                # '제조사 라벨까지 검증된 일치'로 착각하게 된다 → 사람이 직접 보라고 확인필요로 넘긴다.
+                status = "verify"
+                note = "제조사 라벨 부품번호를 읽지 못했습니다 (반사·포장) — 봉투 안 라벨을 직접 확인하세요"
+            else:
+                status = "label_only"      # ➖ 마스터에 없음
         elif not lv:
             status = "master_only"     # 라벨에서 못 읽음
+        elif lkey == "serial" and ref == "cross":
+            # 두 스티커의 표기 형식이 다르다 — Unitrontech `262300 1167040006`,
+            # 제조사 `2622-V25 1500`. 통째로 비교하면 늘 불일치가 나므로 앞
+            # 4자리로만 맞춘다. 섞였는지를 가르는 것은 그 4자리다.
+            a, b = serial_head(lv), serial_head(mv)
+            if not a or not b:
+                status = "verify"; comparable += 1
+                note = "SERIAL 앞 4자리를 읽지 못했습니다 — 두 스티커를 직접 대조해 주십시오"
+            elif a == b:
+                status = "match"; matched += 1; comparable += 1
+            else:
+                status = "mismatch"; comparable += 1
+                note = (f"릴 번호가 다릅니다 — Unitrontech 라벨 {a}, 제조사 라벨 {b}. "
+                        "서로 다른 릴의 라벨이 한 박스에 섞였는지 확인해 주십시오")
         elif norm(lv) == norm(mv):
             status = "match"; matched += 1; comparable += 1
         elif lkey == "material_code" and mobis_is_real(lv, rec, by_mobis):
@@ -375,7 +444,8 @@ def match_label(lab, by_part, by_mobis, uncertain=None):
                 has_verify=has_verify, has_mismatch=has_mismatch,
                 has_mixed=has_mixed, has_verify_other=has_verify_other,
                 rows=rows, info=info, vpn=clean(lab.get("vpn")),
-                material_code=clean(lab.get("material_code")))
+                material_code=clean(lab.get("material_code")),
+                label_count=label_count_of(lab))
 
 
 # ---------------------------------------------------------------- 렌더링
