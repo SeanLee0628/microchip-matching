@@ -100,12 +100,28 @@ def extract_labels(b64data, model=MODEL, effort="medium"):
 
 
 from label_inspector import norm as _norm
+from label_inspector import label_count_of as _label_count
 
-CONSENSUS_FIELDS = ["vpn", "material_code", "vender", "lot", "lot_maker"]
+CONSENSUS_FIELDS = ["vpn", "material_code", "vender", "lot", "lot_maker", "part_maker", "serial"]
 
 
 def _key(l):
     return _norm(l.get("vpn", "")) or _norm(l.get("material_code", ""))
+
+
+def _vote_key(l):
+    """다수결로 묶을 때 쓰는 키. 부품번호 **+ SERIAL** 이다.
+
+    부품번호만으로 묶으면, 한 사진에 같은 부품의 릴이 두 개 있고 SERIAL 이
+    2622·2623 으로 다를 때 **둘이 한 라벨로 합쳐지고 SERIAL 은 다수결로 하나만
+    남는다.** 섞이면 안 되는 물건이 섞였다는 사실이 조용히 사라지는 것이다.
+    실제로 그렇게 통과된 건이 있었다.
+
+    다수결은 같은 라벨을 여러 번 읽은 값들을 안정화하려는 장치이지, 서로 다른
+    개체를 하나로 만들라는 장치가 아니다. SERIAL 은 개체를 가르는 값이므로
+    키에 넣는다.
+    """
+    return (_key(l), _norm(l.get("serial", "")))
 
 
 def reconcile(read1, read2):
@@ -135,7 +151,12 @@ def _vote_field(values):
     vals = [v for v in values if _norm(v)]
     if not vals:
         return ""
-    best = Counter(_norm(v) for v in vals).most_common(1)[0][0]
+    counts = Counter(_norm(v) for v in vals).most_common()
+    best, top = counts[0]
+    # 동점이면 아무것도 고르지 않는다. 2:2 로 갈린 값을 조용히 하나 골라 두면,
+    # 판독이 갈렸다는 사실이 화면에서 사라지고 확실한 값처럼 보인다.
+    if len(counts) > 1 and counts[1][1] == top:
+        return ""
     for v in vals:
         if _norm(v) == best:
             return v
@@ -143,11 +164,18 @@ def _vote_field(values):
 
 
 def _vote_labels(reads):
-    """여러 번 읽은 라벨 리스트들을 _key로 묶어 필드별 다수결 → 안정화된 라벨 리스트."""
+    """여러 번 읽은 라벨 리스트들을 묶어 필드별 다수결 → [(라벨, 불확실필드), ...].
+
+    묶는 키에 SERIAL 이 들어간다(`_vote_key`). 서로 다른 개체는 합치지 않는다.
+
+    **판독이 갈린 필드는 함께 돌려준다.** 예전에는 다수결로 하나를 고르고 끝이라,
+    2:1 로 갈린 값이 화면에서는 확실한 값과 똑같이 보였다. 갈렸다는 사실이야말로
+    사람이 봐야 한다는 신호다.
+    """
     groups, order = {}, []
     for r in reads:
         for l in r:
-            k = _key(l)
+            k = _vote_key(l)
             if k not in groups:
                 groups[k] = []; order.append(k)
             groups[k].append(l)
@@ -155,7 +183,15 @@ def _vote_labels(reads):
     for k in order:
         ls = groups[k]
         fields = set().union(*[set(l.keys()) for l in ls])
-        out.append({f: _vote_field([l.get(f, "") for l in ls]) for f in fields})
+        voted, unsure = {}, set()
+        for f in fields:
+            vals = [l.get(f, "") for l in ls]
+            voted[f] = _vote_field(vals)
+            # 비어 있지 않은 값이 두 종 이상 나왔으면 판독이 갈린 것이다.
+            seen = {_norm(v) for v in vals if _norm(v)}
+            if len(seen) > 1:
+                unsure.add(f)
+        out.append((voted, unsure))
     return out
 
 
@@ -277,6 +313,11 @@ header .sub{margin-top:7px;font-size:12.5px;color:#b9b9c2;max-width:820px;line-h
 .badge{font-size:12px;font-weight:700;padding:4px 11px;border-radius:8px;white-space:nowrap;}
 .badge.ok{background:#e6f4ec;color:var(--green);} .badge.warn,.badge.ver{background:#fcf3e0;color:#a9781d;} .badge.mis{background:#fbe9e9;color:var(--red);} .badge.nf{background:#f0e6f5;color:#9a5ba6;}
 .corr{font-size:9px;font-weight:800;color:#a9781d;background:#fcf3e0;border-radius:5px;padding:1px 5px;margin-left:4px;letter-spacing:.3px;}
+/* 라벨 장수(사진 장수 아님). 비전이 센 값을 사람이 고칠 수 있게 입력칸으로 둔다. */
+.lcnt{display:flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;color:var(--mut);background:#f4f4f6;border-radius:8px;padding:3px 9px;}
+.lcnt input{width:52px;font:inherit;font-size:14px;font-weight:800;color:var(--ink);text-align:right;border:1px solid var(--line);border-radius:6px;padding:2px 5px;background:#fff;}
+.lcnt input:focus{outline:2px solid var(--ink);outline-offset:-1px;}
+.lcnt.multi{background:#eef3fb;color:#2c5aa0;}
 .gauge{position:relative;height:24px;background:#f0f0f2;border-radius:7px;margin:12px 0 14px;overflow:hidden;}
 .gauge .bar{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,var(--green),#5ab884);border-radius:7px;transition:width .5s;}
 .gauge.lo .bar{background:linear-gradient(90deg,var(--amber),#eebb55);}
@@ -355,6 +396,12 @@ table.sum{width:100%;border-collapse:collapse;font-size:13px;}
 table.sum th{text-align:left;color:var(--mut);font-size:10.5px;text-transform:uppercase;padding:7px 10px;border-bottom:2px solid var(--line);}
 table.sum td{padding:8px 10px;border-bottom:1px solid var(--line);}
 table.sum tr.tot td{border-top:2px solid var(--ink);font-weight:800;background:#fafafb;}
+.mixtag{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:4px;
+  background:#fff3d6;color:#8a5a00;font-size:11px;font-weight:700;vertical-align:middle}
+.mixbox{margin:0 0 14px;border:1px solid #f0c36d;background:#fff9ec;border-radius:8px;padding:10px 12px}
+.mixtitle{font-weight:700;font-size:13px;color:#8a5a00;margin-bottom:6px}
+.mixlist{margin:0;padding-left:18px}
+.mixlist li{font-size:13px;color:#4a3a10;margin:4px 0;line-height:1.5}
 </style></head><body>
 <header><h1>부품 라벨 검수 · 모비스향</h1></header>
 <div class="wrap">
@@ -475,7 +522,7 @@ function refresh(){
   const pct = sumC>0 ? Math.round(sumM/sumC*100) : null;
   ov.textContent = pct===null ? '전체 일치율 —' : `전체 일치율 ${pct}%`;
   ov.className='overall'+(pct===null?'':(pct===100?' full':(pct>=80?' part':' low')));
-  document.getElementById('stat').textContent=`사진 ${nImg}장 · 라벨 ${nLab}건`;
+  document.getElementById('stat').textContent=`사진 ${nImg}장 · 라벨 ${nLab}개`;
   document.getElementById('c-ok').textContent='✅ 일치 '+nOk;
   document.getElementById('c-mis').textContent='❌ 불일치 '+nMis;
   document.getElementById('c-ver').textContent='⚠️ 확인필요 '+nVer;
@@ -544,28 +591,84 @@ results.addEventListener('click',e=>{
 document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeLB(); });
 
 // ── MOBIS ID별 수량 검토(총 수량 확인) ──
+// labCount(m) = 이 라벨이 사진에 실제로 몇 장 있는지. 비전이 센 값이며 사람이 카드/확인모드에서 고칠 수 있다.
+const labCount=m=>Math.max(1,Math.min(999,parseInt(m&&m.label_count,10)||1));
+// 라벨 장수 입력칸을 결과 객체에 연결 — 고치면 그 자리에서 합계·상단 카운터까지 반영된다.
+function bindCounts(root,labels){
+  root.querySelectorAll('.lcnt-in').forEach((inp,i)=>{
+    inp.onchange=()=>{
+      const m=labels[i]; if(!m) return;
+      const old=labCount(m), v=Math.max(1,Math.min(999,parseInt(inp.value,10)||1));
+      inp.value=v; m.label_count=v; nLab+=v-old; refresh();
+      // 같은 라벨을 카드와 확인 모드 양쪽에서 보고 있을 수 있다 → 다른 쪽 입력칸도 맞춰준다.
+      document.querySelectorAll('#results .card').forEach(c=>{
+        if(c._res && c._res.labels===labels){ const t=c.querySelectorAll('.lcnt-in')[i]; if(t&&t!==inp) t.value=v; } });
+      const rc=document.getElementById('rev-content'), rcard=REV&&REV.list&&REV.list[REV.i];
+      if(rc && rcard && rcard._res && rcard._res.labels===labels){
+        const t=rc.querySelectorAll('.lcnt-in')[i]; if(t&&t!==inp) t.value=v; }
+    };
+  });
+}
 function collectLabels(){ const out=[];
   document.querySelectorAll('#results .card').forEach(c=>{ const r=c._res; if(r&&r.labels) out.push.apply(out,r.labels); });
   return out; }
 function mobisOf(m){ const r=(m.rows||[]).find(x=>/MOBIS ID/.test(x.field||'')); return (r&&r.master)?r.master:''; }
+function serialOf(m){ const q=(m.info||[]).find(i=>/SERIAL/i.test(i.field||'')); return String((q&&q.label)||'').trim(); }
+
+/**
+ * SERIAL 혼입 검사.
+ *
+ * SERIAL 은 마스터에 없어 옳고 그름을 대조할 수 없다. 대신 **같은 MOBIS ID 에
+ * 몇 종이 들어왔는지** 는 셀 수 있고, 그것이 섞이면 안 되는 물건이 섞인 것을
+ * 잡는 유일한 길이다. 실제로 2622·2623 이 섞인 건이 전 항목 일치로 통과했다.
+ *
+ * 기계가 불량으로 단정하지 않는다 — 의도한 혼입일 수 있다. 사람 눈에 걸리게만 한다.
+ */
+function serialGroups(){
+  const g={};
+  collectLabels().forEach(m=>{ const id=mobisOf(m); const sn=serialOf(m);
+    if(!id||!sn) return; (g[id]=g[id]||new Set()).add(sn); });
+  return g;
+}
+function markMixed(){
+  const g=serialGroups();
+  const mixed=new Set(Object.keys(g).filter(k=>g[k].size>1));
+  document.querySelectorAll('#results .card').forEach(c=>{
+    const r=c._res; if(!r||!r.labels) return;
+    c.querySelectorAll('.mixtag').forEach(e=>e.remove());
+    if(!r.labels.some(m=>mixed.has(mobisOf(m)))) return;
+    if(c.dataset.problem!=='1'){ c.dataset.problem='1'; if(typeof applyOne==='function') applyOne(c); }
+    const fn=c.querySelector('.fn')||c.querySelector('.rvpn');
+    if(fn) fn.insertAdjacentHTML('beforeend',
+      ' <span class="mixtag">⚠️ 같은 품목에 SERIAL 여러 종 — 혼입 확인</span>');
+  });
+}
 function buildSummary(){
+  // 수량은 '라벨 객체 수'가 아니라 라벨 실물 장수(label_count)의 합이다.
+  // 사진 1장에 같은 라벨 10장이면 객체는 1개지만 수량은 10 — 객체 수로 세면 사실상 사진 수가 된다.
   const labels=collectLabels(), groups={}, order=[];
   labels.forEach(m=>{ const id=mobisOf(m)||'__none__';
-    if(!groups[id]){ groups[id]={count:0,vpns:{}}; order.push(id); }
-    groups[id].count++; if(m.vpn) groups[id].vpns[m.vpn]=1; });
+    if(!groups[id]){ groups[id]={count:0,kinds:0,vpns:{}}; order.push(id); }
+    groups[id].count+=labCount(m); groups[id].kinds++; if(m.vpn) groups[id].vpns[m.vpn]=1; });
   order.sort((a,b)=> a==='__none__'?1 : b==='__none__'?-1 : groups[b].count-groups[a].count);
-  const total=labels.length, distinct=order.filter(id=>id!=='__none__').length;
+  const total=labels.reduce((s,m)=>s+labCount(m),0), distinct=order.filter(id=>id!=='__none__').length;
   const body=order.map(id=>{ const g=groups[id];
     const vpns=Object.keys(g.vpns).map(esc).join(', ')||'—';
     const idCell=id==='__none__'?'미등록 / MOBIS ID 없음':esc(id);
-    return '<tr class="'+(id==='__none__'?'none':'')+'"><td class="mono">'+idCell+'</td><td class="mono" style="font-size:11px;color:#777">'+vpns+'</td><td style="text-align:right;font-weight:800;font-size:15px">'+g.count+'<span style="font-size:11px;font-weight:600;color:var(--mut)">장</span></td></tr>';
+    return '<tr class="'+(id==='__none__'?'none':'')+'"><td class="mono">'+idCell+'</td><td class="mono" style="font-size:11px;color:#777">'+vpns+'</td><td style="text-align:right;font-weight:800;font-size:15px">'+g.count+'<span style="font-size:11px;font-weight:600;color:var(--mut)">개</span></td></tr>';
   }).join('');
-  const html='<table class="sum"><thead><tr><th>MOBIS ID</th><th>부품번호(V/PN)</th><th style="text-align:right">라벨 수</th></tr></thead><tbody>'+body+'<tr class="tot"><td>합계</td><td>'+distinct+' MOBIS ID</td><td style="text-align:right">'+total+'장</td></tr></tbody></table>';
+  const mixG=serialGroups(), mixed=Object.keys(mixG).filter(k=>mixG[k].size>1);
+  const mixHtml=mixed.length?('<div class="mixbox"><div class="mixtitle">⚠️ SERIAL 이 섞인 품목 '+mixed.length+'건</div><ul class="mixlist">'
+    +mixed.map(k=>'<li><b class="mono">'+esc(k)+'</b> — SERIAL '+mixG[k].size+'종<br><span class="mono" style="font-size:12px">'
+      +[...mixG[k]].map(esc).join(' · ')+'</span></li>').join('')
+    +'</ul><div style="font-size:11.5px;color:#6b5320;margin-top:6px">같은 품목에 서로 다른 SERIAL 이 들어왔습니다. 의도한 혼입인지 <b>직접 확인해 주십시오.</b> SERIAL 은 마스터에 없어 프로그램이 판정할 수 없습니다.</div></div>'):'';
+  const html=mixHtml+'<table class="sum"><thead><tr><th>MOBIS ID</th><th>부품번호(V/PN)</th><th style="text-align:right">라벨 수(장수)</th></tr></thead><tbody>'+body+'<tr class="tot"><td>합계</td><td>'+distinct+' MOBIS ID</td><td style="text-align:right">'+total+'개</td></tr></tbody></table>';
   return {html:html, total:total, distinct:distinct};
 }
 const summary=document.getElementById('summary');
 function showSummary(){ const has=collectLabels().length;
-  document.getElementById('sum-body').innerHTML='<div style="padding:18px 22px">'+(has?buildSummary().html:'<div style="color:var(--mut);text-align:center;padding:24px">검수된 라벨이 없습니다.</div>')+'</div>';
+  const cap='<div style="font-size:11.5px;color:var(--mut);margin-bottom:10px">사진 장수가 아니라 <b>라벨 실물 장수</b> 합계입니다 (사진 1장에 라벨 10장 = 10개). 장수가 틀리면 각 카드의 「라벨 __장」 칸에서 고치세요.</div>';
+  document.getElementById('sum-body').innerHTML='<div style="padding:18px 22px">'+(has?cap+buildSummary().html:'<div style="color:var(--mut);text-align:center;padding:24px">검수된 라벨이 없습니다.</div>')+'</div>';
   summary.style.display='flex'; }
 function closeSummary(){ summary.style.display='none'; }
 document.getElementById('sumbtn').onclick=showSummary;
@@ -635,9 +738,14 @@ function labelHtml(m,first){
      <td class="st">${ICON[r.status]}</td></tr>${r.note?`<tr class="r-note"><td></td>
      <td colspan="3" class="note">⚠️ ${esc(r.note)}</td></tr>`:''}`).join('');
   const info=m.info.map(i=>`<span class="ic"><b>${esc(i.field)}</b>${esc(i.label)||'—'}</span>`).join('');
+  const cnt=labCount(m);
   return `${first?'':'<div class="sub-lab">같은 사진의 라벨 추가</div>'}
     <div class="chead"><div class="vpn mono">${esc(m.vpn)||'(부품번호 못 읽음)'}</div>
-      <div class="badge ${badge[0]}">${badge[1]}</div></div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="lcnt${cnt>1?' multi':''}" title="이 사진에 붙어 있는 이 라벨의 장수입니다(사진 장수 아님). 다르면 직접 고치세요 — 합계에 바로 반영됩니다">라벨
+          <input type="number" min="1" max="999" step="1" class="lcnt-in" value="${cnt}">장</div>
+        <div class="badge ${badge[0]}">${badge[1]}</div>
+      </div></div>
     <div class="gauge ${(pct<100||m.has_verify||m.has_mismatch)?'lo':''}"><div class="bar" style="width:${reg?pct:0}%"></div>
       <span>${pct}% · ${m.matched}/${m.comparable} 항목${m.has_verify?' · ⚠️확인필요 포함':''}</span></div>
     <table class="cmp"><thead><tr><th>항목</th><th>라벨에서 읽음</th><th>기준값 (마스터)</th><th></th></tr></thead>
@@ -649,7 +757,8 @@ function handle(files){
   for(const f of files){ if(f.type.startsWith('image/')) uploadOne(f); }
 }
 // 동시 호출 제한 + 자동 백오프 재시도 (529 과부하 흡수)
-const MAX_CONCURRENT=5, MAX_AUTORETRY=5;   // 3→5: Sonnet은 Opus보다 덜 붐벼 병렬 상향(혼잡 없을 때 wall-clock 단축)
+const MAX_CONCURRENT=10, MAX_AUTORETRY=5;  // 5→10: 서버 직렬화(async 안 블로킹 호출)를 푼 뒤 상향.
+                                           // 천장은 노트북 성능이 아니라 API 분당 토큰한도 — 429 재시도율 보고 조절할 것.
 let active=0; const Q=[]; let waiting=0, doneArmed=false;   // waiting=재시도 대기중, doneArmed=완료 감지 대상
 function setPending(card,txt){ card.querySelector('.cbody').innerHTML=`<div class="pending"><span class="spin"></span> ${esc(txt)}</div>`; }
 
@@ -697,9 +806,13 @@ function renderResult(card,res){
   card._res=res;
   if(!res.labels.length){ body.innerHTML='<div class="err">라벨을 찾지 못했습니다.</div>'; card.dataset.problem='1'; applyOne(card); updateBad(); return; }
   body.innerHTML=res.labels.map((m,i)=>labelHtml(m,i===0)).join('');
-  res.labels.forEach(m=>{ nLab++; sumM+=m.matched; sumC+=m.comparable;
+  bindCounts(body,res.labels);
+  // nLab 은 '라벨 장수' 합계 — 사진에 같은 라벨이 10장이면 10을 더한다(1이 아니라).
+  // 일치율·상태 카운터(nOk/nMis/…)는 판독 단위인 라벨 종류 기준 그대로 둔다.
+  res.labels.forEach(m=>{ nLab+=labCount(m); sumM+=m.matched; sumC+=m.comparable;
     if(!m.registered)nNf++; else if(m.has_mismatch)nMis++; else if(m.has_verify)nVer++; else nOk++; });
   card.dataset.problem=res.labels.some(m=>!m.registered||m.has_mismatch||m.has_verify)?'1':'0';
+  markMixed();
   applyOne(card); updateBad(); refresh();
 }
 
@@ -730,7 +843,7 @@ function renderRev(){
     const sum=buildSummary();
     C.innerHTML=`<div class="done"><div class="em">🎉</div><h2>모두 확인 완료!</h2>
       <p>${total}건을 검수했습니다. 수고하셨습니다.</p>
-      <div style="text-align:left;margin:20px auto 0;max-width:560px"><div style="font-size:12px;font-weight:700;color:var(--mut);margin-bottom:8px">📊 MOBIS ID별 수량 (총 ${sum.total}장 · ${sum.distinct} MOBIS ID)</div>${sum.html}</div>
+      <div style="text-align:left;margin:20px auto 0;max-width:560px"><div style="font-size:12px;font-weight:700;color:var(--mut);margin-bottom:8px">📊 MOBIS ID별 수량 (라벨 총 ${sum.total}개 · ${sum.distinct} MOBIS ID)</div>${sum.html}</div>
       <div style="margin-top:22px"><button class="ok" style="max-width:220px;margin:0 auto" id="rev-fin">닫기</button></div></div>`;
     C.querySelector('#rev-fin').onclick=closeReview; return;
   }
@@ -745,8 +858,11 @@ function renderRev(){
       m.rows.map(r=>`<tr class="${rowCls(r.status)}"><td>${esc(r.field)}</td><td>${((r.status==='verify'||r.status==='mismatch')&&r.label)?diffMark(r.label,r.master):(esc(r.label)||'—')}</td><td>${esc(r.master)||'—'}</td><td style="text-align:center">${ICON[r.status]||''}</td></tr>`).join('')}</tbody></table>`;
     const info=(m.info||[]).map(i=>`<span class="ic"><b>${esc(i.field)}</b>${esc(i.label)||'—'}</span>`).join('');
     const badge=!m.registered?'🆕 미등록':(m.has_mismatch?('❌ 불일치'+(m.pct<100?' ('+m.pct+'%)':'')):(m.has_verify?'⚠️ 확인필요':'✅ 일치'));
+    const cnt=labCount(m);
+    // 사진을 크게 보는 자리 = 장수를 눈으로 세기 가장 좋은 자리. 여기서 고친 값이 합계에 바로 반영된다.
+    const cbox=`<div class="lcnt${cnt>1?' multi':''}" style="margin:8px 0 2px" title="사진에 보이는 이 라벨의 장수 — 직접 세어 고치세요">라벨 <input type="number" min="1" max="999" step="1" class="lcnt-in" value="${cnt}">장</div>`;
     return `<div class="rvpn">${esc(m.vpn)||'(부품번호 못 읽음)'}<span class="rbadge">${badge}</span></div>
-      <div class="rwhy">${revWhy(m)}</div>${tbl}${info?`<div class="info" style="margin-top:10px">${info}</div>`:''}`;
+      <div class="rwhy">${revWhy(m)}</div>${cbox}${tbl}${info?`<div class="info" style="margin-top:10px">${info}</div>`:''}`;
   }).join('<hr style="border:none;border-top:1px dashed #eee;margin:16px 0">');
   C.innerHTML=`<img class="rimg" src="${card._img||''}">
     <div class="rbody">${blocks||'<div class="rwhy">확인 필요</div>'}</div>
@@ -755,6 +871,7 @@ function renderRev(){
       <button class="ok" id="rev-ok">✅ 확인 (맞음) <span style="opacity:.7;font-weight:600">⏎</span></button>
       <button class="bad" id="rev-bad">❌ 문제</button>
     </div>`;
+  bindCounts(C,res.labels);
   C.querySelector('#rev-ok').onclick=()=>{ markCard(card,true); REV.i++; renderRev(); };
   C.querySelector('#rev-bad').onclick=()=>{ markCard(card,false); REV.i++; renderRev(); };
   const pv=C.querySelector('#rev-prev'); if(pv) pv.onclick=()=>{ REV.i=Math.max(0,REV.i-1); renderRev(); };
@@ -773,6 +890,10 @@ document.getElementById('rev-x').onclick=closeReview;
 document.addEventListener('keydown',e=>{
   if(document.getElementById('rev').style.display!=='flex') return;
   if(lb.classList.contains('show')){ if(e.key==='Escape'){ e.preventDefault(); lb.classList.remove('show'); } return; }
+  // 라벨 장수 입력칸에서 Enter/화살표는 숫자 수정용이다 — 다음 카드로 넘기면 고친 값이 날아간다.
+  if(e.target && e.target.classList && e.target.classList.contains('lcnt-in')){
+    if(e.key==='Enter'){ e.preventDefault(); e.target.blur(); }   // blur → change 발생 → 합계 반영
+    return; }
   if(e.key==='Escape'){ closeReview(); }
   else if(e.key==='Enter'||e.key==='ArrowRight'){ const b=document.getElementById('rev-ok')||document.getElementById('rev-fin'); if(b){e.preventDefault();b.click();} }
   else if(e.key==='ArrowLeft'){ const b=document.getElementById('rev-prev'); if(b&&!b.disabled) b.click(); }
