@@ -398,6 +398,8 @@ table.sum td{padding:8px 10px;border-bottom:1px solid var(--line);}
 table.sum tr.tot td{border-top:2px solid var(--ink);font-weight:800;background:#fafafb;}
 .mixtag{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:4px;
   background:#fff3d6;color:#8a5a00;font-size:11px;font-weight:700;vertical-align:middle}
+.covbox{margin:0 0 12px;border:1px solid #cfd6e0;background:#f7f9fc;border-radius:8px;
+  padding:9px 12px;font-size:12.5px;line-height:1.6;color:#3a4453}
 .mixbox{margin:0 0 14px;border:1px solid #f0c36d;background:#fff9ec;border-radius:8px;padding:10px 12px}
 .mixtitle{font-weight:700;font-size:13px;color:#8a5a00;margin-bottom:6px}
 .mixlist{margin:0;padding-left:18px}
@@ -630,6 +632,30 @@ function serialGroups(){
     if(!id||!sn) return; (g[id]=g[id]||new Set()).add(sn); });
   return g;
 }
+/**
+ * 이번 배치에서 **대조하지 못한 것**을 한 줄로 남긴다.
+ *
+ * 숨기는 것과 조용히 통과시키는 것은 다르다. 제조사 릴 번호가 없는 벤더의
+ * 라벨을 건건이 「확인필요」로 올리면 98건 중 93건이 확인필요가 되어 아무도
+ * 안 본다(실제로 그렇게 됐다). 그렇다고 말없이 넘어가면 "두 스티커까지
+ * 대조된 일치" 로 읽힌다. 건건이 아니라 **배치당 한 줄**로 올린다.
+ */
+function coverageNote(){
+  const labels=collectLabels();
+  if(!labels.length) return '';
+  let done=0, none=0;
+  labels.forEach(m=>{
+    const r=(m.rows||[]).find(x=>String(x.field||'').indexOf('SERIAL')===0);
+    if(!r) return;
+    if(r.status==='match'||r.status==='mismatch') done++;
+    else if(r.status==='na') none++;
+  });
+  if(!none) return '';
+  return '<div class="covbox">제조사 릴 번호를 '+labels.length+'건 중 <b>'+done+'건</b>에서만 읽었습니다. '
+    +'이 벤더 라벨에는 릴 번호가 인쇄돼 있지 않을 수 있습니다 — '
+    +'<b>나머지 '+none+'건은 두 스티커 SERIAL 대조를 하지 않았습니다.</b> '
+    +'같은 품목에 SERIAL 이 여러 종 들어온 경우는 아래에서 따로 표시합니다.</div>';
+}
 function markMixed(){
   const g=serialGroups();
   const mixed=new Set(Object.keys(g).filter(k=>g[k].size>1));
@@ -662,7 +688,7 @@ function buildSummary(){
     +mixed.map(k=>'<li><b class="mono">'+esc(k)+'</b> — SERIAL '+mixG[k].size+'종<br><span class="mono" style="font-size:12px">'
       +[...mixG[k]].map(esc).join(' · ')+'</span></li>').join('')
     +'</ul><div style="font-size:11.5px;color:#6b5320;margin-top:6px">같은 품목에 서로 다른 SERIAL 이 들어왔습니다. 의도한 혼입인지 <b>직접 확인해 주십시오.</b> SERIAL 은 마스터에 없어 프로그램이 판정할 수 없습니다.</div></div>'):'';
-  const html=mixHtml+'<table class="sum"><thead><tr><th>MOBIS ID</th><th>부품번호(V/PN)</th><th style="text-align:right">라벨 수(장수)</th></tr></thead><tbody>'+body+'<tr class="tot"><td>합계</td><td>'+distinct+' MOBIS ID</td><td style="text-align:right">'+total+'개</td></tr></tbody></table>';
+  const html=coverageNote()+mixHtml+'<table class="sum"><thead><tr><th>MOBIS ID</th><th>부품번호(V/PN)</th><th style="text-align:right">라벨 수(장수)</th></tr></thead><tbody>'+body+'<tr class="tot"><td>합계</td><td>'+distinct+' MOBIS ID</td><td style="text-align:right">'+total+'개</td></tr></tbody></table>';
   return {html:html, total:total, distinct:distinct};
 }
 const summary=document.getElementById('summary');

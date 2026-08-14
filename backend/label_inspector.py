@@ -386,7 +386,24 @@ def match_label(lab, by_part, by_mobis, uncertain=None):
         elif not lv and not mv:
             status = "na"
         elif not mv:
-            if ref == "cross" and mkey in ("part_maker", "serial_maker") and lv:
+            if ref == "cross" and mkey == "serial_maker" and lv:
+                # 제조사 라벨의 릴 번호는 **벤더마다 아예 없다.**
+                #
+                # 실측(사진 78장): Cyntec 라벨 30장에는 그런 항목이 인쇄돼 있지
+                # 않고, Fujitsu 48장에도 상자 모서리에 7px 크기로만 찍혀 있다.
+                # 그런데 못 읽으면 확인필요로 올리게 해 놨더니 98건 중 93건이
+                # 확인필요가 되어 프로그램이 못 쓰게 됐다.
+                #
+                # 「못 읽음」은 증거가 아니다. 두 관측이 충돌하는 것만 증거다.
+                # 없는 것을 못 읽었다고 93번 경고하면, 그 경고의 정보량은 0이고
+                # 진짜 경고까지 같이 묻힌다. 대조를 안 했다고 적고 넘어간다.
+                #
+                # 혼입 검사는 이것 없이도 된다 — 같은 품목에 SERIAL 이 두 종
+                # 이상이면 화면이 잡는다(`serialGroups`). 2622·2623 사고를 실제로
+                # 잡는 것도 그쪽이다.
+                status = "na"
+                note = "제조사 라벨에 릴 번호가 없어 대조하지 않았습니다"
+            elif ref == "cross" and mkey == "part_maker" and lv:
                 # 제조사 라벨(봉투 안)을 반사·포장 때문에 못 읽음. 조용히 통과(➖)시키면
                 # '제조사 라벨까지 검증된 일치'로 착각하게 된다 → 사람이 직접 보라고 확인필요로 넘긴다.
                 status = "verify"
