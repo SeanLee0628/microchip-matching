@@ -626,10 +626,25 @@ function serialOf(m){ const q=(m.info||[]).find(i=>/SERIAL/i.test(i.field||''));
  *
  * 기계가 불량으로 단정하지 않는다 — 의도한 혼입일 수 있다. 사람 눈에 걸리게만 한다.
  */
+function serialHead(sn){
+  /* 섞였는지를 가르는 것은 SERIAL 앞 4자리다.
+   *
+   * SERIAL 전체를 종으로 세면 안 된다 — Unitrontech SERIAL 은 **릴마다 다른**
+   * 고유값이라(`260900FPB2609001RF-0047`) 같은 품목 릴이 2개만 들어와도 항상
+   * "여러 종"이 된다. 실측(사진 49장)에서 4개 품목 중 3개가 그렇게 상시 경고
+   * 상태였고, 한 품목은 27장 = 27종이었다. 늘 켜져 있는 경고는 꺼져 있는 것과
+   * 같다 — 진짜 혼입까지 같이 묻힌다.
+   *
+   * 2622·2623 사고가 갈린 자리도 바로 이 앞 4자리다. OCR 잘림(`260900` vs
+   * `260900FPB...-0016`)이 만드는 가짜 "종"도 여기서 함께 사라진다.
+   * 4자리를 못 뽑는 낯선 표기는 예전처럼 전체 문자열로 센다(덜 잡느니 더 잡는다).
+   */
+  const m=/^\D*(\d{4})/.exec(sn); return m?m[1]:sn;
+}
 function serialGroups(){
   const g={};
   collectLabels().forEach(m=>{ const id=mobisOf(m); const sn=serialOf(m);
-    if(!id||!sn) return; (g[id]=g[id]||new Set()).add(sn); });
+    if(!id||!sn) return; (g[id]=g[id]||new Set()).add(serialHead(sn)); });
   return g;
 }
 /**
@@ -685,9 +700,9 @@ function buildSummary(){
   }).join('');
   const mixG=serialGroups(), mixed=Object.keys(mixG).filter(k=>mixG[k].size>1);
   const mixHtml=mixed.length?('<div class="mixbox"><div class="mixtitle">⚠️ SERIAL 이 섞인 품목 '+mixed.length+'건</div><ul class="mixlist">'
-    +mixed.map(k=>'<li><b class="mono">'+esc(k)+'</b> — SERIAL '+mixG[k].size+'종<br><span class="mono" style="font-size:12px">'
+    +mixed.map(k=>'<li><b class="mono">'+esc(k)+'</b> — SERIAL 앞 4자리 '+mixG[k].size+'종<br><span class="mono" style="font-size:12px">'
       +[...mixG[k]].map(esc).join(' · ')+'</span></li>').join('')
-    +'</ul><div style="font-size:11.5px;color:#6b5320;margin-top:6px">같은 품목에 서로 다른 SERIAL 이 들어왔습니다. 의도한 혼입인지 <b>직접 확인해 주십시오.</b> SERIAL 은 마스터에 없어 프로그램이 판정할 수 없습니다.</div></div>'):'';
+    +'</ul><div style="font-size:11.5px;color:#6b5320;margin-top:6px">같은 품목에 <b>앞 4자리가 다른</b> SERIAL 이 들어왔습니다 (2622·2623 이 섞인 그 자리입니다). 릴마다 달라지는 뒷자리는 세지 않습니다. 의도한 혼입인지 <b>직접 확인해 주십시오.</b> SERIAL 은 마스터에 없어 프로그램이 판정할 수 없습니다.</div></div>'):'';
   const html=coverageNote()+mixHtml+'<table class="sum"><thead><tr><th>MOBIS ID</th><th>부품번호(V/PN)</th><th style="text-align:right">라벨 수(장수)</th></tr></thead><tbody>'+body+'<tr class="tot"><td>합계</td><td>'+distinct+' MOBIS ID</td><td style="text-align:right">'+total+'개</td></tr></tbody></table>';
   return {html:html, total:total, distinct:distinct};
 }

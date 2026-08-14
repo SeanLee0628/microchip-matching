@@ -74,6 +74,11 @@ def clean(x):
     return "" if s in (".", "-", "nan") else s
 
 
+def subs_within(a, b, k):
+    """같은 길이에서 치환 k 개 이하. 흔들린 사진의 자릿수 오독용(삽입/삭제는 안 봄)."""
+    return len(a) == len(b) and sum(c1 != c2 for c1, c2 in zip(a, b)) <= k
+
+
 def within_one(a, b):
     """편집거리(삽입/삭제/치환) 1 이하 — OCR 한 글자 오독 허용용."""
     if a == b:
@@ -240,6 +245,19 @@ PROMPT = """이 사진에 보이는 부품 라벨(릴/박스 라벨)을 모두 �
   ⚠️ 이 둘이 다르면 **서로 다른 릴의 라벨이 한 박스에 섞인 것**이다. 실제로 2622 와 2623 이 섞여 들어온 적이 있다.
   **각 스티커에 실제로 찍힌 값을 그대로 읽어라 — 같다고 가정해서 한쪽을 양쪽에 복사하지 마라.**
   앞 4자리는 특히 또박또박 봐라(2↔3 혼동 주의). 제조사 라벨이 안 보이면 `serial_maker` 는 빈칸.
+- **벤더별 제조사 라벨 지도.** 제조사 라벨은 벤더마다 항목 이름이 다르다. 우리가 쓰는 이름이
+  라벨에 그대로 적혀 있을 거라고 기대하지 마라 — 아래 대응표로 찾아라.
+  · **Cyntec** (파란 방습봉투 안 흰 라벨. 박스 창으로 비쳐 보이고 반사가 심하다):
+      `S P/N` 또는 `S.P/N` → `part_maker`      (예: `VAMV06077E-220MM2`)
+      `LOT NO` 또는 `LOT NO.` → `lot_maker`    (예: `FPB2609001RF`)
+      `EACH LOT` → Unitrontech LOT 와 **글자까지 똑같은** 값 (예: `FPB2609001RF-0038`).
+                   `lot_maker` 가 비어 있으면 이 값을 `lot_maker` 에 넣어라.
+      `QTY` → 수량 (예: `QTY600`)
+      ⚠️ Cyntec 라벨에는 `2622-V25` 같은 형태의 릴 번호가 **없다.** 억지로 찾지 말고
+         `serial_maker` 는 빈칸으로 둬라.
+  · **Fujitsu**: 박스 모서리에 아주 작게 `YYWW-Vnn` (예: `2609-V23`) → `serial_maker`.
+  · 봉투 반사·비닐 주름 때문에 흐려도 **`S P/N` 한 줄은 끝까지 읽어내라** — 이 값이 없으면
+    사람이 봉투를 직접 열어봐야 한다. 글자가 정말 판독 불가일 때만 빈칸으로 둬라.
 - QUANTITY 는 숫자만(예: 2,000 → 2000).
 - 안 보이거나 없는 항목은 빈 문자열. 절대 추측해서 지어내지 말고, 보이는 그대로만."""
 
@@ -369,6 +387,12 @@ def match_label(lab, by_part, by_mobis, uncertain=None):
         return bool(lv) and bool(mv) and norm(lv) == norm(mv)
     vpn_exact = _exact("vpn", "part")
     mat_exact = _exact("material_code", "mobis")
+    # 제조사 라벨이 **독립적으로** 같은 부품번호를 말해 주는가.
+    # Unitrontech 라벨과 제조사 라벨은 서로 다른 회사가 서로 다른 시점에 찍은
+    # 두 개의 관측이다. 둘이 같은 값을 가리키고 그 값이 마스터와 정확히 맞으면,
+    # 부품 식별은 사실상 끝난 것이다.
+    _pm = clean(lab.get("part_maker"))
+    part_confirmed = vpn_exact and bool(_pm) and norm(_pm) == norm(clean(rec.get("part")) if rec else "")
     for lkey, disp, ref, mkey in COMPARE_FIELDS:
         lv = clean(lab.get(lkey))
         if ref == "master":
@@ -401,8 +425,31 @@ def match_label(lab, by_part, by_mobis, uncertain=None):
                 # 혼입 검사는 이것 없이도 된다 — 같은 품목에 SERIAL 이 두 종
                 # 이상이면 화면이 잡는다(`serialGroups`). 2622·2623 사고를 실제로
                 # 잡는 것도 그쪽이다.
-                status = "na"
-                note = "제조사 라벨에 릴 번호가 없어 대조하지 않았습니다"
+                # 다만 릴 번호가 없다고 해서 대조할 게 없는 건 아니다. Cyntec 은
+                # `EACH LOT` 에 Unitrontech LOT 와 똑같은 값을 찍고, Unitrontech
+                # SERIAL 은 그 값을 통째로 품고 있다.
+                #   Unitrontech SERIAL : 260900FPB2609001RF-0047
+                #   제조사 EACH LOT    :       FPB2609001RF-0047
+                # 그래서 SERIAL 안에서 제조사 코드가 그대로 나오면, 이름은 달라도
+                # 두 스티커를 실제로 맞춰 본 것이다 → ✅.
+                #
+                # **단방향이다.** 맞을 때만 ✅ 로 올리고, 안 맞으면 불일치로
+                # 떨어뜨리지 않고 예전처럼 `na` 로 둔다. 표기 규칙을 모르는 벤더가
+                # 섞여 있는데 「안 맞음 = 사고」로 단정하면 오검출이 쏟아진다.
+                # ⚠️ **母로트로는 안 된다.** 母로트(`FPB2609001RF`, `1167040006`)는
+                # 릴을 구분하지 않는다. 2622·2623 사고에서도 두 릴의 로트는 같았다.
+                # 母로트가 SERIAL 안에 있다는 이유로 ✅ 를 찍으면, 바로 그 사고를
+                # 「대조 완료」로 덮는다. 릴 꼬리(`-0038`)가 붙은 값일 때만 인정한다.
+                raw_maker_lot = clean(lab.get("lot_maker"))
+                has_reel_suffix = bool(re.search(r"-\d{3,4}$", raw_maker_lot))
+                maker_lot = norm(raw_maker_lot)
+                if has_reel_suffix and len(maker_lot) >= 8 and maker_lot in norm(lv):
+                    status = "match"; matched += 1; comparable += 1
+                    note = ("제조사 라벨에 릴 번호가 없어, 그 자리의 EACH LOT "
+                            f"({clean(lab.get('lot_maker'))}) 로 대조했습니다")
+                else:
+                    status = "na"
+                    note = "제조사 라벨에 릴 번호가 없어 대조하지 않았습니다"
             elif ref == "cross" and mkey == "part_maker" and lv:
                 # 제조사 라벨(봉투 안)을 반사·포장 때문에 못 읽음. 조용히 통과(➖)시키면
                 # '제조사 라벨까지 검증된 일치'로 착각하게 된다 → 사람이 직접 보라고 확인필요로 넘긴다.
@@ -436,6 +483,19 @@ def match_label(lab, by_part, by_mobis, uncertain=None):
             note = (("이 부품은 MOBIS ID 가 혼용됩니다 (" + " / ".join(ids)
                      + ") — 사진에서 어느 쪽인지 확인하세요") if len(ids) > 1 else
                     f"라벨의 '{lv}' 도 마스터에 등록된 MOBIS ID 입니다 — 자동보정하지 않습니다")
+        elif (lkey == "material_code" and part_confirmed
+              and subs_within(norm(lv), norm(mv), 2)):
+            # 흔들린 사진의 자릿수 오독. 실측: 라벨 `M3500110945` ↔ 마스터
+            # `M3500102945` (2·3번째 자리) 가 불일치로 떴는데, 같은 사진에서
+            # 부품번호는 Unitrontech·제조사 **양쪽 다** 마스터와 정확일치였다.
+            # 서로 다른 두 스티커가 같은 부품을 가리키는데 세 번째 식별자의
+            # 두 자리가 흐리다고 「불일치」를 띄우면, 그 빨간불은 거짓이고
+            # 사람은 곧 빨간불 전체를 안 믿게 된다.
+            #
+            # 조건이 좁다: ① 부품번호가 두 스티커 모두 정확일치 ② 이 값이
+            # 마스터 어디에도 없는 MOBIS ID (실재하면 위 분기에서 이미 확인필요)
+            # ③ 길이가 같고 치환 2자 이내. 하나라도 어긋나면 여기 안 온다.
+            status = "match"; matched += 1; comparable += 1; shown = mv; corrected = True
         elif lkey in ("vpn", "material_code") and other_exact and within_one(norm(lv), norm(mv)):
             # 다른 핵심키가 마스터와 정확일치 → 부품 식별됨. 이 키는 딱 1글자 오독 → 마스터값으로 고정(✅).
             # 예: MATERIAL CODE 정확일치인데 V/PN만 'VAMV0607E'(7 하나 빠짐) → 마스터 'VAMV06077E'로 보정.
