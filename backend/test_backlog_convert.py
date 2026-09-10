@@ -95,13 +95,22 @@ def test_output_order_is_fixed_regardless_of_source_order():
     assert res["columns"] == bc.OUT_COLS
 
 
-def test_optional_columns_are_dropped_when_source_lacks_them():
-    """9/2 원본처럼 LINE_ITEM_BLOCK_*·DELIVERY_NUMBER 가 없으면 빼고 순서는 유지."""
+def test_only_line_item_block_columns_are_droppable():
+    """핑크 음영(필수·순서고정)이 아닌 건 LINE_ITEM_BLOCK_CODE·DESC 둘뿐이다."""
     h, rows = bc.read_sheet(_xlsx(SRC_0902, [_src_row("S1", "P1", "M1")]))
     res = bc.convert(h, rows)
     assert res["columns"] == [c for c in bc.OUT_COLS if c not in bc.OPTIONAL_COLS]
     assert res["summary"]["dropped_optional"] == [
-        "LINE_ITEM_BLOCK_CODE", "LINE_ITEM_BLOCK_DESC", "DELIVERY_NUMBER"]
+        "LINE_ITEM_BLOCK_CODE", "LINE_ITEM_BLOCK_DESC"]
+
+
+def test_delivery_number_keeps_its_slot_even_when_source_lacks_it():
+    """필수 열이라 9/2 원본처럼 없는 회차에도 빈 열로 자리를 지킨다."""
+    h, rows = bc.read_sheet(_xlsx(SRC_0902, [_src_row("S1", "P1", "M1")]))
+    res = bc.convert(h, rows)
+    assert "DELIVERY_NUMBER" in res["columns"]
+    assert res["rows"][0]["DELIVERY_NUMBER"] is None
+    assert res["columns"].index("DELIVERY_NUMBER") == res["columns"].index("OPEN COST") + 1
 
 
 def test_derived_columns_always_present_even_without_prev():

@@ -34,9 +34,10 @@ OUT_COLS = [
     "DELIVERY_NUMBER", "DBC", "FSE", "CUST",
 ]
 
-# 원본에 없으면 빼는 열 (사용자 확인: "생략 가능 / 순서 문제없음").
-# DELIVERY_NUMBER 도 여기 둔다 — 9/2 원본에 없어서 9/2 완성본에도 없다.
-OPTIONAL_COLS = {"LINE_ITEM_BLOCK_CODE", "LINE_ITEM_BLOCK_DESC", "DELIVERY_NUMBER"}
+# 원본에 없으면 빼는 열. 사용자 확인(2026-09-10): 핑크 음영(=필수·순서고정)이 아닌 열은
+# LINE_ITEM_BLOCK_CODE·DESC 둘뿐이다. 나머지 20열은 원본에 없어도 빈 열로 자리를 지킨다.
+# DELIVERY_NUMBER 가 여기 해당한다 — 9/2 완성본엔 없지만 필수 열이므로 빈칸으로 낸다.
+OPTIONAL_COLS = {"LINE_ITEM_BLOCK_CODE", "LINE_ITEM_BLOCK_DESC"}
 
 # 원본에 없고 앱이 만드는 열. 항상 붙는다.
 DERIVED_COLS = ["OPEN COST", "DBC", "FSE", "CUST"]
