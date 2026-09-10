@@ -17,6 +17,28 @@ import sys
 from datetime import datetime, date
 
 import xlwings as xw
+from datetime import datetime as _dt
+
+# 날짜 셀(진짜 날짜 / 텍스트로 친 날짜)을 비교 가능한 timestamp(float)로 통일.
+# 파싱 불가하면 None → '최신 날짜' 후보에서 자연히 제외됨.
+_DATE_FORMATS = ("%Y-%m-%d", "%Y/%m/%d", "%Y.%m.%d", "%m/%d/%Y", "%Y%m%d")
+
+
+def _date_ts(v):
+    if v is None:
+        return None
+    if hasattr(v, "timestamp"):          # datetime/Timestamp
+        return v.timestamp()
+    s = str(v).strip()
+    if not s:
+        return None
+    for fmt in _DATE_FORMATS:
+        try:
+            return _dt.strptime(s, fmt).timestamp()
+        except ValueError:
+            continue
+    return None
+
 
 # ========== 시트/컬럼 상수 ==========
 DC_SHEETS = {"1실": "DATECODE(영업1실)", "2실": "DATECODE(영업2실)"}
@@ -227,11 +249,15 @@ def collect_pending(wb, latest_date_only=True):
             p.pop("date_raw", None)
         return all_pending
 
-    def _key(d):
-        v = d.get("date_raw")
-        return v.timestamp() if hasattr(v, "timestamp") else str(v)
-    max_key = max(_key(p) for p in all_pending)
-    filtered = [p for p in all_pending if _key(p) == max_key]
+    keyed = [(p, _date_ts(p.get("date_raw"))) for p in all_pending]
+    valid = [ts for _, ts in keyed if ts is not None]
+    if not valid:
+        # 날짜를 하나도 못 읽으면 필터 없이 전부 반환
+        for p in all_pending:
+            p.pop("date_raw", None)
+        return all_pending
+    max_key = max(valid)
+    filtered = [p for p, ts in keyed if ts == max_key]
     for p in filtered:
         p.pop("date_raw", None)
     return filtered

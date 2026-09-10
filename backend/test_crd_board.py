@@ -153,5 +153,130 @@ class TestCompareBacklog(unittest.TestCase):
         self.assertEqual(r["summary"]["slipped"], 0)
 
 
+# ───────── 2026-09-10 영업1실 요청서 반영분 ─────────
+
+class TestElapsed(unittest.TestCase):
+    """경과일수 = MAD - CRD. "경과된 것" 은 경과일수 > 0 (0 은 경과 아님)."""
+
+    def test_delay_zero_is_not_elapsed(self):
+        cards = cb.classify_backlog([order(date(2026, 8, 1), date(2026, 8, 1))], today=TODAY)
+        self.assertEqual(cards[0]["delay_days"], 0)
+        self.assertFalse(cards[0]["elapsed"])
+
+    def test_delay_positive_is_elapsed(self):
+        cards = cb.classify_backlog([order(date(2026, 8, 1), date(2026, 8, 2))], today=TODAY)
+        self.assertEqual(cards[0]["delay_days"], 1)
+        self.assertTrue(cards[0]["elapsed"])
+
+    def test_mad_earlier_than_crd_is_not_elapsed(self):
+        cards = cb.classify_backlog([order(date(2026, 8, 1), date(2026, 7, 1))], today=TODAY)
+        self.assertEqual(cards[0]["delay_days"], -31)
+        self.assertFalse(cards[0]["elapsed"])
+
+    def test_missing_date_is_not_elapsed(self):
+        cards = cb.classify_backlog([order(date(2026, 8, 1), None), order(None, date(2026, 8, 1))],
+                                    today=TODAY)
+        self.assertFalse(any(c["elapsed"] for c in cards))
+
+    def test_elapsed_only_filters(self):
+        cards = cb.classify_backlog([
+            order(date(2026, 8, 1), date(2026, 8, 1), did="ZERO"),   # 경과 0
+            order(date(2026, 8, 1), date(2026, 9, 1), did="LATE"),   # 경과 31
+        ], today=TODAY)
+        kept = cb.elapsed_only(cards)
+        self.assertEqual([c["did"] for c in kept], ["LATE"])
+
+
+class TestExtraColumnsCarried(unittest.TestCase):
+    """PO#·PLANT·BOX_TYPE·CUST 는 판정에 안 쓰지만 표·엑셀에 나가야 한다."""
+
+    def test_original_fields_survive_classification(self):
+        o = order(date(2026, 8, 1), date(2026, 9, 1),
+                  po="45HWA260203-01", plant="SG15", box_type="DRY PACK",
+                  cust="HANWHA VISION", customer="UNITRON KR", delivery_number=None)
+        c = cb.classify_backlog([o], today=TODAY)[0]
+        self.assertEqual(c["po"], "45HWA260203-01")
+        self.assertEqual(c["plant"], "SG15")
+        self.assertEqual(c["box_type"], "DRY PACK")
+        self.assertEqual(c["cust"], "HANWHA VISION")
+        self.assertEqual(c["customer"], "UNITRON KR")
+
+
+class TestSortByMad(unittest.TestCase):
+    def test_mad_ascending_none_last(self):
+        cards = cb.classify_backlog([
+            order(date(2026, 8, 1), None, did="NOMAD"),
+            order(date(2026, 8, 1), date(2026, 9, 14), did="LATER"),
+            order(date(2026, 8, 1), date(2026, 9, 7), did="SOONER"),
+        ], today=TODAY)
+        self.assertEqual([c["did"] for c in cb.sort_by_mad(cards)],
+                         ["SOONER", "LATER", "NOMAD"])
+
+
+class TestCompareChanged(unittest.TestCase):
+    """"변화된 것" = GAP != 0 양방향 + 신규 SO. GAP = 현재MAD - 이전MAD."""
+
+    def test_pulled_in_is_changed_with_negative_gap(self):
+        # 요청서 예시 R11: 9/9 MAD 09-11, 8/31 MAD 09-14, GAP -3
+        prev = [bo("S1", date(2026, 9, 14))]
+        cur = [bo("S1", date(2026, 9, 11))]
+        r = cb.compare_backlog(prev, cur, today=TODAY)
+        self.assertEqual(r["summary"]["changed"], 1)
+        self.assertEqual(r["changed"][0]["gap_days"], -3)
+        self.assertIsNone(r["changed"][0]["slip_days"])
+        self.assertEqual(r["summary"]["improved"], 1)
+
+    def test_pushed_out_is_changed_with_positive_gap(self):
+        # 요청서 예시 R20: 9/9 MAD 09-14, 8/31 MAD 09-07, GAP +7
+        prev = [bo("S1", date(2026, 9, 7))]
+        cur = [bo("S1", date(2026, 9, 14))]
+        r = cb.compare_backlog(prev, cur, today=TODAY)
+        self.assertEqual(r["changed"][0]["gap_days"], 7)
+        self.assertEqual(r["changed"][0]["slip_days"], 7)
+
+    def test_unchanged_is_not_in_changed(self):
+        prev = [bo("S1", date(2026, 9, 7))]
+        cur = [bo("S1", date(2026, 9, 7))]
+        r = cb.compare_backlog(prev, cur, today=TODAY)
+        self.assertEqual(r["changed"], [])
+        self.assertEqual(r["summary"]["same"], 1)
+
+    def test_new_so_has_na_gap_and_is_flagged(self):
+        prev = []
+        cur = [bo("S9", date(2026, 9, 14))]
+        r = cb.compare_backlog(prev, cur, today=TODAY)
+        self.assertEqual(r["summary"]["changed"], 1)
+        self.assertTrue(r["changed"][0]["is_new"])
+        self.assertIsNone(r["changed"][0]["prev_mad"])
+        self.assertIsNone(r["changed"][0]["gap_days"])
+
+    def test_changed_sorted_by_mad(self):
+        prev = [bo("A", date(2026, 9, 1)), bo("B", date(2026, 9, 1))]
+        cur = [bo("A", date(2026, 10, 1)), bo("B", date(2026, 9, 20))]
+        r = cb.compare_backlog(prev, cur, today=TODAY)
+        self.assertEqual([c["so"] for c in r["changed"]], ["B", "A"])  # MAD 빠른 순
+
+    def test_fse_and_cust_pulled_from_prev_by_so(self):
+        prev = [bo("S1", date(2026, 9, 1), fse="KATE", cust="SKYHIGH")]
+        cur = [bo("S1", date(2026, 9, 8), fse=None, cust=None)]
+        r = cb.compare_backlog(prev, cur, today=TODAY)
+        self.assertEqual(r["changed"][0]["fse"], "KATE")
+        self.assertEqual(r["changed"][0]["cust"], "SKYHIGH")
+
+    def test_current_fse_wins_over_prev(self):
+        prev = [bo("S1", date(2026, 9, 1), fse="OLD", cust="OLDC")]
+        cur = [bo("S1", date(2026, 9, 8), fse="NEW", cust="NEWC")]
+        r = cb.compare_backlog(prev, cur, today=TODAY)
+        self.assertEqual(r["changed"][0]["fse"], "NEW")
+        self.assertEqual(r["changed"][0]["cust"], "NEWC")
+
+    def test_slipped_still_available_for_signal_board(self):
+        prev = [bo("S1", date(2026, 8, 1)), bo("S2", date(2026, 9, 1))]
+        cur = [bo("S1", date(2026, 9, 1)), bo("S2", date(2026, 8, 1))]  # S1 밀림, S2 당겨짐
+        r = cb.compare_backlog(prev, cur, today=TODAY)
+        self.assertEqual([c["so"] for c in r["slipped"]], ["S1"])
+        self.assertEqual(r["summary"]["changed"], 2)
+
+
 if __name__ == "__main__":
     unittest.main()

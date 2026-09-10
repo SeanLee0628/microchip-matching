@@ -1,0 +1,322 @@
+﻿# Microchip POS Report 자동화 — 업무 규칙 설정
+# 이 파일만 고치면 코드를 건드리지 않고 규칙을 바꿀 수 있습니다.
+rule_version: "1.0.0"
+program_version: "1.0.0"
+
+# ─────────────────────────────────────────────────────────────
+# 입력 파일에서 시트를 찾을 때 쓰는 후보 이름 (부분일치, 공백·대소문자 무시)
+# ─────────────────────────────────────────────────────────────
+sheets:
+  shipment:      ["출고이력", "출고내역"]
+  qtn:           ["단가2(QTN)", "단가2", "QTN로우데이터", "QTN"]
+  asd:           ["단가3(ASD)", "단가3", "ASD"]
+  customer_map:  ["업체코드,마이크로칩업체명 매칭", "업체코드매칭", "마이크로칩업체명"]
+  purchase_cost: ["단가1(수입가리스트)", "단가1", "수입가"]
+
+# 컬럼명 후보 — 원본 컬럼명이 달라도 여기에 추가하면 인식합니다.
+columns:
+  shipment:
+    ship_date:           ["출고일자"]
+    invoice_number:      ["출고번호"]
+    invoice_item_number: ["No", "항목", "전표항목"]
+    customer_code:       ["고객코드", "거래처코드", "업체코드"]
+    customer_name:       ["고객", "거래처명"]
+    part_number:         ["품번", "PART#", "MPN"]
+    ship_qty:            ["출고수량"]
+    resale_price:        ["단가"]
+  qtn:
+    quote_number:        ["Quote #", "Quote No.", "QTN#"]
+    quote_item_number:   ["Quote Item #", "Quote Item"]
+    part_number:         ["MPN", "품번", "PART#"]
+    end_customer:        ["End Customer", "고객사 영문이름"]
+    qtn_price:           ["매입단가", "매입가"]
+    remains:             ["Remains", "유효수량"]
+    valid_start:         ["StartDate", "유효-시작일자", "시작일자"]
+    valid_end:           ["Item Expire Date", "유효-종료일자", "유효종료일자"]
+    disti_customer_number: ["DistiCustNum"]
+  asd:
+    part_number:         ["PART#", "품번"]
+    asd_price:           ["PRICE", "ASD 단가"]
+    valid_start:         ["validity start date ASD", "validity start date", "시작일"]
+    valid_end:           ["validity end date ASD", "validity end date", "종료일"]
+  customer_map:
+    customer_code:            ["코드", "업체코드", "거래처코드"]
+    customer_name:            ["거래처명"]
+    name_with_region:         ["지역명포함이름", "고객사 영문이름"]
+    name_without_region:      ["지역명제외이름"]
+  purchase_cost:
+    part_number: ["Device", "품번"]
+    price:       ["DC"]
+
+# 헤더가 몇 번째 줄에 있는지 모를 때 위에서부터 훑는 최대 행 수
+header_scan_rows: 6
+
+# ─────────────────────────────────────────────────────────────
+# 고객명 정규화
+# ─────────────────────────────────────────────────────────────
+customer_normalization:
+  uppercase: true
+  collapse_whitespace: true
+  strip_punctuation: [",", ".", "(", ")", "'", "\""]
+  # 법인 표기 통일 (정규화 비교용에서만 제거)
+  legal_suffixes: ["CO LTD", "CO", "LTD", "INC", "CORP", "CORPORATION", "COMPANY", "LLC", "GMBH"]
+  region_separator: " - "     # "42dot - Seoul" → 지역명 = Seoul
+  fuzzy_suggest_top_n: 3
+  fuzzy_min_score: 80         # 추천만. 자동 확정에는 절대 쓰지 않음
+
+# ─────────────────────────────────────────────────────────────
+# QTN / ASD 유효성 및 우선순위
+# ─────────────────────────────────────────────────────────────
+qtn_rules:
+  require_valid_start: true    # 출고일 < 시작일이면 후보 제외 (사용자 확정: '출고일자 조정'은 오류)
+  require_valid_end: true
+  require_positive_price: true
+  require_sufficient_qty: true # 잔여수량 < 출고수량이면 후보 제외 (사후 경고 금지)
+  allow_split_across_qtn: false
+  remains_means: "available"   # available = 실행 시점 잔량 / approved = 원승인수량
+  priority: ["qtn_price", "valid_end", "valid_start", "quote_number", "quote_item_number", "source_row"]
+
+asd_rules:
+  require_valid_dates: true
+  allow_blank_validity: false  # 스펙 기본값. true 로 바꾸면 기간 공란 ASD 도 유효로 인정
+  require_positive_price: true
+  priority: ["asd_price", "valid_end", "valid_start", "source_row"]
+
+price_selection:
+  tie_breaker: "QTN"           # 가격 동률이면 QTN 우선
+
+# 유효한 QTN·ASD 가 하나도 없을 때
+#   report_with_import_cost : POS 에는 싣고 Disti Purchase Cost 를 표준 수입가(단가1 DC)로 채운다
+#                             — POS 는 '판매실적 보고'이므로 특가가 없다고 출고를 빼면 보고 누락이 된다
+#   exclude                 : 그 출고를 POS 에서 제외하고 예외로만 남긴다
+pricing_fallback:
+  no_price_policy: "report_with_import_cost"
+
+# 고객 주소 원천 (CRM '고객사' 내보내기). --crm-customers 로 파일 지정.
+# 이름 정확일치(표기차이 정규화)로만 붙인다. 유사도 매칭은 하지 않는다.
+address_source:
+  columns:
+    name:   ["고객사명", "거래처명", "고객사"]
+    postal: ["우편번호"]
+    address: ["주소"]
+  # 한국 주소 첫 토큰(시·도) → 영문. 표에 없으면 State 를 비우고 주소 마스터로 넘긴다.
+  province_romanization:
+    서울특별시: Seoul
+    서울: Seoul
+    부산광역시: Busan
+    부산: Busan
+    대구광역시: Daegu
+    대구: Daegu
+    인천광역시: Incheon
+    인천: Incheon
+    광주광역시: Gwangju
+    광주: Gwangju
+    대전광역시: Daejeon
+    대전: Daejeon
+    울산광역시: Ulsan
+    울산: Ulsan
+    세종특별자치시: Sejong
+    세종: Sejong
+    경기도: Gyeonggi-do
+    경기: Gyeonggi-do
+    강원특별자치도: Gangwon-do
+    강원도: Gangwon-do
+    강원: Gangwon-do
+    충청북도: Chungcheongbuk-do
+    충북: Chungcheongbuk-do
+    충청남도: Chungcheongnam-do
+    충남: Chungcheongnam-do
+    전북특별자치도: Jeollabuk-do
+    전라북도: Jeollabuk-do
+    전북: Jeollabuk-do
+    전라남도: Jeollanam-do
+    전남: Jeollanam-do
+    경상북도: Gyeongsangbuk-do
+    경북: Gyeongsangbuk-do
+    경상남도: Gyeongsangnam-do
+    경남: Gyeongsangnam-do
+    제주특별자치도: Jeju-do
+    제주도: Jeju-do
+    제주: Jeju-do
+
+# ─────────────────────────────────────────────────────────────
+# POS 27개 필드 매핑
+#   source 종류:
+#     shipment / qtn / asd / customer_map / applied  : 계산 결과에서 가져옴
+#     derived  : 파생 규칙
+#     const    : 고정값(근거 필요)
+#     address_master : 별도 고객 주소 마스터 파일 필요 (없으면 MISSING_POS_FIELD)
+#   evidence: 이 매핑의 근거. '원본수식' 은 기존 POS_Report 시트에서 살아남은 수식에서 복원한 것.
+# ─────────────────────────────────────────────────────────────
+pos_fields:
+  - name: "Transaction Code"
+    source: const
+    value: null
+    required: true
+    pending_vendor_input: true      # 마이크로칩이 지정하는 값 — 우리가 만들 수 없다.
+    evidence: "원본 수식이 참조오류로 소실. 마이크로칩 지정값 확인 필요"
+  - name: "Microchip Part Number"
+    source: shipment
+    field: part_number
+    required: true
+    evidence: "원본수식 =IF(출고내역!$A3=\"\",\"\",출고내역!$C3)"
+  - name: "Ship Date"
+    source: shipment
+    field: ship_date
+    required: true
+    format: "%Y-%m-%d"
+    evidence: "원본수식 출고내역!$A3"
+  - name: "Shipped Quantity"
+    source: shipment
+    field: ship_qty
+    required: true
+    evidence: "원본수식 출고내역!$D3"
+  - name: "Resale Price (ASP)"
+    source: shipment
+    field: resale_price
+    required: true
+    evidence: "출고이력 '단가' (매출단가). 원본수식은 참조오류로 소실"
+  - name: "Resale Currency Code"
+    source: const
+    value: "KRW"
+    required: true
+    evidence: "출고이력 금액이 원화 기준(공급가/부가세/합계액)"
+  - name: "Disti Purchase Cost"
+    source: applied
+    field: disti_cost
+    required: true
+    evidence: "원본수식 =IF(...,출고내역!$G3) — G열 '가장저렴한단가'(적용단가). 특가가 없으면 단가1(수입가리스트) DC"
+  - name: "Adjusted Cost"
+    source: const
+    value: null
+    required: true
+    pending_vendor_input: true
+    evidence: "원본 수식이 참조오류로 소실. 마이크로칩 정의 확인 필요"
+  - name: "DPA Price"
+    source: applied
+    field: dpa_price
+    required: true
+    blank_ok: true
+    evidence: "원본수식 =IF(출고내역!$H3=\"QTN\",출고내역!$F3,\"\") — ASD 적용 시 공란"
+  - name: "Microchip Quote Number"
+    source: applied
+    field: applied_quote_number
+    required: true
+    blank_ok: true
+    evidence: "원본수식 출고내역!$E3. ASD 적용 시 공란"
+  - name: "Purchasing Customer Name"
+    source: customer_map
+    field: customer_name
+    required: true
+    evidence: "더존 거래처명 (원본 M열 =XLOOKUP(B,Sheet1!A:A,Sheet1!B:B))"
+  - name: "Purchasing Customer City"
+    source: derived
+    field: customer_city
+    required: true
+    evidence: "매칭표 '지역명포함이름' 의 ' - ' 뒤 영문 지역명 (벤더가 쓰는 영문 도시명)"
+  - name: "Purchasing Customer State or Province"
+    source: crm_address
+    field: state
+    required: true
+    evidence: "CRM 고객사 '주소' 첫 토큰(시·도)을 영문 변환. 이름 정확일치로만 연결"
+  - name: "Purchasing Customer Postal Code"
+    source: crm_address
+    field: postal
+    required: true
+    evidence: "CRM 고객사 '우편번호'. 이름 정확일치로만 연결"
+  - name: "Purchasing Customer Country Code"
+    source: address_master
+    field: purchasing_country
+    required: true
+    default: "KR"
+    evidence: "국내 유통 거래처 기본 KR (주소 마스터로 개별 지정 가능)"
+  - name: "End Customer Name"
+    source: customer_map
+    field: name_without_region
+    required: true
+    evidence: "매칭표 '지역명제외이름'"
+  - name: "End Customer City"
+    source: derived
+    field: customer_city
+    required: true
+    evidence: "매칭표 '지역명포함이름' 의 ' - ' 뒤 영문 지역명"
+  - name: "End Customer State or Province"
+    source: crm_address
+    field: state
+    required: true
+    evidence: "CRM 고객사 주소에서 파생 (이 데이터에서는 구매고객=실고객 동일 법인)"
+  - name: "End Customer Postal Code"
+    source: crm_address
+    field: postal
+    required: true
+    evidence: "CRM 고객사 '우편번호'"
+  - name: "End Customer Country Code"
+    source: address_master
+    field: end_country
+    required: true
+    default: "KR"
+    evidence: "국내 실고객 기본 KR"
+  - name: "Invoice Number"
+    source: shipment
+    field: invoice_number
+    required: true
+    evidence: "출고이력 '출고번호'"
+  - name: "Invoice Item Number"
+    source: shipment
+    field: invoice_item_number
+    required: true
+    evidence: "출고이력 'No'"
+  - name: "Distributor Branch Code"
+    source: const
+    value: null
+    required: true
+    pending_vendor_input: true
+    evidence: "원본 수식이 참조오류로 소실. 마이크로칩 부여 코드 확인 필요"
+  - name: "Purchasing Customer Number"
+    source: qtn
+    field: disti_customer_number
+    required: true
+    evidence: "단가2(QTN) 'DistiCustNum'. 해당 고객의 QTN 이 없으면 주소 마스터로 보완"
+  - name: "Third Party Importer"
+    source: const
+    value: ""
+    required: true
+    blank_ok: true
+    evidence: "제3자 수입 해당 없음 (국내 직접 유통)"
+  - name: "Adder Cost"
+    source: const
+    value: 0
+    required: true
+    evidence: "Adder 미적용"
+  - name: "Adder Cost Reason"
+    source: const
+    value: ""
+    required: true
+    blank_ok: true
+    evidence: "Adder 미적용이므로 사유 없음"
+
+# 예외 심각도
+severity:
+  MISSING_REQUIRED_SHEET: ERROR
+  MISSING_REQUIRED_COLUMN: ERROR
+  INVALID_DATE: ERROR
+  INVALID_QUANTITY: ERROR
+  INVALID_PRICE: ERROR
+  DUPLICATE_SHIPMENT: ERROR
+  CUSTOMER_NOT_MATCHED: REVIEW
+  CUSTOMER_MULTIPLE_MATCHES: REVIEW
+  PART_NUMBER_NOT_FOUND: WARNING
+  NO_VALID_QTN: WARNING
+  NO_VALID_ASD: WARNING
+  NO_VALID_PRICE: REVIEW
+  QTN_NOT_STARTED: WARNING
+  QTN_EXPIRED: WARNING
+  QTN_INSUFFICIENT_QTY: REVIEW
+  ASD_NOT_STARTED: WARNING
+  ASD_EXPIRED: WARNING
+  MULTIPLE_QTN_CONFLICT: REVIEW
+  MULTIPLE_ASD_CONFLICT: REVIEW
+  MISSING_POS_FIELD: ERROR
+  RETURN_REVIEW: REVIEW
+  SOURCE_TOTAL_MISMATCH: ERROR
+  OUTPUT_TOTAL_MISMATCH: ERROR

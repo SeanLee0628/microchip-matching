@@ -27,12 +27,14 @@ const GROUPS = [
     { key: "matching", label: "Microchip 매칭" },
     { key: "invoice_batch", label: "거래명세서 일괄" },
     { key: "pos_report_fill", label: "출고내역 자동완성" },
+    { key: "pos_auto", label: "POS Report 자동 생성" },
     { key: "backlog_prd_diff", label: "백록 PRD 변동 비교" },
     { key: "fcst_sales_diff", label: "영업FCST/매출 비교" },
     { key: "match5", label: "영업5실 매칭" },
   ]},
   { team: "자재", items: [
-    { key: "materials", label: "출고 자동등록 (AI Agent)" },
+    { key: "materials", label: "부품 라벨 검수" },
+    { key: "label_maker", label: "라벨 생성" },
   ]},
 ];
 

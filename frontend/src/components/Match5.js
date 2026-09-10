@@ -16,26 +16,39 @@ function fmt(v, col) {
 }
 
 function Match5() {
-  const [files, setFiles] = useState({ inventory: null, fcst: null, blog: null, shipment: null });
+  const [files, setFiles] = useState({ inventory: null, fcst: null, blog: null, shipment: null, matching: null });
   const [password, setPassword] = useState("9178");
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
   const [query, setQuery] = useState("");
-  const refs = { inventory: useRef(), fcst: useRef(), blog: useRef(), shipment: useRef() };
+  const [dragKey, setDragKey] = useState(null);
+  const refs = { inventory: useRef(), fcst: useRef(), blog: useRef(), shipment: useRef(), matching: useRef() };
+
+  const ACCEPT_RE = /\.(xlsx|xlsm|xls)$/i;
+  const handleDrop = (key, e) => {
+    e.preventDefault();
+    setDragKey(null);
+    const f = e.dataTransfer.files && e.dataTransfer.files[0];
+    if (!f) return;
+    if (!ACCEPT_RE.test(f.name)) { setError("엑셀 파일(.xlsx/.xlsm/.xls)만 가능합니다."); return; }
+    setError(null);
+    setFile(key, f);
+  };
 
   const SLOTS = [
     { key: "inventory", label: "재고 (daily inventory)", color: "#0ea5e9" },
     { key: "fcst", label: "FCST (Sales Revenue)", color: "#8b5cf6" },
     { key: "blog", label: "백록 (Blog)", color: "#f59e0b" },
-    { key: "shipment", label: "출고내역", color: "#10b981" },
+    { key: "shipment", label: "출고내역 (2026 출하)", color: "#10b981" },
+    { key: "matching", label: "마이크로칩(매칭) · 과거 출하 23~25", color: "#ec4899", optional: true },
   ];
 
   const setFile = (key, f) => { setFiles((p) => ({ ...p, [key]: f })); setResult(null); };
 
   const reset = () => {
-    setFiles({ inventory: null, fcst: null, blog: null, shipment: null });
+    setFiles({ inventory: null, fcst: null, blog: null, shipment: null, matching: null });
     setError(null); setResult(null); setQuery("");
     Object.values(refs).forEach((r) => { if (r.current) r.current.value = ""; });
   };
@@ -51,6 +64,7 @@ function Match5() {
       fd.append("fcst", files.fcst);
       fd.append("blog", files.blog);
       fd.append("shipment", files.shipment);
+      if (files.matching) fd.append("matching", files.matching);
       fd.append("password", password || "9178");
       const res = await axios.post(`${API_URL}/api/match5/upload`, fd);
       if (res.data.error) { setError(res.data.error); return; }
@@ -118,17 +132,26 @@ function Match5() {
           const f = files[s.key];
           return (
             <div key={s.key}
-              style={{ flex: "1 1 200px", border: `2px dashed ${f ? s.color : "#cbd5e1"}`,
-                background: f ? "#f8fafc" : "white", borderRadius: 8, padding: 16,
-                textAlign: "center", cursor: "pointer" }}
-              onClick={() => refs[s.key].current && refs[s.key].current.click()}>
+              style={{ flex: "1 1 200px",
+                border: `2px dashed ${dragKey === s.key ? s.color : (f ? s.color : "#cbd5e1")}`,
+                background: dragKey === s.key ? "#eef2ff" : (f ? "#f8fafc" : "white"),
+                borderRadius: 8, padding: 16, textAlign: "center", cursor: "pointer",
+                transition: "background 0.12s, border-color 0.12s" }}
+              onClick={() => refs[s.key].current && refs[s.key].current.click()}
+              onDragOver={(e) => { e.preventDefault(); if (dragKey !== s.key) setDragKey(s.key); }}
+              onDragLeave={(e) => { e.preventDefault(); setDragKey(null); }}
+              onDrop={(e) => handleDrop(s.key, e)}>
               <input ref={refs[s.key]} type="file" accept=".xlsx,.xlsm,.xls" style={{ display: "none" }}
                 onChange={(e) => setFile(s.key, e.target.files[0] || null)} />
-              <div style={{ fontSize: 12, fontWeight: 700, color: s.color, marginBottom: 6 }}>{s.label}</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: s.color, marginBottom: 6 }}>
+                {s.label}{s.optional && <span style={{ fontSize: 10, color: "#94a3b8", fontWeight: 500 }}> (선택)</span>}
+              </div>
               {f ? (
                 <div style={{ fontSize: 11, color: "#0f172a", wordBreak: "break-all" }}>📄 {f.name}</div>
               ) : (
-                <div style={{ fontSize: 11, color: "#94a3b8" }}>클릭하여 파일 선택</div>
+                <div style={{ fontSize: 11, color: "#94a3b8" }}>
+                  {dragKey === s.key ? "여기에 놓으세요" : "클릭 또는 드래그 앤 드롭"}
+                </div>
               )}
             </div>
           );
@@ -208,7 +231,8 @@ function Match5() {
           · 재고: <code>Jun inventory</code> 시트 (암호화 — 기본 비번 9178) → PART#별 available Q'ty<br />
           · FCST: <code>Sales Revenue</code> 시트 → Demand Total<br />
           · 백록: 첫 시트 → BLOG TTL·Lead Time·Cancel Window·월별 PDD<br />
-          · 출고내역: 첫 시트 → 담당자·고객·품번·2026 출하<br />
+          · 출고내역: 첫 시트 → 담당자·고객·품번·<b>2026 출하</b><br />
+          · 마이크로칩(매칭) <i>(선택)</i>: 믹스# 기준 <b>2023·2024·2025 과거 출하이력</b> 소스 (미첨부 시 해당 연도는 '-')<br />
           <b>※ 6~3월(BLOG PDD)·추이·25-26(w/BL)은 대시보드에 숨김 → 엑셀 내려보내기에만 출력.</b>
         </div>
       )}

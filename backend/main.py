@@ -21,6 +21,11 @@ from database import engine, get_db, Base
 from models_ublox import UbloxBacklog, UBLOX_COLUMN_MAP, UBLOX_DISPLAY_COLUMNS
 from models_sales import SalesPerformance as SalesModel, SALES_FIELD_MAP, SALES_REVERSE_MAP
 from jaejae_agent import run_batch_agent, mark_all_existing_as_processed, compute_changes_dryrun
+from invoice_render import (_build_invoice_xlsx_bytes, _build_invoice_pdf_bytes,
+                            build_invoice_zip_bytes)
+from invoice_upload import parse_invoice_upload
+from po_report import (PO_REPORT_T1_COLS, build_preview as build_po_report_preview,
+                       build_xlsx_bytes as build_po_report_xlsx_bytes)
 
 # 테이블 생성
 Base.metadata.create_all(bind=engine)
@@ -101,6 +106,37 @@ def _code_str(v):
     return str(v).strip() or None
 
 
+def _norm_mix(s):
+    """믹스# 매칭용 정규화: 공백 제거 + 대문자 (baseline_shipments.json 키와 동일 규칙)."""
+    if s is None or (isinstance(s, float) and math.isnan(s)):
+        return ""
+    s = str(s).strip()
+    if not s or s.lower() == "nan":
+        return ""
+    return re.sub(r"\s+", "", s).upper()
+
+
+def _build_mix(code, part):
+    """믹스#가 비어있을 때 '고객코드 + 품번'으로 생성."""
+    code = _code_str(code) or ""
+    part = _s(part) or ""
+    combined = code + part
+    return combined or None
+
+
+# 2023~2025 출하수량 고정 기준선.
+# 참조파일 '마이크로칩(매칭)20260324.xlsx' 의 '출고기준(백록매칭)' 시트에서 1회 추출.
+# 키 = 정규화된 믹스#(=고객코드+품번), 값 = {"2023","2024","2025"} (각 float 또는 None).
+# 매칭 시 2023~2025 컬럼은 업로드 데이터로 재계산하지 않고 이 테이블에서 항상 채운다.
+_BASELINE_PATH = os.path.join(os.path.dirname(__file__), "baseline_shipments.json")
+try:
+    import json as _baseline_json
+    with open(_BASELINE_PATH, encoding="utf-8") as _bf:
+        BASELINE_SHIPMENTS = _baseline_json.load(_bf)
+except (OSError, ValueError):
+    BASELINE_SHIPMENTS = {}
+
+
 def _parse_snapshot_date(sheet_name: str):
     """'백록260324' → Timestamp(2026, 3, 24)"""
     m = re.search(r"(\d{6})$", sheet_name)
@@ -161,7 +197,8 @@ def parse_excel(contents: bytes, cutoff_date=None):
     if shipment_sheet:
         df = pd.read_excel(xls, sheet_name=shipment_sheet, header=0)
         for _, row in df.iterrows():
-            mix = _s(row.get("믹스#"))
+            # 믹스#가 비어있으면 고객코드+품번으로 생성
+            mix = _s(row.get("믹스#")) or _build_mix(row.get("고객코드"), row.get("품번"))
             if not mix:
                 continue
             qty = to_float(row.get("출고수량")) or 0
@@ -189,7 +226,8 @@ def parse_excel(contents: bytes, cutoff_date=None):
     if backlog_sheet:
         df = pd.read_excel(xls, sheet_name=backlog_sheet, header=0)
         for _, row in df.iterrows():
-            mix = _s(row.get("믹스"))
+            # 믹스가 비어있으면 업체코드+Customer Part Number 로 생성
+            mix = _s(row.get("믹스")) or _build_mix(row.get("업체코드"), row.get("Customer Part Number"))
             if not mix:
                 continue
             qty = to_float(row.get("Qty Due")) or 0
@@ -235,7 +273,11 @@ def parse_excel(contents: bytes, cutoff_date=None):
         end = ship.get("END") or bl.get("END")
 
         blog_ttl = sum(monthly.values()) if monthly else 0
-        y2025 = yearly.get(2025)
+        # 2023~2025: 고정 기준선에서 (업로드로 재계산하지 않음). 2026: 업로드 출고내역에서 동적.
+        base = BASELINE_SHIPMENTS.get(_norm_mix(mix), {})
+        y2023 = base.get("2023")
+        y2024 = base.get("2024")
+        y2025 = base.get("2025")
         y2026 = yearly.get(2026)
         if y2025 is None and y2026 is None and blog_ttl == 0:
             wbl = None
@@ -252,10 +294,10 @@ def parse_excel(contents: bytes, cutoff_date=None):
             "PART#": part_no,
             "FAB2": fab2_map.get(part_no, "-") if part_no else "-",
             "LT": bl.get("LT"),
-            "2023년": yearly.get(2023),
-            "2024년": yearly.get(2024),
-            "2025년": yearly.get(2025),
-            "2026년": yearly.get(2026),
+            "2023년": y2023,
+            "2024년": y2024,
+            "2025년": y2025,
+            "2026년": y2026,
             "23~25추이": None,
             "25-26(w/BL)": wbl,
             "BLOG TTL": blog_ttl,
@@ -313,6 +355,17 @@ async def export_excel(data: dict):
             cell.font = bold_font
             cell.alignment = center_align
 
+        # 숫자 컬럼 천단위 콤마 서식 (#,##0). 고객코드·믹스# 등 식별자는 제외.
+        NUMERIC_COLS = {
+            "2023년", "2024년", "2025년", "2026년", "23~25추이", "25-26(w/BL)",
+            "BLOG TTL", "3월", "4월", "5월", "6월", "7월", "8월", "9월",
+            "10월", "11월", "12월",
+        }
+        for col_idx, col_name in enumerate(df.columns, start=1):
+            if col_name in NUMERIC_COLS:
+                for row_idx in range(2, len(df) + 2):
+                    ws.cell(row=row_idx, column=col_idx).number_format = "#,##0"
+
         # 필터 설정
         ws.auto_filter.ref = ws.dimensions
 
@@ -335,6 +388,7 @@ async def match5_upload(
     fcst: UploadFile = File(...),
     blog: UploadFile = File(...),
     shipment: UploadFile = File(...),
+    matching: UploadFile = File(None),
     password: str = Form("9178"),
 ):
     import match5
@@ -348,14 +402,24 @@ async def match5_upload(
     fc = match5.parse_fcst(await fcst.read())
     if not fc:
         warnings.append("FCST에서 Demand Total 데이터를 찾지 못했습니다.")
-    bl = match5.parse_blog(await blog.read())
+    bl, bl_meta = match5.read_blog(await blog.read())
     if not bl:
         warnings.append("백록 파일에서 데이터를 찾지 못했습니다.")
     sh = match5.parse_shipment(await shipment.read())
     if not sh:
         warnings.append("출고내역에서 데이터를 찾지 못했습니다.")
 
-    columns, dashboard_columns, records = match5.build_records(inv, fc, bl, sh)
+    # 마이크로칩(매칭) 파일(선택): 2023~2025 출하이력 소스
+    hist = {}
+    if matching is not None:
+        hist = match5.parse_matching_history(await matching.read())
+        if not hist:
+            warnings.append("마이크로칩(매칭) 파일에서 믹스#/2023~2025년 헤더를 찾지 못했습니다 → 2023~2025 출하이력은 '-' 로 표시됩니다.")
+    else:
+        warnings.append("마이크로칩(매칭) 파일 미첨부 → 2023~2025 출하이력은 '-' (출고내역엔 2026만 존재).")
+
+    columns, dashboard_columns, records = match5.build_records(inv, fc, bl, sh, history=hist)
+    warnings.extend(match5.diagnostics(bl_meta, records))
     return {
         "columns": columns,
         "dashboard_columns": dashboard_columns,
@@ -947,19 +1011,30 @@ def _bl_clean(v):
     return s or None
 
 
+def _bl_blank_zero(v):
+    """FSE·CUST 는 값이 문자 0 으로 들어오는 행이 있다(샘플 3건) — 공란으로 본다.
+    (요청 2026-09-10: "데이터에 해당 열(FSE CUST) 없다면 공란표기")"""
+    s = _bl_clean(v)
+    return None if s in ("0", "0.0") else s
+
+
+BL_REQUIRED_COLS = {"MPN", "DID", "CRD", "MAD", "QTY"}
+
+
 def _parse_backlog_orders(contents):
     """Backlog Shipment Report 파싱. 필수 컬럼이 있는 시트를 자동 탐지(시트명 제각각 대응).
-    반환: 주문 dict 리스트(so/did/mpn/customer/qty/crd/mad/order_type/fse/open),
-          백로그 형식이 아니면 None."""
+    반환: 주문 dict 리스트, 백로그 형식이 아니면 None.
+
+    요청서(2026-09-10) 표에 나가는 열을 전부 읽는다 — 예전엔 판정에 쓰는 것만 읽어서
+    PO#·CUSTOMER_MATERIAL·PLANT·BOX_TYPE·CUST 가 화면에 못 나왔다."""
     try:
         xls = pd.ExcelFile(io.BytesIO(contents))
     except Exception:
         return None
-    req = {"MPN", "DID", "CRD", "MAD", "QTY"}
     df = None
     for s in xls.sheet_names:
         d = pd.read_excel(xls, sheet_name=s, header=0)
-        if req.issubset(set(d.columns)):
+        if BL_REQUIRED_COLS.issubset(set(d.columns)):
             df = d
             break
     if df is None:
@@ -971,16 +1046,26 @@ def _parse_backlog_orders(contents):
         did, mpn = _bl_clean(row.get("DID")), _bl_clean(row.get("MPN"))
         if not did and not mpn:
             continue
+        delivery = _bl_clean(row.get("DELIVERY_NUMBER"))
         orders.append({
             "so": _bl_clean(row.get("SO")),
             "did": did, "mpn": mpn,
-            "customer": _bl_clean(row.get("End customer")),  # FSE 옆 실제 공급 고객
+            # 실제 헤더는 END_CUSTOMER_NAME. 예전 코드가 "End customer" 만 찾아서
+            # 고객명이 전 행 빈칸으로 나왔다 (2026-09-10 수정). 구 헤더도 같이 본다.
+            "customer": (_bl_clean(row.get("END_CUSTOMER_NAME"))
+                         or _bl_clean(row.get("End customer"))),
+            "po": _bl_clean(row.get("PURCH_ORDER_NO")),
+            "cust_material": _bl_clean(row.get("CUSTOMER_MATERIAL")),
             "qty": to_float(row.get("QTY")) or 0,
             "crd": _parse_date(row.get("CRD")),
             "mad": _parse_date(row.get("MAD")),
+            "plant": _bl_clean(row.get("PLANT")),
+            "box_type": _bl_clean(row.get("BOX_TYPE")),
+            "delivery_number": delivery,
             "order_type": _bl_clean(row.get("ORDER_TYPE")),  # OR=양산, FD=샘플
-            "fse": _bl_clean(row.get("FSE")),
-            "open": _bl_clean(row.get("DELIVERY_NUMBER")) is None,  # 출하번호 없으면 미출하
+            "fse": _bl_blank_zero(row.get("FSE")),
+            "cust": _bl_blank_zero(row.get("CUST")),
+            "open": delivery is None,  # 출하번호 없으면 미출하
         })
     return orders
 
@@ -991,6 +1076,109 @@ def _bl_ser_card(c):
         if k in c and hasattr(c[k], "isoformat"):
             c[k] = c[k].isoformat()
     return c
+
+
+# ───────── 엑셀 내보내기 (요청 2026-09-10) ─────────
+# "경과된 것 뿐만 아니라 원본 엑셀에서 경과일수 열 추가된 엑셀 다운 가능하게"
+# → 화면 필터와 무관하게 업로드한 파일의 전체 행을 그대로 내보내고 계산열만 덧붙인다.
+
+def _bl_read_raw_sheet(contents):
+    """업로드 원본에서 백로그 시트를 (헤더, 데이터행들) 로 읽는다. 값만 — 서식은 안 가져온다.
+    헤더가 1행이 아닐 수 있어 앞 10행까지 훑는다. 못 찾으면 (None, None)."""
+    from openpyxl import load_workbook
+    wb = load_workbook(io.BytesIO(contents), data_only=True, read_only=True)
+    try:
+        for ws in wb.worksheets:
+            rows = list(ws.iter_rows(values_only=True))
+            for i, r in enumerate(rows[:10]):
+                hdr = [(str(v).strip() if v is not None else "") for v in r]
+                if BL_REQUIRED_COLS.issubset(set(hdr)):
+                    data = [list(x) for x in rows[i + 1:]
+                            if any(v is not None and str(v).strip() != "" for v in x)]
+                    return hdr, data
+    finally:
+        wb.close()
+    return None, None
+
+
+def _bl_cell_date(v):
+    from datetime import datetime as _dtc, date as _datec
+    if isinstance(v, _dtc):
+        return v.date()
+    if isinstance(v, _datec):
+        return v
+    return _parse_date(v)
+
+
+def _bl_export_workbook(hdr, rows, extra_names, extra_values, sheet_title="Backlog"):
+    """원본 헤더·행을 그대로 옮기고 MAD 열 바로 뒤에 계산열을 끼운 워크북을 만든다.
+
+    extra_names: 추가 열 이름들, extra_values: 행별 추가값 리스트(rows 와 같은 길이).
+    값이 None 이면 "N/A" 로 쓴다 (이전 백록에 없던 신규 SO 등).
+    """
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    from openpyxl.utils import get_column_letter
+    from datetime import datetime as _dtc, date as _datec
+
+    HDR_FILL = PatternFill("solid", fgColor="1F3A8A")
+    ADD_FILL = PatternFill("solid", fgColor="C43A3A")   # 추가한 계산열은 색으로 구분
+    ADD_BODY = PatternFill("solid", fgColor="FEF2F2")
+    HDR_FONT = Font(name="맑은 고딕", bold=True, color="FFFFFF", size=10)
+    DATA_FONT = Font(name="맑은 고딕", size=10)
+    THIN = Side(border_style="thin", color="D1D5DB")
+    BORDER = Border(left=THIN, right=THIN, top=THIN, bottom=THIN)
+    CENTER = Alignment(horizontal="center", vertical="center")
+
+    pos = hdr.index("MAD") + 1 if "MAD" in hdr else len(hdr)
+    out_hdr = hdr[:pos] + list(extra_names) + hdr[pos:]
+    add_cols = set(range(pos + 1, pos + 1 + len(extra_names)))  # 1-indexed 열번호
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = sheet_title
+    for j, name in enumerate(out_hdr, start=1):
+        c = ws.cell(1, j, name)
+        c.fill = ADD_FILL if j in add_cols else HDR_FILL
+        c.font = HDR_FONT
+        c.alignment = CENTER
+        c.border = BORDER
+
+    for i, (row, extra) in enumerate(zip(rows, extra_values), start=2):
+        row = list(row) + [None] * (len(hdr) - len(row))
+        vals = row[:pos] + [("N/A" if v is None else v) for v in extra] + row[pos:len(hdr)]
+        for j, v in enumerate(vals, start=1):
+            c = ws.cell(i, j, v)
+            c.font = DATA_FONT
+            c.border = BORDER
+            if j in add_cols:
+                c.fill = ADD_BODY
+                c.alignment = CENTER
+            if isinstance(v, (_dtc, _datec)):
+                c.number_format = "yyyy-mm-dd"
+                c.alignment = CENTER
+
+    for j, name in enumerate(out_hdr, start=1):
+        width = max(9, min(26, len(str(name)) + 4))
+        if name in ("MPN", "PURCH_ORDER_NO", "END_CUSTOMER_NAME", "CUSTOMER_MATERIAL", "CUST"):
+            width = 24
+        ws.column_dimensions[get_column_letter(j)].width = width
+    ws.freeze_panes = "A2"
+    return wb
+
+
+def _bl_xlsx_response(wb, fname, extra_headers=None):
+    from urllib.parse import quote
+    out = io.BytesIO()
+    wb.save(out)
+    out.seek(0)
+    h = {"Content-Disposition": "attachment; filename*=UTF-8''" + quote(fname)}
+    h.update(extra_headers or {})
+    return StreamingResponse(
+        out,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers=h,
+    )
 
 
 @app.post("/api/crd-board")
@@ -1009,6 +1197,8 @@ async def crd_board_compute(file: UploadFile = File(...), buffer_days: int = 7):
 
     today = _dt.now().date()
     cards = crd_board.classify_backlog(open_orders, today=today, buffer_days=buffer_days)
+    # 화면 정렬은 위험도순이 아니라 MAD(자재 가용일) 빠른 순 — 요청서 예시와 첨부 파일이 그 순서.
+    cards = crd_board.sort_by_mad(cards)
 
     board, summary = [], {"red": 0, "yellow": 0, "green": 0, "unknown": 0}
     for c in cards:
@@ -1019,14 +1209,44 @@ async def crd_board_compute(file: UploadFile = File(...), buffer_days: int = 7):
         "board": board, "summary": summary,
         "part_summary": crd_board.summarize_by_part(cards),
         "open_count": len(open_orders), "shipped_skipped": shipped,
+        "elapsed_count": len(crd_board.elapsed_only(cards)),   # 경과일수 > 0
         "order_types": type_counts, "buffer_days": buffer_days,
         "today": today.isoformat(),
     }
 
 
+@app.post("/api/crd-board/export")
+async def crd_board_export(file: UploadFile = File(...)):
+    """업로드 원본 전체 행 + 경과일수(MAD-CRD) 열 xlsx.
+    화면의 "경과된 것만" 필터와 무관하게 전수 — 요청서 N7 코멘트."""
+    from datetime import datetime as _dt
+    contents = await file.read()
+    hdr, rows = _bl_read_raw_sheet(contents)
+    if hdr is None:
+        return {"error": "Backlog Shipment Report 형식이 아닙니다 (MPN·DID·CRD·MAD·QTY 컬럼 필요)."}
+
+    i_crd, i_mad = hdr.index("CRD"), hdr.index("MAD")
+    extras, n_elapsed = [], 0
+    for r in rows:
+        crd = _bl_cell_date(r[i_crd] if i_crd < len(r) else None)
+        mad = _bl_cell_date(r[i_mad] if i_mad < len(r) else None)
+        if crd is None or mad is None:
+            extras.append([None])          # 날짜 없으면 N/A
+        else:
+            d = (mad - crd).days
+            extras.append([d])
+            if d > 0:
+                n_elapsed += 1
+
+    wb = _bl_export_workbook(hdr, rows, ["경과일수"], extras)
+    stamp = _dt.now().strftime("%Y%m%d_%H%M")
+    return _bl_xlsx_response(wb, f"CRD현황_경과일수_{stamp}.xlsx",
+                             {"X-Row-Count": str(len(rows)), "X-Elapsed-Count": str(n_elapsed)})
+
+
 @app.post("/api/crd-board/compare")
 async def crd_board_compare(prev: UploadFile = File(...), current: UploadFile = File(...)):
-    """이전·현재 백로그 두 파일 비교 → MAD 밀린(선적 지연) 주문 + 주간 움직임 요약."""
+    """이전·현재 백로그 두 파일 비교 → MAD 변화(밀림·당겨짐·신규) + 주간 움직임 요약."""
     import crd_board
     from datetime import datetime as _dt
     prev_all = _parse_backlog_orders(await prev.read())
@@ -1040,12 +1260,53 @@ async def crd_board_compare(prev: UploadFile = File(...), current: UploadFile = 
     res = crd_board.compare_backlog(prev_open, cur_open, today=today)
 
     return {
+        "changed": [_bl_ser_card(c) for c in res["changed"]],
         "slipped": [_bl_ser_card(c) for c in res["slipped"]],
         "new": [_bl_ser_card(c) for c in res["new"]],
         "gone_count": res["gone_count"],
         "summary": res["summary"],
         "today": today.isoformat(),
     }
+
+
+@app.post("/api/crd-board/compare/export")
+async def crd_board_compare_export(prev: UploadFile = File(...), current: UploadFile = File(...)):
+    """현재 백록 전체 행 + 이전 MAD·GAP 열 xlsx (전체 백록 라인 비교 — 요청서 N7 코멘트).
+    GAP = 현재 MAD - 이전 MAD. 이전 백록에 없던 SO 는 N/A."""
+    from datetime import datetime as _dt
+    cur_bytes = await current.read()
+    prev_orders = _parse_backlog_orders(await prev.read())
+    hdr, rows = _bl_read_raw_sheet(cur_bytes)
+    if hdr is None or prev_orders is None:
+        return {"error": "두 파일 모두 Backlog Shipment Report 형식이어야 합니다."}
+
+    prev_mad_by_so = {o["so"]: o["mad"] for o in prev_orders if o.get("so")}
+    i_so = hdr.index("SO") if "SO" in hdr else None
+    i_mad = hdr.index("MAD")
+    stat = {"push": 0, "pull": 0, "na": 0}
+    vals = []
+    for r in rows:
+        so = _bl_clean(r[i_so]) if (i_so is not None and i_so < len(r)) else None
+        mad = _bl_cell_date(r[i_mad] if i_mad < len(r) else None)
+        pmad = prev_mad_by_so.get(so)
+        if pmad is None or mad is None:
+            vals.append([pmad, None])       # 신규 SO 등 → GAP N/A
+            stat["na"] += 1
+        else:
+            gap = (mad - pmad).days
+            vals.append([pmad, gap])
+            if gap > 0:
+                stat["push"] += 1
+            elif gap < 0:
+                stat["pull"] += 1
+
+    wb = _bl_export_workbook(hdr, rows, ["이전 MAD", "GAP"], vals)
+    stamp = _dt.now().strftime("%Y%m%d_%H%M")
+    return _bl_xlsx_response(wb, f"CRD변화_MAD비교_{stamp}.xlsx",
+                             {"X-Row-Count": str(len(rows)),
+                              "X-Push-Out": str(stat["push"]),
+                              "X-Pull-In": str(stat["pull"]),
+                              "X-Na-Count": str(stat["na"])})
 
 
 # ==================== 거래명세서 ====================
@@ -1138,255 +1399,35 @@ def _detect_invoice_currency(items):
     return "USD"
 
 
-def _build_invoice_xlsx_bytes(data: dict) -> bytes:
-    """거래명세서 엑셀 생성 — 통화별 컬럼 숨김 + 도장."""
-    from openpyxl import Workbook
-    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
-    from openpyxl.drawing.image import Image as XlImage
-    from openpyxl.drawing.spreadsheet_drawing import AnchorMarker, TwoCellAnchor
+@app.post("/api/invoice/upload-preview")
+async def invoice_upload_preview(file: UploadFile = File(...)):
+    """거래명세서 업로드 데이터(xlsx) → 문서번호별 거래명세서 미리보기.
 
-    items = data.get("items", [])
-    customer = data.get("customer", "")
-    date_str = data.get("date", "")
-    rate = float(data.get("rate", 1400))
-    inv_currency = _detect_invoice_currency(items)
+    파일에 적힌 값과 셀 서식(업체별 소수점 자릿수)을 그대로 들고 온다.
+    서버가 환율을 다시 곱하거나 반올림하지 않는다.
+    """
+    from starlette.concurrency import run_in_threadpool
+    contents = await file.read()
+    return await run_in_threadpool(parse_invoice_upload, contents)
 
-    wb = Workbook()
-    ws = wb.active
-    ws.title = "거래명세서"
 
-    # 열 너비 (원본 동일)
-    widths = {"A": 5, "B": 20, "C": 8, "D": 18, "E": 16, "F": 10, "G": 20, "H": 18}
-    for col, w in widths.items():
-        ws.column_dimensions[col].width = w
-
-    # 스타일
-    thin = Side(style="thin")
-    border = Border(left=thin, right=thin, top=thin, bottom=thin)
-    center = Alignment(horizontal="center", vertical="center")
-    right_a = Alignment(horizontal="right", vertical="center")
-    left_a = Alignment(horizontal="left", vertical="center")
-
-    # Row 1: 거래명세표
-    ws.merge_cells("A1:H1")
-    ws["A1"] = "거래명세표"
-    ws["A1"].font = Font(bold=True, size=36)
-    ws["A1"].alignment = center
-    ws.row_dimensions[1].height = 55
-    ws.row_dimensions[2].height = 8
-
-    # 굵은 테두리
-    thick = Side(style="medium")
-    thick_border_tl = Border(left=thick, top=thick)
-    thick_border_t = Border(top=thick)
-    thick_border_tr = Border(right=thick, top=thick)
-    thick_border_l = Border(left=thick)
-    thick_border_r = Border(right=thick)
-    thick_border_bl = Border(left=thick, bottom=thick)
-    thick_border_b = Border(bottom=thick)
-    thick_border_br = Border(right=thick, bottom=thick)
-    no_border = Border()
-
-    # Row 3: 공급자 제목
-    ws.merge_cells("A3:C3")
-    ws["A3"] = "공 급 자"
-    ws["A3"].font = Font(bold=True, size=10)
-    ws["A3"].alignment = center
-    ws["A3"].border = Border(left=thick, top=thick, bottom=Side(style="thin"))
-    ws["B3"].border = Border(top=thick, bottom=Side(style="thin"))
-    ws["C3"].border = Border(right=thick, top=thick, bottom=Side(style="thin"))
-
-    # Row 4~9: 공급자 정보 (A~C, 외곽 굵은 테두리, 내부 없음)
-    info = [
-        (4, "등록번호 : 229-81-00105"),
-        (5, "상      호 : ㈜유니트론텍"),
-        (6, "대표이사 : 남궁 선"),
-        (7, "주 : 서울 강남구 영동대로 638(삼성동, 삼보빌딩 9층)"),
-        (8, "업      태 : 도.소매"),
-        (9, "종      목 :전자부품 외"),
-    ]
-    for row_num, val in info:
-        ws.merge_cells(f"A{row_num}:C{row_num}")
-        ws[f"A{row_num}"] = val
-        ws[f"A{row_num}"].font = Font(size=8)
-        ws[f"A{row_num}"].alignment = left_a
-        # 외곽만 굵게
-        if row_num == 9:  # 마지막 행
-            ws[f"A{row_num}"].border = Border(left=thick, bottom=thick)
-            ws[f"B{row_num}"].border = Border(bottom=thick)
-            ws[f"C{row_num}"].border = Border(right=thick, bottom=thick)
-        else:
-            ws[f"A{row_num}"].border = Border(left=thick)
-            ws[f"C{row_num}"].border = Border(right=thick)
-
-    # 공급받는자 제목
-    ws.merge_cells("F3:H3")
-    ws["F3"] = "공급받는자"
-    ws["F3"].font = Font(bold=True, size=10)
-    ws["F3"].alignment = center
-    ws["F3"].border = Border(left=thick, top=thick, bottom=Side(style="thin"))
-    ws["G3"].border = Border(top=thick, bottom=Side(style="thin"))
-    ws["H3"].border = Border(right=thick, top=thick, bottom=Side(style="thin"))
-
-    # 공급받는자 본문 (F4:H9 전체 병합, 굵은 외곽)
-    ws.merge_cells("F4:H9")
-    ws["F4"] = customer
-    ws["F4"].font = Font(bold=True, size=16)
-    ws["F4"].alignment = center
-    # 병합 셀 외곽 굵은 테두리
-    for row_num in range(4, 10):
-        for col_letter in ["F", "G", "H"]:
-            cell = ws[f"{col_letter}{row_num}"]
-            l = thick if col_letter == "F" else None
-            r_side = thick if col_letter == "H" else None
-            b = thick if row_num == 9 else None
-            cell.border = Border(
-                left=l or Side(), right=r_side or Side(),
-                bottom=b or Side(), top=Side(),
-            )
-
-    # Row 12: 날짜
-    ws["B12"] = date_str
-    ws["B12"].font = Font(bold=True, size=10)
-
-    # Row 13: 헤더
-    headers = ["No.", "Part #", "QTY", "U/PRICE ($)", "Amount ($)", "RATE", "U/PRICE (￦)", "AMOUNT (￦)"]
-    header_fill = PatternFill(start_color="CCFF33", end_color="CCFF33", fill_type="solid")
-    for j, h in enumerate(headers):
-        cell = ws.cell(row=13, column=j+1)
-        cell.value = h
-        cell.font = Font(bold=True, size=9)
-        cell.fill = header_fill
-        cell.alignment = center
-        cell.border = border
-
-    # 데이터 행
-    fit_center = Alignment(horizontal="center", vertical="center", shrink_to_fit=True)
-    data_font = Font(size=9)
-    total_usd = 0
-    total_krw = 0
-    for i, item in enumerate(items):
-        row = 14 + i
-        qty = float(item.get("qty", 0))
-        currency = (item.get("currency") or "USD").upper()
-
-        if currency == "KRW":
-            price_krw = float(item.get("price_krw") or item.get("price") or 0)
-            amount_krw = float(item.get("amount_krw") or round(qty * price_krw, 0))
-            total_krw += amount_krw
-            vals = [i + 1, item.get("part", ""), int(qty), None, None, None, price_krw, int(amount_krw)]
-            fmts = [None, None, None, None, None, None, '₩#,##0.00###', '₩#,##0']
-        elif item.get("rate"):
-            price_usd = float(item.get("price") or 0)
-            item_rate = float(item.get("rate"))
-            amount_usd = round(qty * price_usd, 2)
-            price_krw = round(price_usd * item_rate, 2)
-            amount_krw = round(amount_usd * item_rate, 0)
-            total_usd += amount_usd
-            total_krw += amount_krw
-            vals = [i + 1, item.get("part", ""), int(qty), price_usd, amount_usd, item_rate, price_krw, int(amount_krw)]
-            fmts = [None, None, None, '$#,##0.00###', '$#,##0.00', '#,##0.00', '₩#,##0.00###', '₩#,##0']
-        else:
-            price_usd = float(item.get("price") or 0)
-            amount_usd = round(qty * price_usd, 2)
-            total_usd += amount_usd
-            vals = [i + 1, item.get("part", ""), int(qty), price_usd, amount_usd, None, None, None]
-            fmts = [None, None, None, '$#,##0.00###', '$#,##0.00', None, None, None]
-
-        for j, (v, fmt) in enumerate(zip(vals, fmts)):
-            cell = ws.cell(row=row, column=j + 1, value=v)
-            cell.alignment = fit_center
-            cell.font = data_font
-            cell.border = border
-            if fmt:
-                cell.number_format = fmt
-
-    # 빈 행 (10행까지)
-    for i in range(len(items), 10):
-        row = 14 + i
-        ws.cell(row=row, column=1, value=i+1).alignment = center
-        for j in range(1, 9):
-            ws.cell(row=row, column=j).border = border
-
-    # 소계/부가세/합계
-    summary_row = 24
-    tax_usd = round(total_usd * 0.1, 2)
-    tax_krw = round(total_krw * 0.1, 0)
-    for label, usd_val, krw_val, row_offset in [
-        ("소  계", total_usd, total_krw, 0),
-        ("부가세", tax_usd, tax_krw, 1),
-        ("합  계", total_usd + tax_usd, total_krw + tax_krw, 2),
-    ]:
-        r = summary_row + row_offset
-        fnt = Font(bold=True, size=9)
-
-        ws.cell(row=r, column=4, value=label).font = fnt
-        ws.cell(row=r, column=4).alignment = fit_center
-        c5 = ws.cell(row=r, column=5)
-        c5.value = usd_val
-        c5.number_format = '$#,##0.00'
-        c5.alignment = fit_center
-        c5.font = fnt
-        ws.cell(row=r, column=7, value=label).font = fnt
-        ws.cell(row=r, column=7).alignment = fit_center
-        c8 = ws.cell(row=r, column=8)
-        c8.value = int(krw_val)
-        c8.number_format = '₩#,##0'
-        c8.alignment = fit_center
-        c8.font = fnt
-
-        for j in [4, 5, 7, 8]:
-            ws.cell(row=r, column=j).border = border
-
-    # 합계 아래 줄 (A~H 전체)
-    합계row = summary_row + 2
-    for j in range(1, 9):
-        cell = ws.cell(row=합계row, column=j)
-        existing = cell.border
-        cell.border = Border(
-            left=existing.left, right=existing.right,
-            top=existing.top, bottom=Side(style="medium"),
-        )
-
-    # 비고
-    ws.merge_cells("A27:H27")
-    ws["A27"] = "  비  고 : 금일 최초고시 매매기준율 적용"
-    ws["A27"].font = Font(size=9)
-
-    # 인수자 + 아래 줄
-    ws.merge_cells("E30:H30")
-    ws["E30"] = "인수자 :                                              (인)"
-    for j in range(1, 9):
-        ws.cell(row=30, column=j).border = Border(bottom=Side(style="thin"))
-    ws["E30"].font = Font(size=9)
-
-    # 계좌정보
-    ws["B31"] = "계좌정보"
-    ws["B31"].font = Font(bold=True, size=9)
-    ws["B32"] = "원화> 기업은행 528-002245-01011"
-    ws["B32"].font = Font(size=9)
-    ws["B33"] = "외화> 기업은행 528-002245-56-00013"
-    ws["B33"].font = Font(size=9)
-
-    # 도장 이미지
-    stamp_path = os.path.join(os.path.dirname(__file__), "stamp.png")
-    if os.path.exists(stamp_path):
-        img = XlImage(stamp_path)
-        from openpyxl.utils.units import pixels_to_EMU
-        from openpyxl.drawing.spreadsheet_drawing import AnchorMarker, OneCellAnchor
-        from openpyxl.drawing.spreadsheet_drawing import AnchorMarker, TwoCellAnchor
-        img.width = 75
-        img.height = 75
-        # 공급자 박스 우측 상단에 겹치게 — C열, 2행에서 시작 (오프셋으로 미세 조정)
-        marker = AnchorMarker(col=2, colOff=300000, row=1, rowOff=50000)  # C열 중간, 2행 상단
-        marker2 = AnchorMarker(col=3, colOff=200000, row=4, rowOff=100000)
-        anchor = TwoCellAnchor(_from=marker, to=marker2)
-        img.anchor = anchor
-        ws.add_image(img)
-
-    output = io.BytesIO()
-    wb.save(output)
-    return output.getvalue()
+@app.post("/api/invoice/upload-zip")
+async def invoice_upload_zip(request: Request):
+    """거래명세서 여러 건을 엑셀+PDF 로 묶어 ZIP 으로 내려준다."""
+    from starlette.concurrency import run_in_threadpool
+    from urllib.parse import quote
+    data = await request.json()
+    invoices = data.get("invoices") or []
+    if not invoices:
+        return JSONResponse({"error": "거래명세서가 없습니다."}, status_code=400)
+    zip_bytes = await run_in_threadpool(build_invoice_zip_bytes, invoices)
+    fname = quote(f"거래명세서_{datetime.now().strftime('%Y-%m-%d')}.zip")
+    return StreamingResponse(
+        io.BytesIO(zip_bytes),
+        media_type="application/zip",
+        headers={"Content-Disposition":
+                 f"attachment; filename=invoices.zip; filename*=UTF-8''{fname}"},
+    )
 
 
 @app.post("/api/invoice/generate")
@@ -1398,303 +1439,6 @@ async def generate_invoice(data: dict):
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": f"attachment; filename=invoice_{date_str}.xlsx"},
     )
-
-
-def _fmt_unit_price(v, sym):
-    """단가 포맷: 소수점 2~5자리, trailing 0 제거 (단 최소 2자리 유지)."""
-    if v is None:
-        return ""
-    s = f"{v:,.5f}"
-    if "." in s:
-        intpart, dec = s.split(".")
-        dec = dec.rstrip("0")
-        if len(dec) < 2:
-            dec = (dec + "00")[:2]
-        s = f"{intpart}.{dec}"
-    return f"{sym}{s}"
-
-
-def _build_invoice_pdf_bytes(data: dict) -> bytes:
-    """거래명세서 PDF — 통화별로 사용 안 하는 컬럼 너비 0으로 숨김."""
-    from reportlab.pdfgen import canvas
-    from reportlab.lib.pagesizes import A4
-    from reportlab.lib.colors import Color, black
-    from reportlab.pdfbase import pdfmetrics
-    from reportlab.pdfbase.cidfonts import UnicodeCIDFont
-    from reportlab.pdfbase.ttfonts import TTFont
-
-    KF = None
-    bundled = os.path.join(os.path.dirname(__file__), "fonts", "NanumGothic.ttf")
-    if os.path.exists(bundled):
-        try:
-            pdfmetrics.registerFont(TTFont("KoreanFont", bundled))
-            KF = "KoreanFont"
-        except Exception:
-            pass
-    if not KF:
-        try:
-            pdfmetrics.registerFont(UnicodeCIDFont("HYGothic-Medium"))
-            KF = "HYGothic-Medium"
-        except Exception:
-            KF = "Helvetica"
-    KF_BOLD = KF
-    WON = "₩"
-
-    items = data.get("items", [])
-    customer = data.get("customer", "")
-
-    buf = io.BytesIO()
-    c = canvas.Canvas(buf, pagesize=A4)
-    W, H = A4
-    margin_x = 28
-    margin_top = 25
-    uw = W - 2 * margin_x
-    grey = Color(0.88, 0.88, 0.88)
-
-    c.setLineWidth(0.8)
-
-    # 9열: A(No.)/B(Part#)/C(QTY)/D(U/P$)/E(Amt$)/F(Rate)/G(U/P₩)/H(Amt₩)/I(비고)
-    # U/P 컬럼은 5자리 소수점까지 수용 (예: $0.00645) — D, G 확장
-    col_w_pt = [22, 90, 43, 78, 54, 50, 84, 66, 38]  # sum=525
-    scale = uw / sum(col_w_pt)
-    col_w = [w * scale for w in col_w_pt]
-    x_bounds = [margin_x]
-    for w in col_w:
-        x_bounds.append(x_bounds[-1] + w)
-
-    title_h = 55
-    info_row_h = 18
-    box_header_h = 28
-    box_body_h = info_row_h * 6
-    box_total_h = box_header_h + box_body_h
-    gap_before_table = 18
-    table_header_h = 24
-    data_row_h = 19
-    n_data = max(24, len(items))
-    summary_row_h = 22
-
-    title_y = H - margin_top - title_h + 18
-    c.setFont(KF_BOLD, 34)
-    c.drawCentredString(W / 2, title_y, "거래명세서")
-
-    issue_date = data.get("issue_date", "")
-    person = data.get("person_in_charge", "")
-    extra_offset = 0
-    if issue_date or person:
-        c.setFont(KF, 9)
-        extra_y = title_y - 22
-        if issue_date:
-            c.drawRightString(margin_x + uw, extra_y, f"발행일 : {issue_date}")
-            extra_y -= 12
-            extra_offset = 12
-        if person:
-            c.drawRightString(margin_x + uw, extra_y, f"담당자 : {person}")
-            extra_offset = (extra_offset + 12) if issue_date else 12
-
-    box_top = H - margin_top - title_h - 10 - extra_offset
-    # 공급자/공급받는자 박스: 좌측 절반 vs 우측 절반 (컬럼 숨김 영향 없도록 절대좌표)
-    half = uw / 2
-    sup_x = margin_x
-    sup_w = half - 6
-    cust_x = margin_x + half + 6
-    cust_w = half - 6
-
-    c.setFillColor(grey)
-    c.rect(sup_x, box_top - box_header_h, sup_w, box_header_h, stroke=1, fill=1)
-    c.setFillColor(black)
-    c.rect(sup_x, box_top - box_total_h, sup_w, box_total_h, stroke=1, fill=0)
-    c.line(sup_x, box_top - box_header_h, sup_x + sup_w, box_top - box_header_h)
-    c.setFont(KF_BOLD, 12)
-    c.drawCentredString(sup_x + sup_w / 2, box_top - box_header_h + 10, "공 급 자")
-
-    c.setFillColor(grey)
-    c.rect(cust_x, box_top - box_header_h, cust_w, box_header_h, stroke=1, fill=1)
-    c.setFillColor(black)
-    c.rect(cust_x, box_top - box_total_h, cust_w, box_total_h, stroke=1, fill=0)
-    c.line(cust_x, box_top - box_header_h, cust_x + cust_w, box_top - box_header_h)
-    c.setFont(KF_BOLD, 12)
-    c.drawCentredString(cust_x + cust_w / 2, box_top - box_header_h + 10, "공급받는자")
-
-    info = [
-        "등록번호 : 229-81-00105",
-        "상      호 : ㈜유니트론텍",
-        "대표이사 : 남궁 선",
-        "주      소 : 서울 강남구 영동대로 638(삼성동, 삼보빌딩 9층)",
-        "업      태 : 도.소매",
-        "종      목 : 전자부품 외",
-    ]
-    c.setFont(KF, 8.5)
-    info_top_y = box_top - box_header_h - 12
-    for i, line in enumerate(info):
-        c.drawString(sup_x + 6, info_top_y - i * info_row_h, line)
-
-    stamp_path = os.path.join(os.path.dirname(__file__), "stamp.png")
-    if os.path.exists(stamp_path):
-        try:
-            ss = 42
-            c.drawImage(stamp_path, sup_x + sup_w - ss - 12, box_top - box_header_h - 8 - ss,
-                        ss, ss, mask="auto", preserveAspectRatio=True)
-        except Exception:
-            pass
-
-    c.setFont(KF_BOLD, 12)
-    cust_center_y = box_top - box_header_h - box_body_h / 2 - 4
-    c.drawCentredString(cust_x + cust_w / 2, cust_center_y, customer)
-
-    table_top = box_top - box_total_h - gap_before_table
-    headers = ["No.", "Part #", "QTY", "U/PRICE ($)", "Amount ($)", "RATE",
-               f"U/PRICE ({WON})", f"AMOUNT ({WON})", "비고"]
-
-    c.setFillColor(grey)
-    c.rect(margin_x, table_top - table_header_h, uw, table_header_h, stroke=1, fill=1)
-    c.setFillColor(black)
-    c.setFont(KF_BOLD, 9.5)
-    for i, h in enumerate(headers):
-        if col_w[i] <= 0:
-            continue
-        c.drawCentredString((x_bounds[i] + x_bounds[i + 1]) / 2, table_top - table_header_h + 8, h)
-        if i > 0 and col_w[i] > 0:
-            c.line(x_bounds[i], table_top, x_bounds[i], table_top - table_header_h)
-
-    total_usd = 0
-    total_krw = 0
-    total_qty = 0
-    c.setFont(KF, 9)
-    data_top = table_top - table_header_h
-    for i in range(n_data):
-        row_btm = data_top - data_row_h * (i + 1)
-        c.rect(margin_x, row_btm, uw, data_row_h, stroke=1, fill=0)
-        for j in range(1, 9):
-            if col_w[j] > 0:
-                c.line(x_bounds[j], row_btm, x_bounds[j], row_btm + data_row_h)
-
-        if i < len(items):
-            item = items[i]
-            qty = float(item.get("qty", 0))
-            currency = (item.get("currency") or "USD").upper()
-            note = str(item.get("date", "") or "")
-            if currency == "KRW":
-                price_krw = float(item.get("price_krw") or item.get("price") or 0)
-                amount_krw = float(item.get("amount_krw") or round(qty * price_krw, 0))
-                total_krw += amount_krw
-                total_qty += qty
-                vals = [str(i + 1), str(item.get("part", "")), f"{int(qty):,}",
-                        "", "", "",
-                        _fmt_unit_price(price_krw, WON), f"{WON}{int(amount_krw):,}", note]
-            elif item.get("rate"):
-                price = float(item.get("price") or 0)
-                item_rate = float(item.get("rate"))
-                amount_usd = round(qty * price, 2)
-                price_krw = round(price * item_rate, 2)
-                amount_krw = round(amount_usd * item_rate, 0)
-                total_usd += amount_usd
-                total_krw += amount_krw
-                total_qty += qty
-                vals = [str(i + 1), str(item.get("part", "")), f"{int(qty):,}",
-                        _fmt_unit_price(price, "$"), f"${amount_usd:,.2f}", f"{item_rate:,.2f}",
-                        _fmt_unit_price(price_krw, WON), f"{WON}{int(amount_krw):,}", note]
-            else:
-                price = float(item.get("price") or 0)
-                amount_usd = round(qty * price, 2)
-                total_usd += amount_usd
-                total_qty += qty
-                vals = [str(i + 1), str(item.get("part", "")), f"{int(qty):,}",
-                        _fmt_unit_price(price, "$"), f"${amount_usd:,.2f}", "",
-                        "", "", note]
-        else:
-            vals = ["", "", "", "", "", "", "", "", ""]
-
-        for j, v in enumerate(vals):
-            if not v or col_w[j] <= 0:
-                continue
-            s = str(v)
-            cell_w = col_w[j] - 6
-            text_w = pdfmetrics.stringWidth(s, KF, 9)
-            fs = 9
-            if text_w > cell_w and cell_w > 0:
-                fs = max(5.5, 9 * cell_w / text_w)
-            c.setFont(KF, fs)
-            if j == 1:
-                c.drawString(x_bounds[j] + 3, row_btm + 6, s)
-            else:
-                c.drawCentredString((x_bounds[j] + x_bounds[j + 1]) / 2, row_btm + 6, s)
-        c.setFont(KF, 9)
-
-    sum_top = data_top - data_row_h * n_data
-    tax_usd = round(total_usd * 0.1, 2)
-    tax_krw = round(total_krw * 0.1, 0)
-    total_usd_sum = total_usd + tax_usd
-    total_krw_sum = total_krw + tax_krw
-
-    r38_btm = sum_top - summary_row_h
-    r39_btm = r38_btm - summary_row_h
-    r40_btm = r39_btm - summary_row_h
-
-    def _rect_if(left_idx, right_idx, btm, h):
-        lw = x_bounds[right_idx] - x_bounds[left_idx]
-        if lw <= 0:
-            return
-        c.rect(x_bounds[left_idx], btm, lw, h, stroke=1, fill=0)
-
-    # 행 38 (소계)
-    _rect_if(0, 2, r38_btm, summary_row_h)  # A:B
-    _rect_if(2, 3, r38_btm, summary_row_h)  # C
-    _rect_if(3, 4, r38_btm, summary_row_h)  # D
-    _rect_if(4, 6, r38_btm, summary_row_h)  # E:F
-    _rect_if(6, 7, r38_btm, summary_row_h)  # G
-    _rect_if(7, 9, r38_btm, summary_row_h)  # H:I
-    # 행 39+40
-    _rect_if(0, 3, r40_btm, summary_row_h * 2)  # A:C 세로병합
-    _rect_if(3, 4, r39_btm, summary_row_h)
-    _rect_if(4, 6, r39_btm, summary_row_h)
-    _rect_if(6, 7, r39_btm, summary_row_h)
-    _rect_if(7, 9, r39_btm, summary_row_h)
-    _rect_if(3, 4, r40_btm, summary_row_h)
-    _rect_if(4, 6, r40_btm, summary_row_h)
-    _rect_if(6, 7, r40_btm, summary_row_h)
-    _rect_if(7, 9, r40_btm, summary_row_h)
-
-    def draw_cell(text, left_x, right_x, y, base_fs=8):
-        if not text or (right_x - left_x) <= 0:
-            return
-        cell_w = (right_x - left_x) - 6
-        tw = pdfmetrics.stringWidth(text, KF, base_fs)
-        fs = base_fs
-        if tw > cell_w and tw > 0:
-            fs = max(5.5, base_fs * cell_w / tw)
-        c.setFont(KF, fs)
-        c.drawCentredString((left_x + right_x) / 2, y, text)
-
-    # 행 38
-    draw_cell("소  계", x_bounds[0], x_bounds[2], r38_btm + 7)
-    draw_cell(f"{int(total_qty):,}", x_bounds[2], x_bounds[3], r38_btm + 7)
-    draw_cell("공급가액 합계($)", x_bounds[3], x_bounds[4], r38_btm + 7)
-    draw_cell(f"${total_usd:,.2f}", x_bounds[4], x_bounds[6], r38_btm + 7)
-    draw_cell(f"공급가액 합계({WON})", x_bounds[6], x_bounds[7], r38_btm + 7)
-    draw_cell(f"{WON}{int(total_krw):,}", x_bounds[7], x_bounds[9], r38_btm + 7)
-    # 행 39
-    draw_cell("부가세($)", x_bounds[3], x_bounds[4], r39_btm + 7)
-    draw_cell(f"${tax_usd:,.2f}", x_bounds[4], x_bounds[6], r39_btm + 7)
-    draw_cell(f"부가세({WON})", x_bounds[6], x_bounds[7], r39_btm + 7)
-    draw_cell(f"{WON}{int(tax_krw):,}", x_bounds[7], x_bounds[9], r39_btm + 7)
-    # 행 40
-    draw_cell("총 금액($)", x_bounds[3], x_bounds[4], r40_btm + 7)
-    draw_cell(f"${total_usd_sum:,.2f}", x_bounds[4], x_bounds[6], r40_btm + 7)
-    draw_cell(f"총 금액({WON})", x_bounds[6], x_bounds[7], r40_btm + 7)
-    draw_cell(f"{WON}{int(total_krw_sum):,}", x_bounds[7], x_bounds[9], r40_btm + 7)
-    # 비고
-    bigo_y = (r39_btm + summary_row_h + r40_btm) / 2 - 3
-    bigo_text = "비 고 : 출고 일자, 최초매매기준율 기준"
-    bigo_w = (x_bounds[3] - x_bounds[0]) - 12
-    tw = pdfmetrics.stringWidth(bigo_text, KF, 9)
-    bigo_fs = min(9, 9 * bigo_w / tw) if tw > bigo_w else 9
-    c.setFont(KF, bigo_fs)
-    c.drawString(x_bounds[0] + 6, bigo_y, bigo_text)
-
-    c.showPage()
-    c.save()
-    return buf.getvalue()
-
 
 @app.post("/api/invoice/generate-pdf")
 async def generate_invoice_pdf(data: dict):
@@ -1896,317 +1640,24 @@ async def sales_report_export(request: Request):
 
 # ==================== 1실 발주요청서 변환 ====================
 
-PO_REPORT_T1_COLS = [
-    "CPO", "Order Date", "Unitrontech CRD", "고객사 요청일",
-    "담당 Sales", "End Customer", "DID", "MPN", "Package",
-    "Qty", "DCPL", "Resale Price", "Resale AMT", "PO Customer",
-]
-
-
-def _fmt_korean_month(v):
-    if v is None:
-        return None
-    try:
-        d = pd.Timestamp(v)
-        return f"{d.year}년 {d.month}월"
-    except Exception:
-        return str(v) if v else None
-
-
 @app.post("/api/po-report/preview")
 async def po_report_preview(file: UploadFile = File(...)):
-    """발주요청서 데이터 양식 → 보고 양식(표1, 표2)."""
+    """발주요청서 데이터 양식 → 보고 양식(표1·표2)."""
     contents = await file.read()
-    try:
-        df = pd.read_excel(io.BytesIO(contents), header=0)
-    except Exception:
-        return {"error": "엑셀을 읽을 수 없습니다."}
-
-    t1_rows = []
-    for _, row in df.iterrows():
-        if row.isna().all():
-            continue
-        po_date = clean_value(row.get("PO Date"))
-        srd = clean_value(row.get("Customer SRD"))
-        rec = {
-            "CPO": clean_value(row.get("CUST PO#")),
-            "Order Date": po_date,
-            "Unitrontech CRD": clean_value(row.get("CRD")),
-            "고객사 요청일": _fmt_korean_month(srd) if srd else None,
-            "담당 Sales": clean_value(row.get("FSE")),
-            "End Customer": clean_value(row.get("End customer")),
-            "DID": clean_value(row.get("DID")),
-            "MPN": clean_value(row.get("MPN")),
-            "Package": clean_value(row.get("BOX_TYPE")),
-            "Qty": clean_value(row.get("QTY")),
-            "DCPL": clean_value(row.get("DCPL")),
-            "Resale Price": clean_value(row.get("SP ($)")),
-            "Resale AMT": clean_value(row.get("Sales Amt ($)")),
-            "PO Customer": clean_value(row.get("PO Customer")),
-        }
-        if not rec.get("MPN") and not rec.get("DID"):
-            continue
-        if rec["Resale AMT"] in (None, 0, ""):
-            qty = to_float(rec["Qty"])
-            price = to_float(rec["Resale Price"])
-            if qty is not None and price is not None:
-                rec["Resale AMT"] = round(qty * price, 2)
-        t1_rows.append(rec)
-
-    sum_qty = sum(to_float(r.get("Qty")) or 0 for r in t1_rows)
-    sum_amt = sum(to_float(r.get("Resale AMT")) or 0 for r in t1_rows)
-
-    t2_groups = {}
-    for r in t1_rows:
-        key = (r.get("MPN"), r.get("End Customer"))
-        if key not in t2_groups:
-            t2_groups[key] = {
-                "Date": r.get("Order Date"),
-                "Sales": r.get("담당 Sales"),
-                "PART NO.": r.get("MPN"),
-                "Customer": r.get("End Customer"),
-                "기 수주": None,
-                "신규 수주": 0,
-                "Inventory": None,
-                "Backlog": None,
-                "매출 M": None,
-                "매출 +1M": None,
-                "매출 +2M": None,
-                "매출 +3M": None,
-                "매출 ~+4M": None,
-                "Remarks": None,
-            }
-        t2_groups[key]["신규 수주"] += to_float(r.get("Qty")) or 0
-    t2_rows = list(t2_groups.values())
-
-    return {
-        "t1_columns": PO_REPORT_T1_COLS,
-        "t1_rows": t1_rows,
-        "t1_sum": {"Qty": round(sum_qty), "Resale AMT": round(sum_amt, 2)},
-        "t2_rows": t2_rows,
-    }
+    return build_po_report_preview(contents)
 
 
 @app.post("/api/po-report/export")
 async def po_report_export(request: Request):
     """변환 결과를 엑셀(표1/표2/표3)로 다운로드."""
-    from openpyxl import Workbook
-    from openpyxl.styles import Font, PatternFill, Alignment
-    from openpyxl.utils import get_column_letter
-
-    data = await request.json()
-    t1_rows = data.get("t1_rows", [])
-    t1_sum = data.get("t1_sum", {})
-    t2_rows = data.get("t2_rows", [])
-
-    wb = Workbook()
-
-    ws1 = wb.active
-    ws1.title = "표1"
-    header_fill = PatternFill(start_color="D9EAD3", end_color="D9EAD3", fill_type="solid")
-    sum_fill = PatternFill(start_color="FFF2CC", end_color="FFF2CC", fill_type="solid")
-    bold = Font(bold=True)
-    center = Alignment(horizontal="center", vertical="center")
-
-    for j, h in enumerate(PO_REPORT_T1_COLS):
-        cell = ws1.cell(row=1, column=j + 1, value=h)
-        cell.fill = header_fill
-        cell.font = bold
-        cell.alignment = center
-
-    for i, r in enumerate(t1_rows, start=2):
-        for j, col in enumerate(PO_REPORT_T1_COLS):
-            ws1.cell(row=i, column=j + 1, value=r.get(col))
-
-    sum_row = len(t1_rows) + 2
-    ws1.cell(row=sum_row, column=10, value=t1_sum.get("Qty"))
-    ws1.cell(row=sum_row, column=10).fill = sum_fill
-    ws1.cell(row=sum_row, column=10).font = bold
-    ws1.cell(row=sum_row, column=13, value=t1_sum.get("Resale AMT"))
-    ws1.cell(row=sum_row, column=13).fill = sum_fill
-    ws1.cell(row=sum_row, column=13).font = bold
-
-    widths1 = [14, 12, 14, 14, 12, 18, 8, 28, 12, 10, 10, 12, 12, 18]
-    for j, w in enumerate(widths1):
-        ws1.column_dimensions[get_column_letter(j + 1)].width = w
-
-    ws2 = wb.create_sheet("표2")
-    t2_cols = ["Date", "Sales", "PART NO.", "Customer", "기 수주", "신규 수주",
-               "Inventory", "Backlog",
-               "매출 M", "매출 +1M", "매출 +2M", "매출 +3M", "매출 ~+4M", "Remarks"]
-    for j, h in enumerate(t2_cols):
-        cell = ws2.cell(row=1, column=j + 1, value=h)
-        cell.fill = header_fill
-        cell.font = bold
-        cell.alignment = center
-    for i, r in enumerate(t2_rows, start=2):
-        for j, col in enumerate(t2_cols):
-            ws2.cell(row=i, column=j + 1, value=r.get(col))
-    widths2 = [12, 10, 28, 18, 10, 10, 10, 10, 10, 10, 10, 10, 12, 16]
-    for j, w in enumerate(widths2):
-        ws2.column_dimensions[get_column_letter(j + 1)].width = w
-
-    ws3 = wb.create_sheet("표3")
-    ws3.cell(row=1, column=1, value="표3 (월별 수급 시뮬) — 사용자 수동 입력").font = bold
-    ws3.cell(row=2, column=1, value="MPN별로 Apr~Feb 11개월의 Delivery / Inventory / Backlog / New PO / Balance 입력").font = Font(size=10, color="666666")
-
-    output = io.BytesIO()
-    wb.save(output)
-    output.seek(0)
     from urllib.parse import quote
+    data = await request.json()
+    output = io.BytesIO(build_po_report_xlsx_bytes(data))
     fname = f"발주요청서_보고_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx"
     fname_enc = quote(fname)
-    return StreamingResponse(
-        output,
+    return StreamingResponse(output,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": f"attachment; filename=po_request.xlsx; filename*=UTF-8''{fname_enc}"},
-    )
-
-
-# ==================== 4실 주간 영업실적 취합 ====================
-
-SALES_AGG_COLS = [
-    "Vendor", "PN", "QTY", "U/P", "AMOUNT",
-    "수입신고일", "수입환율", "FSE", "한글업체명", "거래처코드",
-    "SP ($)", "Sales Amt ($)", "매출환율", "SP (KRW)", "Sales Amt(KRW)",
-    "GP($)", "GP%($)", "GP(KRW)", "GP%(KRW)",
-]
-
-
-def _to_clean_v(v):
-    if v is None:
-        return None
-    try:
-        if pd.isna(v):
-            return None
-    except Exception:
-        pass
-    if isinstance(v, float) and (math.isnan(v) or math.isinf(v)):
-        return None
-    if isinstance(v, pd.Timestamp):
-        try:
-            return v.strftime("%Y-%m-%d")
-        except Exception:
-            return None
-    return v
-
-
-def _parse_kec(xls):
-    sh = None
-    for s in xls.sheet_names:
-        if "(본사)" in s or "본사" in s:
-            sh = s
-            break
-    if not sh:
-        sh = max(xls.sheet_names, key=lambda x: pd.read_excel(xls, sheet_name=x, header=None).shape[0])
-    df = pd.read_excel(xls, sheet_name=sh, header=1)
-    rows = []
-    for _, r in df.iterrows():
-        if pd.isna(r.get("PN")):
-            continue
-        sales_usd = to_float(r.get("SalesAmt($)")) or 0
-        buy_usd = to_float(r.get("BuyingAmt")) or 0
-        sales_krw = to_float(r.get("SalesAmt(KRW)")) or 0
-        buy_krw = to_float(r.get("BuyingAmt(KRW)")) or 0
-        gp_usd = sales_usd - buy_usd
-        gp_krw = sales_krw - buy_krw
-        rec = {
-            "Vendor": "KEC",
-            "PN": _to_clean_v(r.get("PN")),
-            "QTY": to_float(r.get("Q'TY")),
-            "U/P": to_float(r.get("Buyingprice")),
-            "AMOUNT": buy_usd,
-            "수입신고일": _to_clean_v(r.get("입고일")),
-            "수입환율": to_float(r.get(" 적용환율")) or to_float(r.get("적용환율")),
-            "FSE": _to_clean_v(r.get("FSE")),
-            "한글업체명": _to_clean_v(r.get("Customer (origin)")),
-            "거래처코드": _to_clean_v(r.get("Customer#")),
-            "SP ($)": to_float(r.get("SP($)")),
-            "Sales Amt ($)": sales_usd,
-            "매출환율": to_float(r.get("매출환율")),
-            "SP (KRW)": to_float(r.get(" SP(KRW)")) or to_float(r.get("SP(KRW)")),
-            "Sales Amt(KRW)": sales_krw,
-            "GP($)": gp_usd,
-            "GP%($)": (gp_usd / sales_usd) if sales_usd else 0,
-            "GP(KRW)": gp_krw,
-            "GP%(KRW)": (gp_krw / sales_krw) if sales_krw else 0,
-        }
-        rows.append(rec)
-    return rows
-
-
-def _parse_standard(xls, vendor_label):
-    sh = xls.sheet_names[0]
-    for s in xls.sheet_names:
-        df_chk = pd.read_excel(xls, sheet_name=s, header=0, nrows=1)
-        if "PN" in df_chk.columns or "DID" in df_chk.columns:
-            sh = s  # 매칭되는 시트 중 마지막 것을 사용
-    df = pd.read_excel(xls, sheet_name=sh, header=0)
-    rows = []
-    for _, r in df.iterrows():
-        if pd.isna(r.get("PN")):
-            continue
-        amount = to_float(r.get("AMOUNT")) or 0
-        sales_usd = to_float(r.get("Sales Amt ($)")) or 0
-        sales_krw = to_float(r.get("Sales Amt(KRW)")) or 0
-        gp_usd = sales_usd - amount
-        # 원본 GP(KRW) 공식: Sales Amt(KRW) - (AMOUNT × 수입환율)
-        import_rate = to_float(r.get("수입환율"))
-        sell_rate = to_float(r.get("매출환율")) or import_rate or 1400
-        buy_krw_est = amount * (import_rate or sell_rate)
-        gp_krw = sales_krw - buy_krw_est
-        rate = sell_rate
-        rec = {
-            "Vendor": vendor_label,
-            "PN": _to_clean_v(r.get("PN")),
-            "QTY": to_float(r.get("QTY")),
-            "U/P": to_float(r.get("U/P")),
-            "AMOUNT": amount,
-            "수입신고일": _to_clean_v(r.get("수입신고일")),
-            "수입환율": to_float(r.get("수입환율")),
-            "FSE": _to_clean_v(r.get("FSE")),
-            "한글업체명": _to_clean_v(r.get("End customer")),
-            "거래처코드": None,
-            "SP ($)": to_float(r.get("SP ($)")),
-            "Sales Amt ($)": sales_usd,
-            "매출환율": rate,
-            "SP (KRW)": to_float(r.get("SP (KRW)")),
-            "Sales Amt(KRW)": sales_krw,
-            "GP($)": round(gp_usd, 2),
-            "GP%($)": round(gp_usd / sales_usd, 4) if sales_usd else 0,
-            "GP(KRW)": round(gp_krw, 0),
-            "GP%(KRW)": round(gp_krw / sales_krw, 4) if sales_krw else 0,
-        }
-        rows.append(rec)
-    return rows
-
-
-def _detect_vendor(filename: str, xls) -> str:
-    name = filename.lower()
-    if "kec" in name:
-        return "KEC"
-    if "delta" in name:
-        return "DELTA"
-    if "fujitsu" in name or "ramxeed" in name:
-        return "RAMXEED(FUJITSU)"
-    try:
-        for sh in xls.sheet_names:
-            df = pd.read_excel(xls, sheet_name=sh, header=0, nrows=2)
-            if "Vendor" in df.columns and len(df) > 0:
-                v = str(df.iloc[0]["Vendor"]).upper()
-                if "KEC" in v: return "KEC"
-                if "DELTA" in v: return "DELTA"
-                if "FUJITSU" in v or "RAMXEED" in v: return "RAMXEED(FUJITSU)"
-            if "DID" in df.columns and len(df) > 0:
-                d = str(df.iloc[0]["DID"]).upper()
-                if "FUJITSU" in d or "RAMXEED" in d: return "RAMXEED(FUJITSU)"
-            if "(본사)" in sh or "PODate" in df.columns:
-                return "KEC"
-    except Exception:
-        pass
-    return "UNKNOWN"
-
-
+        headers={"Content-Disposition": f"attachment; filename=po_report.xlsx; filename*=UTF-8''{fname_enc}"})
 @app.post("/api/sales-summary/aggregate")
 async def sales_summary_aggregate(files: list[UploadFile] = File(...)):
     """벤더별 영업실적 파일 다중 업로드 → 통합."""
@@ -2732,6 +2183,55 @@ async def pos_report_fill(
 
 
 # ==================== 5실 POS Report 자동완성 v2 (POS_Report 시트 채우기) ====================
+
+# ==================== POS Report 자동 생성 (규칙 엔진) ====================
+
+@app.post("/api/pos-auto/run")
+async def pos_auto_run(
+    rawdata: UploadFile = File(...),
+    crm: UploadFile = File(None),
+    address_master: UploadFile = File(None),
+    approved_mapping: UploadFile = File(None),
+    start_date: str = Form(...),
+    end_date: str = Form(...),
+    mode: str = Form("draft"),
+):
+    """RAWDATA(+CRM 고객사, 주소 마스터) → POS 27열 + 검증·예외·원장 시트 워크북.
+    로직은 CLI(pos_auto) 와 동일. 원본 파일은 읽기만 한다."""
+    import base64
+    import json as _json
+    from urllib.parse import quote as _quote
+
+    from pos_auto.service import run_pos
+
+    async def _read(f):
+        return await f.read() if f is not None else None
+
+    try:
+        data, fname, summary = run_pos(
+            await rawdata.read(), start_date, end_date,
+            crm=await _read(crm), address_master=await _read(address_master),
+            approved_mapping=await _read(approved_mapping), mode=mode,
+        )
+    except ValueError as e:
+        return {"error": str(e)}
+    except Exception as e:
+        import traceback
+        return {"error": f"실행 실패: {type(e).__name__}: {e}",
+                "trace": traceback.format_exc()[-1200:]}
+
+    meta_b64 = base64.b64encode(
+        _json.dumps(summary, ensure_ascii=False, default=str).encode("utf-8")).decode()
+    return StreamingResponse(
+        io.BytesIO(data),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={
+            "Content-Disposition": f"attachment; filename=pos_result.xlsx; "
+                                   f"filename*=UTF-8''{_quote(fname)}",
+            "X-Result-Json-B64": meta_b64,
+        },
+    )
+
 
 @app.post("/api/pos-report/build-v2")
 async def pos_report_build_v2(
@@ -3929,11 +3429,13 @@ async def label_master_status():
 
 @app.post("/inspect")
 async def label_inspect(request: Request):
+    # 블로킹(PIL + Claude 비전 API 대기)이라 스레드풀로 — main_aws.py 와 동일.
+    from starlette.concurrency import run_in_threadpool
     import label_app, dataurl
     payload = await request.json()
     try:
         raw_b64 = dataurl.to_b64(payload["image"])   # data URL 접두 제거
-        return label_app.inspect_one(raw_b64)
+        return await run_in_threadpool(label_app.inspect_one, raw_b64)
     except Exception as e:  # noqa: BLE001
         return JSONResponse(status_code=500, content={"error": f"{type(e).__name__}: {e}"})
 
@@ -3968,10 +3470,13 @@ async def labelmaker_page():
 @app.post("/labelmaker/upload")
 async def labelmaker_upload(request: Request):
     """Mobis 출고내역 엑셀 업로드 → LOT 파싱 (암호화 파일 자동 복호화)."""
+    # 블로킹(20만 LOT 파싱 ~26초)이라 스레드풀로 — main_aws.py 와 동일.
+    from starlette.concurrency import run_in_threadpool
     import labelmaker_app, dataurl
     payload = await request.json()
     try:
-        n_lots, _ = labelmaker_app.ingest(
+        n_lots, _ = await run_in_threadpool(
+            labelmaker_app.ingest,
             dataurl.to_bytes(payload["file"]),
             payload.get("password") or labelmaker_app.DEFAULT_PW)
         return {"ok": True, "lots": n_lots, "materials": labelmaker_app.MATERIALS}

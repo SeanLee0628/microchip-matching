@@ -15,7 +15,9 @@ import PoReportConvert from "./components/PoReportConvert";
 import SalesSummary from "./components/SalesSummary";
 import ShippingInvoice from "./components/ShippingInvoice";
 import PosReportFill from "./components/PosReportFill";
+import PosAutomation from "./components/PosAutomation";
 import Materials from "./components/Materials";
+import LabelMaker from "./components/LabelMaker";
 import MicrochipAiMatch from "./components/MicrochipAiMatch";
 import MicrochipBuildSheet from "./components/MicrochipBuildSheet";
 import InventoryAnalysis from "./components/InventoryAnalysis";
@@ -30,9 +32,9 @@ import "./App.css";
 const VALID_MENUS = new Set([
   "matching", "ublox", "sales", "invoice", "micron", "crd_board", "auo",
   "po_request", "invoice_batch", "micron_invoice", "sales_report", "po_report",
-  "sales_summary", "shipping_invoice", "pos_report_fill", "materials",
+  "sales_summary", "shipping_invoice", "pos_report_fill", "materials", "label_maker",
   "matching_ai", "matching_build", "inventory_analysis", "subul_filter",
-  "backlog_prd_diff", "fcst_sales_diff", "match5",
+  "backlog_prd_diff", "fcst_sales_diff", "match5", "pos_auto",
 ]);
 
 function menuFromPath() {
@@ -126,7 +128,9 @@ function App() {
         {activeMenu === "sales_summary" && <SalesSummary />}
         {activeMenu === "shipping_invoice" && <ShippingInvoice />}
         {activeMenu === "pos_report_fill" && <PosReportFill />}
+        {activeMenu === "pos_auto" && <PosAutomation />}
         {activeMenu === "materials" && <Materials />}
+        {activeMenu === "label_maker" && <LabelMaker />}
         {activeMenu === "matching_ai" && <MicrochipAiMatch />}
         {activeMenu === "matching_build" && <MicrochipBuildSheet />}
         {activeMenu === "inventory_analysis" && <InventoryAnalysis />}
