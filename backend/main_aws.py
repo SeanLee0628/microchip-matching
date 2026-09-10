@@ -1037,6 +1037,74 @@ async def crd_board_compare_export(prev: UploadFile = File(...), current: Upload
                               "X-Na-Count": str(stat["na"])})
 
 
+# ==================== 마이크론 백로그 원본 변환 ====================
+# 마이크론 담당자가 메일로 보내는 원본 → Backlog Shipment Report 재배열 + DBC·FSE·CUST 채움.
+# 원본은 회차마다 열 순서·개수가 달라서(9/2 15열 / 9/7 18열) 위치가 아니라 헤더 이름으로 찾는다.
+# 순수 로직은 backlog_convert.py (단위테스트 test_backlog_convert.py). 양쪽 백엔드 동일.
+
+async def _bc_load(file, prev):
+    """반환: (에러 dict|None, 원본 bytes, 원본 헤더, 원본 행, 이전 백록 행|None)"""
+    import backlog_convert as bc
+    contents = await file.read()
+    src_h, src = bc.read_sheet(contents)
+    if src_h is None:
+        return ({"error": "Backlog 원본 형식이 아닙니다 (SO·MPN·QTY·CRD·MAD 컬럼 필요)."},
+                None, None, None, None)
+    prev_rows = None
+    if prev is not None:
+        pb = await prev.read()
+        if pb:
+            _, prev_rows = bc.read_sheet(pb)
+            if prev_rows is None:
+                return ({"error": "이전 백록이 Backlog Shipment Report 형식이 아닙니다."},
+                        None, None, None, None)
+    return None, contents, src_h, src, prev_rows
+
+
+@app.post("/api/backlog-convert/preview")
+async def backlog_convert_preview(file: UploadFile = File(...), prev: UploadFile = File(None)):
+    """원본(+이전 백록) → 재배열 결과 미리보기. 행은 앞부분만, 확인 필요 목록은 전부."""
+    import backlog_convert as bc
+    err, contents, src_h, src, prev_rows = await _bc_load(file, prev)
+    if err:
+        return err
+    res = bc.convert(src_h, src, prev_rows)
+    return {
+        "columns": res["columns"],
+        "rows": res["rows"][:bc.PREVIEW_ROWS],
+        "fills": res["fills"][:bc.PREVIEW_ROWS],
+        "review": res["review"],
+        "summary": res["summary"],
+        "source_header": src_h,
+        "sheet": bc.find_sheet_title(contents),
+        "preview_rows": bc.PREVIEW_ROWS,
+    }
+
+
+@app.post("/api/backlog-convert/export")
+async def backlog_convert_export(file: UploadFile = File(...), prev: UploadFile = File(None)):
+    """전수 변환 xlsx. 확인 필요한 건이 있으면 '확인필요' 시트가 붙는다."""
+    import backlog_convert as bc
+    from datetime import datetime as _bc_dt
+    from urllib.parse import quote
+    err, contents, src_h, src, prev_rows = await _bc_load(file, prev)
+    if err:
+        return err
+    res = bc.convert(src_h, src, prev_rows)
+    out = io.BytesIO(bc.build_xlsx_bytes(res, bc.find_sheet_title(contents)))
+    fname = f"Backlog Shipment Report - {_bc_dt.now().strftime('%y%m%d')}.xlsx"
+    return StreamingResponse(
+        out,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={
+            "Content-Disposition": "attachment; filename*=UTF-8''" + quote(fname),
+            "X-Row-Count": str(res["summary"]["row_count"]),
+            "X-Review-Count": str(res["summary"]["review_count"]),
+            "X-Output-Columns": str(res["summary"]["output_columns"]),
+        },
+    )
+
+
 # ==================== AUO 백로그 ====================
 
 AUO_STAGE_LABELS = {

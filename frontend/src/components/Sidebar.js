@@ -7,6 +7,7 @@ const GROUPS = [
     { key: "micron_invoice", label: "거래명세서" },
     { key: "sales_report", label: "영업실적 변환" },
     { key: "po_report", label: "발주요청서 변환" },
+    { key: "backlog_convert", label: "Backlog 원본 변환" },
   ]},
   { team: "2실", items: [
     { key: "ublox", label: "UBLOX 백로그" },

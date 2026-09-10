@@ -25,6 +25,7 @@ import SubulFilter from "./components/SubulFilter";
 import BacklogPrdDiff from "./components/BacklogPrdDiff";
 import FcstSalesDiff from "./components/FcstSalesDiff";
 import CrdBoard from "./components/CrdBoard";
+import BacklogConvert from "./components/BacklogConvert";
 import Match5 from "./components/Match5";
 import "./App.css";
 
@@ -34,7 +35,7 @@ const VALID_MENUS = new Set([
   "po_request", "invoice_batch", "micron_invoice", "sales_report", "po_report",
   "sales_summary", "shipping_invoice", "pos_report_fill", "materials", "label_maker",
   "matching_ai", "matching_build", "inventory_analysis", "subul_filter",
-  "backlog_prd_diff", "fcst_sales_diff", "match5", "pos_auto",
+  "backlog_prd_diff", "fcst_sales_diff", "match5", "pos_auto", "backlog_convert",
 ]);
 
 function menuFromPath() {
@@ -125,6 +126,7 @@ function App() {
         {activeMenu === "micron_invoice" && <MicronInvoice />}
         {activeMenu === "sales_report" && <SalesReportConvert />}
         {activeMenu === "po_report" && <PoReportConvert />}
+        {activeMenu === "backlog_convert" && <BacklogConvert />}
         {activeMenu === "sales_summary" && <SalesSummary />}
         {activeMenu === "shipping_invoice" && <ShippingInvoice />}
         {activeMenu === "pos_report_fill" && <PosReportFill />}
