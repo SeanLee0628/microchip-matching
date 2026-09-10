@@ -261,6 +261,9 @@ def convert(src_header, src_rows, prev_rows=None):
                if c in DERIVED_COLS or c in present or c not in OPTIONAL_COLS]
 
     ref = build_reference(prev_rows)
+    # 이전 백록을 아예 안 줬으면 세 열이 비는 건 당연한 결과다 — 확인 필요로 쌓지 않는다.
+    # (3천 행 x 3열 = 만 건이 "이전 백록에 없음" 으로 뜨면 정작 볼 것을 못 본다.)
+    has_prev = bool(prev_rows)
     rows, fills, review = [], [], []
     counts = {f: {"SO#": 0, "MPN": 0, "PO#": 0, "": 0} for f in FILL_KEYS}
 
@@ -279,7 +282,7 @@ def convert(src_header, src_rows, prev_rows=None):
         fills.append(sources)
         for f in FILL_KEYS:
             counts[f][sources[f]] = counts[f].get(sources[f], 0) + 1
-        for field, reason, cands in notes:
+        for field, reason, cands in (notes if has_prev else []):
             review.append({
                 "row": i, "field": field, "reason": reason, "candidates": cands,
                 "SO": r.get("SO"), "PURCH_ORDER_NO": r.get("PURCH_ORDER_NO"),
@@ -299,7 +302,7 @@ def convert(src_header, src_rows, prev_rows=None):
             "dropped_optional": [c for c in OUT_COLS if c in OPTIONAL_COLS and c not in columns],
             "fill_counts": counts,
             "review_count": len(review),
-            "has_prev": bool(prev_rows),
+            "has_prev": has_prev,
         },
     }
 

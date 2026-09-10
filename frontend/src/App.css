@@ -443,3 +443,213 @@ body {
   font-weight: 700;
   color: #1a1a2e;
 }
+
+/* ── 파일 슬롯: 원본·이전 파일을 나란히 받는 화면 ── */
+.upload-panel {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  padding: 18px 20px;
+  margin-bottom: 20px;
+}
+
+.file-slots {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+/* 파일 슬롯 옆 버튼을 파일 버튼과 같은 줄에 세운다 (라벨 높이만큼 내림) */
+.slot-actions { padding-top: 23px; }
+
+.file-slot-label {
+  font-size: 11px;
+  color: #888;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.file-slot-label .req { color: #c43a3a; }
+
+.file-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  max-width: 260px;
+  background: #fff;
+  border: 1px solid #d0d5dd;
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.file-btn:hover { border-color: #98a2b3; }
+.file-btn.filled { border-color: #22c55e; color: #0a0a0a; }
+.file-btn .fname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-slot-hint { font-size: 11.5px; color: #98a2b3; margin-top: 5px; }
+
+/* ── 버튼 ── */
+.primary-btn {
+  background: #232d37;
+  color: #fff;
+  border: none;
+  padding: 9px 20px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.primary-btn:hover:not(:disabled) { background: #0a0e12; }
+.primary-btn:disabled { background: #cbd5e1; cursor: default; }
+
+.accent-btn {
+  background: #c43a3a;
+  color: #fff;
+  border: none;
+  padding: 9px 18px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.accent-btn:hover:not(:disabled) { background: #a72f2f; }
+.accent-btn:disabled { background: #e3b6b6; cursor: default; }
+
+/* ── 탭 ── */
+.tabs {
+  display: flex;
+  gap: 2px;
+  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 14px;
+}
+
+.tab {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 9px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #888;
+  cursor: pointer;
+}
+
+.tab:hover { color: #555; }
+.tab.active { color: #0a0a0a; border-bottom-color: #c43a3a; }
+.tab .tab-count { margin-left: 6px; font-size: 11.5px; color: #98a2b3; }
+.tab.active .tab-count { color: #c43a3a; }
+
+/* ── 패널: 표·요약을 담는 흰 박스 ── */
+.panel {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+
+.panel-title {
+  font-size: 11px;
+  color: #888;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+/* 패널 안에 들어가는 작은 표 (요약용) */
+.mini-table {
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+
+.mini-table th {
+  font-size: 11px;
+  color: #888;
+  font-weight: 600;
+  text-align: right;
+  padding: 3px 0 7px 22px;
+}
+
+.mini-table th:first-child, .mini-table td:first-child {
+  text-align: left;
+  padding-left: 0;
+  font-weight: 700;
+  color: #1a1a2e;
+}
+
+.mini-table td {
+  text-align: right;
+  padding: 3px 0 3px 22px;
+  font-variant-numeric: tabular-nums;
+  color: #374151;
+}
+
+/* ── 자동 매칭 출처 배지 ── */
+.src-badge {
+  display: inline-block;
+  margin-left: 5px;
+  padding: 0 4px;
+  border-radius: 3px;
+  font-size: 9.5px;
+  font-weight: 700;
+  vertical-align: 1px;
+}
+
+.src-so  { background: #dcfce7; color: #15803d; }
+.src-mpn { background: #dbeafe; color: #1d4ed8; }
+.src-po  { background: #fef3c7; color: #b45309; }
+
+.cell-blank { color: #c43a3a; font-weight: 600; }
+
+/* ── 노트 ── */
+.warn-note {
+  background: #fefce8;
+  border: 1px solid #fde68a;
+  color: #92400e;
+  padding: 11px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 13px;
+}
+
+.muted-note {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  color: #555;
+  padding: 11px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 13px;
+}
+
+.empty-state {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 44px;
+  text-align: center;
+  font-size: 14px;
+  color: #888;
+}
+
+.empty-state.ok { color: #16a34a; }
+
+/* 계산·자동 채움 열 머리에 얇은 강조선 */
+.data-table th.th-derived { box-shadow: inset 0 -3px 0 #c43a3a; }
+.data-table th.th-calc { box-shadow: inset 0 -3px 0 #eab308; }
+
+/* 요약 카드를 내용 폭에 맞춰 왼쪽으로 모을 때 (4개 이상이면 늘어나 비어 보인다) */
+.sales-summary.compact .summary-card { flex: 0 0 auto; min-width: 128px; }

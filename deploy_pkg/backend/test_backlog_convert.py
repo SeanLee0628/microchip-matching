@@ -248,12 +248,20 @@ def test_sheet_title_keeps_source_name_but_not_sheet1():
 
 def test_review_sheet_only_when_something_needs_checking():
     h, rows = bc.read_sheet(_xlsx(SRC_0907, [_src_row("S1", "P1", "M1")]))
-    prev = [_prev_row("S1", "P1", "M1")]
-    clean = openpyxl.load_workbook(io.BytesIO(bc.build_xlsx_bytes(bc.convert(h, rows, prev))))
+    clean = openpyxl.load_workbook(io.BytesIO(
+        bc.build_xlsx_bytes(bc.convert(h, rows, [_prev_row("S1", "P1", "M1")]))))
     assert "확인필요" not in clean.sheetnames
-    dirty = openpyxl.load_workbook(io.BytesIO(bc.build_xlsx_bytes(bc.convert(h, rows, None))))
+    # 이전 백록은 줬는데 그 안에 이 SO·PO·MPN 이 없는 경우
+    dirty = openpyxl.load_workbook(io.BytesIO(
+        bc.build_xlsx_bytes(bc.convert(h, rows, [_prev_row("OTHER", "PX", "MX")]))))
     assert "확인필요" in dirty.sheetnames
     assert dirty["확인필요"].max_row == 4, "DBC·FSE·CUST 3건 + 헤더"
+
+
+def test_no_prev_file_produces_no_review_sheet():
+    h, rows = bc.read_sheet(_xlsx(SRC_0907, [_src_row("S1", "P1", "M1")]))
+    wb = openpyxl.load_workbook(io.BytesIO(bc.build_xlsx_bytes(bc.convert(h, rows, None))))
+    assert "확인필요" not in wb.sheetnames and len(wb.sheetnames) == 1
 
 
 # ---------- 엔드포인트 ----------
@@ -279,10 +287,14 @@ def test_preview_returns_columns_summary_and_review(mod):
 
 
 @pytest.mark.parametrize("mod", BACKENDS)
-def test_preview_without_prev_flags_everything(mod):
+def test_preview_without_prev_leaves_blanks_but_no_review_noise(mod):
+    """참조 파일을 안 줬으면 비는 게 당연하다 — 확인 필요로 쌓으면 만 건이 된다."""
     body = _post(mod, _xlsx(SRC_0907, [_src_row("S1", "P1", "M1")]))
     assert body["summary"]["has_prev"] is False
-    assert body["summary"]["review_count"] == 3
+    assert body["summary"]["review_count"] == 0
+    assert body["review"] == []
+    row = body["rows"][0]
+    assert row["DBC"] is None and row["FSE"] is None and row["CUST"] is None
 
 
 @pytest.mark.parametrize("mod", BACKENDS)

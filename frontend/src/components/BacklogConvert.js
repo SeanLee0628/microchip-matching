@@ -8,15 +8,25 @@ const API = process.env.REACT_APP_API_URL || "";
 // DBC 는 SO# → MPN, FSE·CUST 는 SO# → PO# 순서로 이전 백록에서 끌어온다.
 // 후보가 여러 개면 채우지 않고 '확인 필요'로 뽑는다 — 같은 PO# 에 담당자가 둘인 경우가 있다.
 
-const RED = "#c43a3a";
-const SRC_COLOR = { "SO#": "#16a34a", MPN: "#2563eb", "PO#": "#d97706" };
 const FILL_FIELDS = ["DBC", "FSE", "CUST"];
-const fmt = (v) => {
+const CALC_COLS = ["OPEN_ORDER_VALUE", "OPEN COST"];
+const NUM_COLS = new Set(["QTY", "OPEN_ORDER_VALUE", "OPEN COST", "DBC", "SAP_NO", "CHANNEL_CODE"]);
+const SRC_CLASS = { "SO#": "src-so", MPN: "src-mpn", "PO#": "src-po" };
+
+// 열마다 소수 자리를 정해 준다 — 안 그러면 OPEN COST 가 14.04 / 10.779861 처럼 들쭉날쭉해진다
+const DECIMALS = { "OPEN COST": 4, DBC: 2 };
+
+const fmt = (v, col) => {
   if (v == null || v === "") return "";
-  if (typeof v === "number") return Number(v).toLocaleString(undefined, { maximumFractionDigits: 6 });
-  const s = String(v);
-  const m = /^(\d{4}-\d{2}-\d{2})T/.exec(s);   // 날짜는 시간 부분을 잘라 보여준다
-  return m ? m[1] : s;
+  if (typeof v === "number") {
+    const d = DECIMALS[col];
+    return Number(v).toLocaleString(undefined, {
+      maximumFractionDigits: d == null ? 6 : d,
+      minimumFractionDigits: d == null ? 0 : Math.min(d, 2),
+    });
+  }
+  const m = /^(\d{4}-\d{2}-\d{2})T/.exec(String(v));   // 날짜는 시간 부분을 자른다
+  return m ? m[1] : String(v);
 };
 
 function BacklogConvert() {
@@ -26,32 +36,35 @@ function BacklogConvert() {
   const [loading, setLoading] = useState(false);
   const [dl, setDl] = useState(false);
   const [error, setError] = useState(null);
-  const [tab, setTab] = useState("rows");     // rows | review
+  const [tab, setTab] = useState("rows");
   const srcRef = useRef();
   const prevRef = useRef();
+
+  const send = (fd) => {
+    fd.append("file", srcFile);
+    if (prevFile) fd.append("prev", prevFile);
+    return fd;
+  };
 
   const run = async () => {
     if (!srcFile) return;
     setLoading(true); setError(null); setData(null);
-    const fd = new FormData();
-    fd.append("file", srcFile);
-    if (prevFile) fd.append("prev", prevFile);
     try {
-      const res = await axios.post(`${API}/api/backlog-convert/preview`, fd);
+      const res = await axios.post(`${API}/api/backlog-convert/preview`, send(new FormData()));
       if (res.data.error) setError(res.data.error);
       else { setData(res.data); setTab(res.data.review?.length ? "review" : "rows"); }
-    } catch (e) { setError("변환 실패: " + (e.response?.data?.detail || e.message)); }
+    } catch (e) {
+      setError("변환 실패: " + (e.response?.data?.detail || e.message));
+    }
     setLoading(false);
   };
 
   const download = async () => {
     if (!srcFile) return;
     setDl(true); setError(null);
-    const fd = new FormData();
-    fd.append("file", srcFile);
-    if (prevFile) fd.append("prev", prevFile);
     try {
-      const res = await axios.post(`${API}/api/backlog-convert/export`, fd, { responseType: "blob" });
+      const res = await axios.post(`${API}/api/backlog-convert/export`, send(new FormData()),
+                                   { responseType: "blob" });
       const cd = res.headers["content-disposition"] || "";
       const m = /filename\*=UTF-8''([^;]+)/.exec(cd);
       const a = document.createElement("a");
@@ -59,12 +72,14 @@ function BacklogConvert() {
       a.download = m ? decodeURIComponent(m[1]) : "Backlog Shipment Report.xlsx";
       a.click();
       URL.revokeObjectURL(a.href);
-    } catch (e) { setError("다운로드 실패: " + e.message); }
+    } catch (e) {
+      setError("다운로드 실패: " + e.message);
+    }
     setDl(false);
   };
 
   const s = data?.summary;
-  const counts = useMemo(() => {
+  const fillRows = useMemo(() => {
     if (!s) return [];
     return FILL_FIELDS.map((f) => {
       const c = s.fill_counts[f] || {};
@@ -77,114 +92,141 @@ function BacklogConvert() {
       <div className="page-header">
         <h1>Backlog 원본 변환</h1>
         <p className="subtitle">
-          마이크론 원본 → Backlog Shipment Report 순서로 재배열 · OPEN COST 계산 ·
-          DBC·FSE·CUST 를 이전 백록에서 채움
+          마이크론 원본을 Backlog Shipment Report 열 순서로 재배열하고, OPEN COST 를 계산해
+          DBC·FSE·CUST 를 이전 백록에서 채웁니다.
         </p>
       </div>
 
       {error && <div className="error-banner">{error}</div>}
 
-      <div style={{ display: "flex", gap: 14, alignItems: "flex-end", flexWrap: "wrap", marginBottom: 8 }}>
-        <Pick label="1) 마이크론 원본" required file={srcFile} inputRef={srcRef} onPick={setSrcFile} />
-        <Pick label="2) 이전 백록 (선택)" file={prevFile} inputRef={prevRef} onPick={setPrevFile}
-              hint="DBC·FSE·CUST 를 여기서 끌어옵니다" />
-        <button onClick={run} disabled={!srcFile || loading}
-                style={{ ...btn, background: srcFile ? "#0a0e12" : "#cbd5e1" }}>
-          {loading ? "변환 중…" : "변환"}
-        </button>
-        <button onClick={download} disabled={!srcFile || dl}
-                style={{ ...btn, background: RED, marginLeft: "auto", opacity: srcFile ? 1 : 0.5 }}>
-          {dl ? "만드는 중…" : "⬇ 엑셀 다운로드"}
-        </button>
+      <div className="upload-panel">
+        <div className="file-slots">
+          <Slot label="마이크론 원본" required file={srcFile} inputRef={srcRef} onPick={setSrcFile} />
+          <Slot label="이전 백록" file={prevFile} inputRef={prevRef} onPick={setPrevFile}
+                hint="DBC·FSE·CUST 를 여기서 끌어옵니다" />
+          <div className="slot-actions">
+            <button className="primary-btn" onClick={run} disabled={!srcFile || loading}>
+              {loading ? "변환 중…" : "변환"}
+            </button>
+          </div>
+          <div className="slot-actions" style={{ marginLeft: "auto" }}>
+            <button className="accent-btn" onClick={download} disabled={!srcFile || dl}>
+              {dl ? "만드는 중…" : "엑셀 다운로드"}
+            </button>
+          </div>
+        </div>
+        <div className="file-slot-hint" style={{ marginTop: 12 }}>
+          원본 열 순서·개수가 달라도 헤더 이름으로 찾습니다. 이전 백록을 올리지 않으면
+          DBC·FSE·CUST 는 빈칸으로 나가고, 열 순서와 OPEN COST 는 그대로 만들어집니다.
+        </div>
       </div>
-      <p style={{ fontSize: 12, color: "#64748b", margin: "0 0 18px" }}>
-        이전 백록을 올리지 않으면 DBC·FSE·CUST 는 빈칸으로 나갑니다. 열 순서와 OPEN COST 는 그대로 만들어집니다.
-      </p>
 
       {s && (<>
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 14 }}>
-          <Stat label="행" value={s.row_count} big />
-          <Stat label="출력 열" value={s.output_columns} sub={`원본 ${s.source_columns}열`} />
-          <Stat label="확인 필요" value={s.review_count} color={s.review_count ? RED : "#16a34a"} />
+        <div className="sales-summary compact">
+          <Card label="행" value={s.row_count} />
+          <Card label="출력 열" value={s.output_columns} sub={`원본 ${s.source_columns}열`} />
+          <Card label="자동 채움" value={autoFilled(s)} sub="DBC·FSE·CUST 합계" ok />
+          <Card label="확인 필요" value={s.review_count} warn={s.review_count > 0} />
         </div>
 
-        {s.dropped_optional?.length > 0 && (
-          <Note>
-            원본에 없어서 뺀 열: <b>{s.dropped_optional.join(", ")}</b> — 순서는 그대로 유지됩니다.
-          </Note>
+        {!s.has_prev && (
+          <div className="warn-note">
+            이전 백록을 올리지 않아 <b>DBC·FSE·CUST 가 모두 빈칸</b>입니다. 열 순서와 OPEN COST 는 정상입니다.
+          </div>
         )}
-        {!s.has_prev && <Note warn>이전 백록을 올리지 않아 DBC·FSE·CUST 가 모두 빈칸입니다.</Note>}
+        {s.dropped_optional?.length > 0 && (
+          <div className="muted-note">
+            원본에 없어서 뺀 열 — <b>{s.dropped_optional.join(", ")}</b>. 나머지 열 순서는 그대로입니다.
+          </div>
+        )}
 
         {s.has_prev && (
-          <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 10,
-                        padding: "12px 14px", marginBottom: 14 }}>
-            <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 8 }}>자동 채움 결과</div>
-            <table style={{ fontSize: 12.5, borderCollapse: "collapse" }}>
+          <div className="panel">
+            <div className="panel-title">자동 채움 결과</div>
+            <table className="mini-table">
               <thead>
-                <tr style={{ color: "#64748b" }}>
-                  {["", "SO# 로", "MPN 으로", "PO# 로", "빈칸"].map((h) => (
-                    <th key={h} style={{ textAlign: "left", padding: "4px 14px 4px 0", fontWeight: 600 }}>{h}</th>
-                  ))}
+                <tr>
+                  <th> </th>
+                  <th>SO# 로</th>
+                  <th>MPN 으로</th>
+                  <th>PO# 로</th>
+                  <th>빈칸</th>
                 </tr>
               </thead>
               <tbody>
-                {counts.map((c) => (
-                  <tr key={c.field}>
-                    <td style={{ padding: "3px 14px 3px 0", fontWeight: 700 }}>{c.field}</td>
-                    <td style={{ padding: "3px 14px 3px 0", color: SRC_COLOR["SO#"] }}>{c.so.toLocaleString()}</td>
-                    <td style={{ padding: "3px 14px 3px 0", color: SRC_COLOR.MPN }}>
-                      {c.field === "DBC" ? c.mpn.toLocaleString() : "—"}
-                    </td>
-                    <td style={{ padding: "3px 14px 3px 0", color: SRC_COLOR["PO#"] }}>
-                      {c.field === "DBC" ? "—" : c.po.toLocaleString()}
-                    </td>
-                    <td style={{ padding: "3px 14px 3px 0", color: c.blank ? RED : "#94a3b8", fontWeight: c.blank ? 700 : 400 }}>
-                      {c.blank.toLocaleString()}
-                    </td>
+                {fillRows.map((r) => (
+                  <tr key={r.field}>
+                    <td>{r.field}</td>
+                    <td><b>{r.so.toLocaleString()}</b></td>
+                    <td>{r.field === "DBC" ? r.mpn.toLocaleString() : "—"}</td>
+                    <td>{r.field === "DBC" ? "—" : r.po.toLocaleString()}</td>
+                    <td className={r.blank ? "cell-blank" : undefined}>{r.blank.toLocaleString()}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
+            <div className="file-slot-hint" style={{ marginTop: 10 }}>
+              SO# 로 채운 건 이전 백록에서 맞춰두신 값입니다. MPN·PO# 는 신규 SO 에 쓴 대체 경로이고,
+              후보가 둘 이상이면 채우지 않고 확인 필요로 넘깁니다.
+            </div>
           </div>
         )}
 
-        <div style={{ display: "flex", gap: 4, borderBottom: "1px solid #e2e8f0", marginBottom: 12 }}>
-          <Tab on={tab === "rows"} onClick={() => setTab("rows")}>
-            결과 미리보기 ({Math.min(data.rows.length, s.row_count).toLocaleString()} / {s.row_count.toLocaleString()}행)
-          </Tab>
-          <Tab on={tab === "review"} onClick={() => setTab("review")} alert={s.review_count > 0}>
-            확인 필요 {s.review_count}
-          </Tab>
+        <div className="tabs">
+          <button className={`tab ${tab === "rows" ? "active" : ""}`} onClick={() => setTab("rows")}>
+            결과 미리보기
+            <span className="tab-count">
+              {Math.min(data.rows.length, s.row_count).toLocaleString()} / {s.row_count.toLocaleString()}
+            </span>
+          </button>
+          <button className={`tab ${tab === "review" ? "active" : ""}`} onClick={() => setTab("review")}>
+            확인 필요
+            <span className="tab-count">{s.review_count.toLocaleString()}</span>
+          </button>
         </div>
 
         {tab === "review" && (s.review_count === 0
-          ? <Empty>확인할 게 없습니다. DBC·FSE·CUST 가 전부 채워졌습니다.</Empty>
-          : <Review rows={data.review} />)}
+          ? <div className="empty-state ok">확인할 게 없습니다. DBC·FSE·CUST 가 전부 채워졌습니다.</div>
+          : <ReviewTable rows={data.review} />)}
 
-        {tab === "rows" && (<>
-          {data.rows.length < s.row_count && (
-            <div style={{ fontSize: 12, color: "#64748b", marginBottom: 8 }}>
-              화면에는 앞 {data.rows.length.toLocaleString()}행만 보여줍니다. 엑셀 다운로드는 전체 {s.row_count.toLocaleString()}행입니다.
+        {tab === "rows" && (
+          <>
+            <div className="table-header">
+              <div className="table-info">
+                화면에는 앞 <strong>{data.rows.length.toLocaleString()}</strong>행,
+                엑셀 다운로드는 전체 <strong>{s.row_count.toLocaleString()}</strong>행입니다.
+                {" · "}머리 밑줄 <Legend color="#eab308" /> 계산 열,
+                <Legend color="#c43a3a" /> 자동 채움 열
+              </div>
             </div>
-          )}
-          <Rows columns={data.columns} rows={data.rows} fills={data.fills} />
-        </>)}
+            <RowTable columns={data.columns} rows={data.rows} fills={data.fills} />
+          </>
+        )}
       </>)}
     </div>
   );
 }
 
-const Rows = ({ columns, rows, fills }) => (
-  <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 10,
-                overflowX: "auto", maxHeight: "68vh", overflowY: "auto" }}>
-    <table style={{ borderCollapse: "separate", borderSpacing: 0, fontSize: 11.5, width: "100%" }}>
+const autoFilled = (s) =>
+  FILL_FIELDS.reduce((n, f) => {
+    const c = s.fill_counts[f] || {};
+    return n + (c["SO#"] || 0) + (c.MPN || 0) + (c["PO#"] || 0);
+  }, 0);
+
+const Legend = ({ color }) => (
+  <span style={{ display: "inline-block", width: 14, height: 3, background: color,
+                 borderRadius: 2, margin: "0 4px 0 6px", verticalAlign: "middle" }} />
+);
+
+const RowTable = ({ columns, rows, fills }) => (
+  <div className="table-container">
+    <table className="data-table">
       <thead>
         <tr>
           {columns.map((c) => (
-            <th key={c} style={{ position: "sticky", top: 0, zIndex: 1,
-                                 background: ["OPEN_ORDER_VALUE", "OPEN COST"].includes(c) ? "#8a6d00" : "#0a0e12",
-                                 color: "#fff", fontSize: 10.5, fontWeight: 600, whiteSpace: "nowrap",
-                                 padding: "8px 9px", textAlign: "left" }}>
+            <th key={c}
+                className={CALC_COLS.includes(c) ? "th-calc"
+                           : FILL_FIELDS.includes(c) ? "th-derived" : undefined}>
               {c}
             </th>
           ))}
@@ -192,15 +234,20 @@ const Rows = ({ columns, rows, fills }) => (
       </thead>
       <tbody>
         {rows.map((r, i) => (
-          <tr key={i} style={{ background: i % 2 ? "#fafafa" : "#fff" }}>
+          <tr key={i}>
             {columns.map((c) => {
-              const src = FILL_FIELDS.includes(c) ? fills?.[i]?.[c] : null;
-              const blank = FILL_FIELDS.includes(c) && (r[c] == null || r[c] === "");
+              const isFill = FILL_FIELDS.includes(c);
+              const blank = isFill && (r[c] == null || r[c] === "");
+              // 배지는 예외에만 — SO# 로 채운 건 기본 경로라 표시하지 않는다
+              const src = isFill ? fills?.[i]?.[c] : null;
+              const badge = src && src !== "SO#" ? src : null;
               return (
-                <td key={c} style={{ padding: "6px 9px", borderTop: "1px solid #f1f5f9",
-                                     whiteSpace: "nowrap", color: blank ? RED : "#334155" }}>
-                  {blank ? "확인 필요" : fmt(r[c])}
-                  {src && <sup style={{ marginLeft: 3, fontSize: 8.5, color: SRC_COLOR[src] }}>{src}</sup>}
+                <td key={c} className={[
+                  NUM_COLS.has(c) ? "cell-number" : "",
+                  blank ? "cell-blank" : "",
+                ].filter(Boolean).join(" ") || undefined}>
+                  {blank ? "확인 필요" : fmt(r[c], c)}
+                  {badge && <span className={`src-badge ${SRC_CLASS[badge]}`}>{badge}</span>}
                 </td>
               );
             })}
@@ -211,31 +258,27 @@ const Rows = ({ columns, rows, fills }) => (
   </div>
 );
 
-const Review = ({ rows }) => (
-  <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 10,
-                overflowX: "auto", maxHeight: "68vh", overflowY: "auto" }}>
-    <table style={{ borderCollapse: "separate", borderSpacing: 0, fontSize: 12, width: "100%" }}>
+const REVIEW_COLS = ["행", "항목", "사유", "후보", "SO", "PURCH_ORDER_NO", "MPN", "DID",
+                     "END_CUSTOMER_NAME"];
+
+const ReviewTable = ({ rows }) => (
+  <div className="table-container">
+    <table className="data-table">
       <thead>
-        <tr>
-          {["행", "항목", "사유", "후보", "SO", "PURCH_ORDER_NO", "MPN", "DID", "END_CUSTOMER_NAME"].map((h) => (
-            <th key={h} style={{ position: "sticky", top: 0, background: "#8a6d00", color: "#fff",
-                                 fontSize: 10.5, fontWeight: 600, padding: "8px 10px",
-                                 textAlign: "left", whiteSpace: "nowrap" }}>{h}</th>
-          ))}
-        </tr>
+        <tr>{REVIEW_COLS.map((h) => <th key={h}>{h}</th>)}</tr>
       </thead>
       <tbody>
         {rows.map((r, i) => (
-          <tr key={i} style={{ background: i % 2 ? "#fafafa" : "#fff" }}>
-            <td style={td}>{r.row}</td>
-            <td style={{ ...td, fontWeight: 700, color: RED }}>{r.field}</td>
-            <td style={td}>{r.reason}</td>
-            <td style={td}>{(r.candidates || []).join(", ") || "—"}</td>
-            <td style={td}>{fmt(r.SO)}</td>
-            <td style={td}>{fmt(r.PURCH_ORDER_NO)}</td>
-            <td style={td}>{fmt(r.MPN)}</td>
-            <td style={td}>{fmt(r.DID)}</td>
-            <td style={td}>{fmt(r.END_CUSTOMER_NAME)}</td>
+          <tr key={i}>
+            <td className="cell-number">{r.row}</td>
+            <td className="cell-blank">{r.field}</td>
+            <td>{r.reason}</td>
+            <td>{(r.candidates || []).join(", ") || "—"}</td>
+            <td>{fmt(r.SO)}</td>
+            <td>{fmt(r.PURCH_ORDER_NO)}</td>
+            <td>{fmt(r.MPN)}</td>
+            <td>{fmt(r.DID)}</td>
+            <td>{fmt(r.END_CUSTOMER_NAME)}</td>
           </tr>
         ))}
       </tbody>
@@ -243,55 +286,30 @@ const Review = ({ rows }) => (
   </div>
 );
 
-const td = { padding: "6px 10px", borderTop: "1px solid #f1f5f9", whiteSpace: "nowrap", color: "#334155" };
-const btn = { padding: "9px 18px", color: "#fff", border: "none", borderRadius: 8,
-              fontSize: 13, fontWeight: 600, cursor: "pointer" };
-
-const Pick = ({ label, file, inputRef, onPick, required, hint }) => (
+const Slot = ({ label, file, inputRef, onPick, required, hint }) => (
   <div>
-    <div style={{ fontSize: 11.5, color: required ? "#0a0e12" : "#64748b", fontWeight: 600, marginBottom: 4 }}>
-      {label}
+    <div className="file-slot-label">
+      {label}{required && <span className="req"> *</span>}
     </div>
     <input ref={inputRef} type="file" accept=".xlsx,.xls" style={{ display: "none" }}
            onChange={(e) => onPick(e.target.files[0])} />
-    <button onClick={() => inputRef.current?.click()}
-            style={{ padding: "8px 14px", background: "#fff", color: "#0a0e12",
-                     border: `1px solid ${file ? "#16a34a" : "#cbd5e1"}`, borderRadius: 8,
-                     fontSize: 13, cursor: "pointer" }}>
-      📄 {file ? "✓ " + (file.name.length > 26 ? file.name.slice(0, 26) + "…" : file.name) : "파일 선택"}
+    <button className={`file-btn ${file ? "filled" : ""}`} onClick={() => inputRef.current?.click()}>
+      <span>{file ? "✓" : "＋"}</span>
+      <span className="fname">{file ? file.name : "파일 선택"}</span>
     </button>
-    {hint && !file && <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 3 }}>{hint}</div>}
+    {/* 힌트가 없어도 자리를 차지해 슬롯 높이를 맞춘다 */}
+    <div className="file-slot-hint">{hint && !file ? hint : " "}</div>
   </div>
 );
 
-const Tab = ({ on, onClick, children, alert }) => (
-  <button onClick={onClick}
-          style={{ padding: "8px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer", border: "none",
-                   borderBottom: `2px solid ${on ? "#0a0e12" : "transparent"}`, background: "none",
-                   color: on ? "#0a0e12" : alert ? RED : "#94a3b8" }}>
-    {children}
-  </button>
-);
-
-const Stat = ({ label, value, color, sub, big }) => (
-  <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 10, padding: "10px 16px", minWidth: 96 }}>
-    <div style={{ fontSize: 11.5, color: "#64748b" }}>{label}</div>
-    <div style={{ fontSize: big ? 22 : 18, fontWeight: 700, color: color || "#0a0e12" }}>
+const Card = ({ label, value, sub, warn, ok }) => (
+  <div className={`summary-card${ok && value ? " card-gp" : ""}`}>
+    <div className="summary-label">{label}</div>
+    <div className="summary-value" style={warn && value ? { color: "#c43a3a" } : undefined}>
       {Number(value).toLocaleString()}
     </div>
-    {sub && <div style={{ fontSize: 11, color: "#94a3b8" }}>{sub}</div>}
+    {sub && <div className="file-slot-hint" style={{ marginTop: 2 }}>{sub}</div>}
   </div>
-);
-
-const Note = ({ children, warn }) => (
-  <div style={{ background: warn ? "#fffbeb" : "#f8fafc", border: `1px solid ${warn ? "#fde68a" : "#e2e8f0"}`,
-                color: warn ? "#92400e" : "#475569", padding: "10px 14px", borderRadius: 8,
-                fontSize: 12.5, marginBottom: 12 }}>{children}</div>
-);
-
-const Empty = ({ children }) => (
-  <div style={{ padding: 40, textAlign: "center", color: "#16a34a", fontSize: 14,
-                background: "#fff", border: "1px solid #e2e8f0", borderRadius: 10 }}>{children}</div>
 );
 
 export default BacklogConvert;
