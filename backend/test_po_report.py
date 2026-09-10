@@ -1,4 +1,4 @@
-"""발주요청서 보고 양식(표1·표2·표3) 회귀 테스트.
+"""발주요청서 보고 양식(표1~표4) 회귀 테스트.
 
 기준은 사용자가 빨간 글씨로 코멘트를 단 `발주요청서_보고_2026-09-08.xlsx` 다.
 색·병합·숫자서식·월 범위를 그 파일에 맞춰 놓았으므로, 바뀌면 여기서 걸려야 한다.
@@ -6,7 +6,7 @@
 main.py(로컬) / main_aws.py(배포) 둘 다 건다 — 사본을 따로 두면 갈라진다.
 """
 import io
-from datetime import datetime
+from datetime import date, datetime
 
 import openpyxl
 import pytest
@@ -192,7 +192,7 @@ def test_t2_blank_cells_carry_comma_format(mod):
 @pytest.mark.parametrize("mod", BACKENDS)
 def test_t3_blocks_titled_did_mpn(mod):
     ws = _book(mod)["표3"]
-    titles = [ws.cell(row=r, column=2).value for r in (1, 9, 17, 25)]
+    titles = [ws.cell(row=r, column=2).value for r in (1, 10, 19, 28)]
     assert titles == ["(Z42M)MT53E1G32D2FW-046 WT:B", "(V89C)MT41K128M16JT-125:K",
                       "(V88A)MT41K64M16TW-107 AIT:J", "(QLHS)MT25QL128ABA8ESF-0SIT"]
 
@@ -202,19 +202,19 @@ def test_t3_new_po_lands_on_crd_month(mod):
     """표1 CRD 월 기준으로 수량이 꽂힌다 — 첨부 파일과 같은 자리·같은 값."""
     ws = _book(mod)["표3"]
     # 블록1(Z42M): CRD 2027-02 → Feb(H) 2000
-    assert ws["H6"].value == 2000
-    assert ws["G6"].value is None
+    assert ws["H7"].value == 2000
+    assert ws["G7"].value is None
     # 블록2(V89C): CRD 2027-01, 2027-02 → Jan(G)·Feb(H) 각 2000
-    assert (ws["G14"].value, ws["H14"].value) == (2000, 2000)
+    assert (ws["G16"].value, ws["H16"].value) == (2000, 2000)
     # 블록4(QLHS): 1000씩
-    assert (ws["G30"].value, ws["H30"].value) == (1000, 1000)
+    assert (ws["G34"].value, ws["H34"].value) == (1000, 1000)
 
 
 @pytest.mark.parametrize("mod", BACKENDS)
 def test_t3_manual_rows_left_empty(mod):
     """Delivery/Inventory/Backlog 는 사용자가 채운다 — 자동으로 넣지 않는다."""
     ws = _book(mod)["표3"]
-    for r in (3, 4, 5):
+    for r in (4, 5, 6):
         assert all(ws.cell(row=r, column=c).value is None for c in range(3, 15))
         assert ws.cell(row=r, column=3).number_format == pr.FMT_ACCT
 
@@ -223,26 +223,160 @@ def test_t3_manual_rows_left_empty(mod):
 def test_t3_new_po_row_is_red(mod):
     """자동으로 채워진 New PO 는 수동 입력칸과 구분되게 빨강 (첨부 양식 그대로)."""
     ws = _book(mod)["표3"]
-    assert _fg(ws["B6"]) == pr.C_RED
-    assert _fg(ws["H6"]) == pr.C_RED
-    assert _fg(ws["B3"]) != pr.C_RED, "Delivery 는 검정"
+    assert _fg(ws["B7"]) == pr.C_RED
+    assert _fg(ws["H7"]) == pr.C_RED
+    assert _fg(ws["B4"]) != pr.C_RED, "Delivery 는 검정"
 
 
 @pytest.mark.parametrize("mod", BACKENDS)
 def test_t3_balance_is_a_real_formula(mod):
     ws = _book(mod)["표3"]
-    assert ws["C7"].value == "=C4-C3+C5+C6", ws["C7"].value
-    assert ws["N7"].value == "=N4-N3+N5+N6"
-    assert _bg(ws["B7"]) == pr.C_BAL and _bg(ws["C7"]) == pr.C_BAL
+    assert ws["C8"].value == "=C5-C4+C6+C7", ws["C8"].value
+    assert ws["N8"].value == "=N5-N4+N6+N7"
+    assert _bg(ws["B8"]) == pr.C_BAL and _bg(ws["C8"]) == pr.C_BAL
 
 
 @pytest.mark.parametrize("mod", BACKENDS)
 def test_t3_month_header_row(mod):
     ws = _book(mod)["표3"]
-    assert [ws.cell(row=2, column=c).value for c in range(3, 15)] == [
+    assert [ws.cell(row=3, column=c).value for c in range(3, 15)] == [
         "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug"]
-    assert _bg(ws.cell(row=2, column=3)) == pr.C_MONTH
+    assert _bg(ws.cell(row=3, column=3)) == pr.C_MONTH
     assert ws["C1"].value == "소요계획"
+
+
+# ---------- 2026-09-10 대량발주 요청서 반영분 ----------
+
+def test_fiscal_label_follows_micron_year_starting_september():
+    """요청서 표3 FQ 행에서 역산한 규칙: 9월 시작, 연도는 종료연도 표기."""
+    f = lambda y, m: pr.fiscal_label(pr._ym(date(y, m, 1)))
+    assert f(2026, 3) == "FQ3 YR2026"      # Mar~May
+    assert f(2026, 6) == "FQ4 YR2026"      # Jun~Aug
+    assert f(2026, 9) == "FQ1 YR2027"      # Sep~Nov, 여기서 회계연도가 넘어간다
+    assert f(2026, 12) == "FQ2 YR2027"     # Dec~Feb
+    assert f(2027, 1) == "FQ2 YR2027"
+    assert f(2027, 3) == "FQ3 YR2027"
+
+
+def test_fiscal_spans_group_consecutive_months_into_quarters():
+    months = [pr._ym(date(2026, 3, 1)) + k for k in range(13)]   # Mar 2026 ~ Mar 2027
+    assert pr.fiscal_spans(months) == [
+        (0, 3, "FQ3 YR2026"), (3, 3, "FQ4 YR2026"), (6, 3, "FQ1 YR2027"),
+        (9, 3, "FQ2 YR2027"), (12, 1, "FQ3 YR2027")]
+
+
+@pytest.mark.parametrize("mod", BACKENDS)
+def test_t3_fq_row_sits_above_months_in_every_block(mod):
+    """FQ 행은 요청서엔 블록1에만 있었지만 시범이라 보고 전 블록에 넣는다."""
+    ws = _book(mod)["표3"]
+    for head in (1, 10, 19, 28):
+        assert ws.cell(row=head + 1, column=3).value == "FQ1 YR2027", head
+        assert ws.cell(row=head + 2, column=3).value == "Sep", head
+
+
+@pytest.mark.parametrize("mod", BACKENDS)
+def test_t3_fq_cells_merge_per_quarter(mod):
+    ws = _book(mod)["표3"]
+    merged = {str(m) for m in ws.merged_cells.ranges}
+    assert {"C2:E2", "F2:H2", "I2:K2", "L2:N2"} <= merged, sorted(merged)[:8]
+    assert "B1:B3" in merged, "제목은 머리 3행을 덮는다"
+
+
+@pytest.mark.parametrize("mod", BACKENDS)
+def test_t3_item_labels_are_centered(mod):
+    ws = _book(mod)["표3"]
+    assert [ws.cell(row=r, column=2).alignment.horizontal for r in range(4, 9)] == ["center"] * 5
+
+
+@pytest.mark.parametrize("mod", BACKENDS)
+def test_t2_existing_order_is_a_live_formula(mod):
+    """기 수주 = Inventory Total + Backlog Total. 값이 아니라 수식으로 고정."""
+    ws = _book(mod)["표2"]
+    assert ws["E3"].value == "=G3+H3"
+    assert ws["E4"].value == "=G4+H4"
+    assert ws["E3"].number_format == pr.FMT_ACCT
+
+
+@pytest.mark.parametrize("mod", BACKENDS)
+def test_t2_body_is_malgun_10pt_header_stays_gulim(mod):
+    ws = _book(mod)["표2"]
+    assert (ws["A3"].font.name, ws["A3"].font.size) == ("맑은 고딕", 10)
+    assert ws["A1"].font.name == "굴림", "헤더는 요청서 그대로 굴림"
+
+
+@pytest.mark.parametrize("mod", BACKENDS)
+def test_all_four_tables_have_thin_borders(mod):
+    wb = _book(mod)
+    for sheet, co in (("표1", "A3"), ("표2", "A3"), ("표3", "B4"), ("표4", "A2")):
+        assert wb[sheet][co].border.left.style == "thin", sheet
+    assert wb["표1"]["A1"].border.bottom.style == "thin", "헤더도 포함"
+
+
+@pytest.mark.parametrize("mod", BACKENDS)
+def test_t3_gap_row_between_blocks_has_no_border(mod):
+    """블록 사이 빈 줄에 선이 가면 표가 하나로 붙어 보인다."""
+    ws = _book(mod)["표3"]
+    assert ws["B9"].border.left.style is None
+
+
+# ---------- 표4 (월별 발주 수량) ----------
+
+@pytest.mark.parametrize("mod", BACKENDS)
+def test_t4_header_and_rows(mod):
+    ws = _book(mod)["표4"]
+    assert [ws.cell(row=1, column=j).value for j in (1, 2, 3)] == ["Part (MPN)", "End Customer", "DID"]
+    assert ws.cell(row=1, column=4).value == "Jan", "발주 첫 달"
+    keys = [(ws.cell(row=r, column=1).value, ws.cell(row=r, column=3).value) for r in range(2, 6)]
+    assert keys == [("MT53E1G32D2FW-046 WT:B", "Z42M"),
+                    ("MT41K128M16JT-125:K", "V89C"),
+                    ("MT41K64M16TW-107 AIT:J", "V88A"),
+                    ("MT25QL128ABA8ESF-0SIT", "QLHS")]
+
+
+def test_t4_window_is_first_po_month_plus_six():
+    months, _ = pr.build_t4_rows(_preview(main)["t1_rows"])
+    assert [pr.month_abbr(m) for m in months] == [
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"]
+
+
+def test_t4_window_extends_when_orders_run_past_six_months():
+    """뒤를 자르지 않는다 — 발주가 7개월 밖에 있어도 그 달까지 늘린다."""
+    rows = [list(ROWS[0]), list(ROWS[1])]
+    rows[0][2], rows[1][2] = "2027-01-08", "2027-12-05"
+    months, _ = pr.build_t4_rows(_preview(main, rows)["t1_rows"])
+    assert [pr.month_abbr(m) for m in months][0] == "Jan"
+    assert len(months) == 12 and pr.month_abbr(months[-1]) == "Dec"
+
+
+def test_t4_sums_orders_split_within_the_same_month():
+    """이 표가 필요한 이유 — CRD 를 같은 달에 쪼개 넣은 건을 한 칸으로 합친다."""
+    rows = [list(ROWS[1]), list(ROWS[1])]   # 같은 품목·같은 CRD, 2000 씩
+    months, t4 = pr.build_t4_rows(_preview(main, rows)["t1_rows"])
+    assert len(t4) == 1
+    assert t4[0]["qty"][months[0]] == 4000
+
+
+def test_t4_values_equal_t3_new_po():
+    """표4 는 표3 New PO 와 같은 원천 — 수치가 갈리면 안 된다."""
+    rows = _preview(main)["t1_rows"]
+    _, blocks = pr.build_t3_blocks(rows)
+    _, t4 = pr.build_t4_rows(rows)
+    by_key = {(r["Part (MPN)"], r["DID"]): r["qty"] for r in t4}
+    assert len(by_key) == len(blocks) == 4
+    for b in blocks:
+        did, mpn = b["title"][1:].split(")", 1)
+        assert by_key[(mpn, did)] == b["new_po"], b["title"]
+
+
+@pytest.mark.parametrize("mod", BACKENDS)
+def test_t4_month_without_orders_is_zero_in_accounting_format(mod):
+    """0 을 넣어야 회계 서식이 '-' 로 보여준다 (요청서와 같은 모양)."""
+    ws = _book(mod)["표4"]
+    # 2행 = Z42M, 발주는 CRD 2027-02 한 건뿐 → Feb(E) 에만 2000, 나머지 달은 0
+    assert ws["D2"].value == 0, "Jan 은 발주 없음"
+    assert ws["E2"].value == 2000
+    assert [c.value for c in ws[2][3:]] == [0, 2000, 0, 0, 0, 0, 0]
+    assert all(c.number_format == pr.FMT_ACCT for c in ws[2][3:])
 
 
 @pytest.mark.parametrize("mod", BACKENDS)

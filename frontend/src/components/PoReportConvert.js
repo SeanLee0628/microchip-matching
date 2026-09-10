@@ -66,7 +66,7 @@ function PoReportConvert() {
     <div>
       <div className="page-header">
         <h1>발주요청서 변환</h1>
-        <p className="subtitle">데이터 양식 → 보고 양식 (표1 자동, 표2 부분, 표3 수동)</p>
+        <p className="subtitle">데이터 양식 → 보고 양식 (표1·표4 자동, 표2 기 수주 수식, 표3 New PO 자동 · 나머지 수동)</p>
       </div>
 
       {error && <div className="error-banner">{error}</div>}
@@ -154,7 +154,7 @@ function PoReportConvert() {
           </div>
 
           <div style={{ marginTop: 16, padding: 12, background: "#f1f5f9", borderRadius: 6, fontSize: 13, color: "#475569" }}>
-            💡 다운받은 엑셀에는 표1, 표2와 함께 <b>표3 (월별 수급 시뮬) 빈 시트</b>가 포함됩니다. 표2의 빈칸과 표3은 직접 채워주세요.
+            💡 다운받은 엑셀에는 표1·표2 와 함께 <b>표3 (월별 수급 시뮬)</b>, <b>표4 (월별 발주 수량)</b> 가 들어갑니다. 표3의 New PO 와 표4는 자동으로 채워지고, 표3의 Delivery·Inventory·Backlog 와 표2의 빈칸은 직접 채워주세요.
           </div>
         </>
       )}
