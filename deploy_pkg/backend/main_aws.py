@@ -745,18 +745,30 @@ def _bl_clean(v):
     return s or None
 
 
+def _bl_blank_zero(v):
+    """FSE·CUST 는 값이 문자 0 으로 들어오는 행이 있다(샘플 3건) — 공란으로 본다.
+    (요청 2026-09-10: "데이터에 해당 열(FSE CUST) 없다면 공란표기")"""
+    s = _bl_clean(v)
+    return None if s in ("0", "0.0") else s
+
+
+BL_REQUIRED_COLS = {"MPN", "DID", "CRD", "MAD", "QTY"}
+
+
 def _parse_backlog_orders(contents):
     """Backlog Shipment Report 파싱. 필수 컬럼이 있는 시트를 자동 탐지(시트명 제각각 대응).
-    반환: 주문 dict 리스트, 백로그 형식이 아니면 None."""
+    반환: 주문 dict 리스트, 백로그 형식이 아니면 None.
+
+    요청서(2026-09-10) 표에 나가는 열을 전부 읽는다 — 예전엔 판정에 쓰는 것만 읽어서
+    PO#·CUSTOMER_MATERIAL·PLANT·BOX_TYPE·CUST 가 화면에 못 나왔다."""
     try:
         xls = pd.ExcelFile(io.BytesIO(contents))
     except Exception:
         return None
-    req = {"MPN", "DID", "CRD", "MAD", "QTY"}
     df = None
     for s in xls.sheet_names:
         d = pd.read_excel(xls, sheet_name=s, header=0)
-        if req.issubset(set(d.columns)):
+        if BL_REQUIRED_COLS.issubset(set(d.columns)):
             df = d
             break
     if df is None:
@@ -768,16 +780,26 @@ def _parse_backlog_orders(contents):
         did, mpn = _bl_clean(row.get("DID")), _bl_clean(row.get("MPN"))
         if not did and not mpn:
             continue
+        delivery = _bl_clean(row.get("DELIVERY_NUMBER"))
         orders.append({
             "so": _bl_clean(row.get("SO")),
             "did": did, "mpn": mpn,
-            "customer": _bl_clean(row.get("End customer")),
+            # 실제 헤더는 END_CUSTOMER_NAME. 예전 코드가 "End customer" 만 찾아서
+            # 고객명이 전 행 빈칸으로 나왔다 (2026-09-10 수정). 구 헤더도 같이 본다.
+            "customer": (_bl_clean(row.get("END_CUSTOMER_NAME"))
+                         or _bl_clean(row.get("End customer"))),
+            "po": _bl_clean(row.get("PURCH_ORDER_NO")),
+            "cust_material": _bl_clean(row.get("CUSTOMER_MATERIAL")),
             "qty": to_float(row.get("QTY")) or 0,
             "crd": _parse_date(row.get("CRD")),
             "mad": _parse_date(row.get("MAD")),
-            "order_type": _bl_clean(row.get("ORDER_TYPE")),
-            "fse": _bl_clean(row.get("FSE")),
-            "open": _bl_clean(row.get("DELIVERY_NUMBER")) is None,
+            "plant": _bl_clean(row.get("PLANT")),
+            "box_type": _bl_clean(row.get("BOX_TYPE")),
+            "delivery_number": delivery,
+            "order_type": _bl_clean(row.get("ORDER_TYPE")),  # OR=양산, FD=샘플
+            "fse": _bl_blank_zero(row.get("FSE")),
+            "cust": _bl_blank_zero(row.get("CUST")),
+            "open": delivery is None,  # 출하번호 없으면 미출하
         })
     return orders
 
@@ -788,6 +810,109 @@ def _bl_ser_card(c):
         if k in c and hasattr(c[k], "isoformat"):
             c[k] = c[k].isoformat()
     return c
+
+
+# ───────── 엑셀 내보내기 (요청 2026-09-10) ─────────
+# "경과된 것 뿐만 아니라 원본 엑셀에서 경과일수 열 추가된 엑셀 다운 가능하게"
+# → 화면 필터와 무관하게 업로드한 파일의 전체 행을 그대로 내보내고 계산열만 덧붙인다.
+
+def _bl_read_raw_sheet(contents):
+    """업로드 원본에서 백로그 시트를 (헤더, 데이터행들) 로 읽는다. 값만 — 서식은 안 가져온다.
+    헤더가 1행이 아닐 수 있어 앞 10행까지 훑는다. 못 찾으면 (None, None)."""
+    from openpyxl import load_workbook
+    wb = load_workbook(io.BytesIO(contents), data_only=True, read_only=True)
+    try:
+        for ws in wb.worksheets:
+            rows = list(ws.iter_rows(values_only=True))
+            for i, r in enumerate(rows[:10]):
+                hdr = [(str(v).strip() if v is not None else "") for v in r]
+                if BL_REQUIRED_COLS.issubset(set(hdr)):
+                    data = [list(x) for x in rows[i + 1:]
+                            if any(v is not None and str(v).strip() != "" for v in x)]
+                    return hdr, data
+    finally:
+        wb.close()
+    return None, None
+
+
+def _bl_cell_date(v):
+    from datetime import datetime as _dtc, date as _datec
+    if isinstance(v, _dtc):
+        return v.date()
+    if isinstance(v, _datec):
+        return v
+    return _parse_date(v)
+
+
+def _bl_export_workbook(hdr, rows, extra_names, extra_values, sheet_title="Backlog"):
+    """원본 헤더·행을 그대로 옮기고 MAD 열 바로 뒤에 계산열을 끼운 워크북을 만든다.
+
+    extra_names: 추가 열 이름들, extra_values: 행별 추가값 리스트(rows 와 같은 길이).
+    값이 None 이면 "N/A" 로 쓴다 (이전 백록에 없던 신규 SO 등).
+    """
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    from openpyxl.utils import get_column_letter
+    from datetime import datetime as _dtc, date as _datec
+
+    HDR_FILL = PatternFill("solid", fgColor="1F3A8A")
+    ADD_FILL = PatternFill("solid", fgColor="C43A3A")   # 추가한 계산열은 색으로 구분
+    ADD_BODY = PatternFill("solid", fgColor="FEF2F2")
+    HDR_FONT = Font(name="맑은 고딕", bold=True, color="FFFFFF", size=10)
+    DATA_FONT = Font(name="맑은 고딕", size=10)
+    THIN = Side(border_style="thin", color="D1D5DB")
+    BORDER = Border(left=THIN, right=THIN, top=THIN, bottom=THIN)
+    CENTER = Alignment(horizontal="center", vertical="center")
+
+    pos = hdr.index("MAD") + 1 if "MAD" in hdr else len(hdr)
+    out_hdr = hdr[:pos] + list(extra_names) + hdr[pos:]
+    add_cols = set(range(pos + 1, pos + 1 + len(extra_names)))  # 1-indexed 열번호
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = sheet_title
+    for j, name in enumerate(out_hdr, start=1):
+        c = ws.cell(1, j, name)
+        c.fill = ADD_FILL if j in add_cols else HDR_FILL
+        c.font = HDR_FONT
+        c.alignment = CENTER
+        c.border = BORDER
+
+    for i, (row, extra) in enumerate(zip(rows, extra_values), start=2):
+        row = list(row) + [None] * (len(hdr) - len(row))
+        vals = row[:pos] + [("N/A" if v is None else v) for v in extra] + row[pos:len(hdr)]
+        for j, v in enumerate(vals, start=1):
+            c = ws.cell(i, j, v)
+            c.font = DATA_FONT
+            c.border = BORDER
+            if j in add_cols:
+                c.fill = ADD_BODY
+                c.alignment = CENTER
+            if isinstance(v, (_dtc, _datec)):
+                c.number_format = "yyyy-mm-dd"
+                c.alignment = CENTER
+
+    for j, name in enumerate(out_hdr, start=1):
+        width = max(9, min(26, len(str(name)) + 4))
+        if name in ("MPN", "PURCH_ORDER_NO", "END_CUSTOMER_NAME", "CUSTOMER_MATERIAL", "CUST"):
+            width = 24
+        ws.column_dimensions[get_column_letter(j)].width = width
+    ws.freeze_panes = "A2"
+    return wb
+
+
+def _bl_xlsx_response(wb, fname, extra_headers=None):
+    from urllib.parse import quote
+    out = io.BytesIO()
+    wb.save(out)
+    out.seek(0)
+    h = {"Content-Disposition": "attachment; filename*=UTF-8''" + quote(fname)}
+    h.update(extra_headers or {})
+    return StreamingResponse(
+        out,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers=h,
+    )
 
 
 @app.post("/api/crd-board")
@@ -804,6 +929,8 @@ async def crd_board_compute(file: UploadFile = File(...), buffer_days: int = 7):
 
     today = datetime.now().date()
     cards = crd_board.classify_backlog(open_orders, today=today, buffer_days=buffer_days)
+    # 화면 정렬은 위험도순이 아니라 MAD(자재 가용일) 빠른 순 — 요청서 예시와 첨부 파일이 그 순서.
+    cards = crd_board.sort_by_mad(cards)
 
     board, summary = [], {"red": 0, "yellow": 0, "green": 0, "unknown": 0}
     for c in cards:
@@ -814,14 +941,43 @@ async def crd_board_compute(file: UploadFile = File(...), buffer_days: int = 7):
         "board": board, "summary": summary,
         "part_summary": crd_board.summarize_by_part(cards),
         "open_count": len(open_orders), "shipped_skipped": shipped,
+        "elapsed_count": len(crd_board.elapsed_only(cards)),   # 경과일수 > 0
         "order_types": type_counts, "buffer_days": buffer_days,
         "today": today.isoformat(),
     }
 
 
+@app.post("/api/crd-board/export")
+async def crd_board_export(file: UploadFile = File(...)):
+    """업로드 원본 전체 행 + 경과일수(MAD-CRD) 열 xlsx.
+    화면의 "경과된 것만" 필터와 무관하게 전수 — 요청서 N7 코멘트."""
+    contents = await file.read()
+    hdr, rows = _bl_read_raw_sheet(contents)
+    if hdr is None:
+        return {"error": "Backlog Shipment Report 형식이 아닙니다 (MPN·DID·CRD·MAD·QTY 컬럼 필요)."}
+
+    i_crd, i_mad = hdr.index("CRD"), hdr.index("MAD")
+    extras, n_elapsed = [], 0
+    for r in rows:
+        crd = _bl_cell_date(r[i_crd] if i_crd < len(r) else None)
+        mad = _bl_cell_date(r[i_mad] if i_mad < len(r) else None)
+        if crd is None or mad is None:
+            extras.append([None])          # 날짜 없으면 N/A
+        else:
+            d = (mad - crd).days
+            extras.append([d])
+            if d > 0:
+                n_elapsed += 1
+
+    wb = _bl_export_workbook(hdr, rows, ["경과일수"], extras)
+    stamp = datetime.now().strftime("%Y%m%d_%H%M")
+    return _bl_xlsx_response(wb, f"CRD현황_경과일수_{stamp}.xlsx",
+                             {"X-Row-Count": str(len(rows)), "X-Elapsed-Count": str(n_elapsed)})
+
+
 @app.post("/api/crd-board/compare")
 async def crd_board_compare(prev: UploadFile = File(...), current: UploadFile = File(...)):
-    """이전·현재 백로그 두 파일 비교 → MAD 밀린(선적 지연) 주문 + 주간 움직임 요약."""
+    """이전·현재 백로그 두 파일 비교 → MAD 변화(밀림·당겨짐·신규) + 주간 움직임 요약."""
     prev_all = _parse_backlog_orders(await prev.read())
     cur_all = _parse_backlog_orders(await current.read())
     if prev_all is None or cur_all is None:
@@ -833,12 +989,52 @@ async def crd_board_compare(prev: UploadFile = File(...), current: UploadFile = 
     res = crd_board.compare_backlog(prev_open, cur_open, today=today)
 
     return {
+        "changed": [_bl_ser_card(c) for c in res["changed"]],
         "slipped": [_bl_ser_card(c) for c in res["slipped"]],
         "new": [_bl_ser_card(c) for c in res["new"]],
         "gone_count": res["gone_count"],
         "summary": res["summary"],
         "today": today.isoformat(),
     }
+
+
+@app.post("/api/crd-board/compare/export")
+async def crd_board_compare_export(prev: UploadFile = File(...), current: UploadFile = File(...)):
+    """현재 백록 전체 행 + 이전 MAD·GAP 열 xlsx (전체 백록 라인 비교 — 요청서 N7 코멘트).
+    GAP = 현재 MAD - 이전 MAD. 이전 백록에 없던 SO 는 N/A."""
+    cur_bytes = await current.read()
+    prev_orders = _parse_backlog_orders(await prev.read())
+    hdr, rows = _bl_read_raw_sheet(cur_bytes)
+    if hdr is None or prev_orders is None:
+        return {"error": "두 파일 모두 Backlog Shipment Report 형식이어야 합니다."}
+
+    prev_mad_by_so = {o["so"]: o["mad"] for o in prev_orders if o.get("so")}
+    i_so = hdr.index("SO") if "SO" in hdr else None
+    i_mad = hdr.index("MAD")
+    stat = {"push": 0, "pull": 0, "na": 0}
+    vals = []
+    for r in rows:
+        so = _bl_clean(r[i_so]) if (i_so is not None and i_so < len(r)) else None
+        mad = _bl_cell_date(r[i_mad] if i_mad < len(r) else None)
+        pmad = prev_mad_by_so.get(so)
+        if pmad is None or mad is None:
+            vals.append([pmad, None])       # 신규 SO 등 → GAP N/A
+            stat["na"] += 1
+        else:
+            gap = (mad - pmad).days
+            vals.append([pmad, gap])
+            if gap > 0:
+                stat["push"] += 1
+            elif gap < 0:
+                stat["pull"] += 1
+
+    wb = _bl_export_workbook(hdr, rows, ["이전 MAD", "GAP"], vals)
+    stamp = datetime.now().strftime("%Y%m%d_%H%M")
+    return _bl_xlsx_response(wb, f"CRD변화_MAD비교_{stamp}.xlsx",
+                             {"X-Row-Count": str(len(rows)),
+                              "X-Push-Out": str(stat["push"]),
+                              "X-Pull-In": str(stat["pull"]),
+                              "X-Na-Count": str(stat["na"])})
 
 
 # ==================== AUO 백로그 ====================
